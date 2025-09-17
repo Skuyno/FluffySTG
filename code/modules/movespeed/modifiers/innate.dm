@@ -2,6 +2,10 @@
 	multiplicative_slowdown = -0.35 // NOVA EDIT CHANGE - Heavy nerf, because speedboosts are way-way more effective here - ORIGINAL: multiplicative_slowdown = -0.55
 	blacklisted_movetypes = (FLYING|FLOATING)
 
+/datum/movespeed_modifier/changeling/projectile_absorption
+	multiplicative_slowdown = 0.5
+	blacklisted_movetypes = (FLYING|FLOATING)
+
 /datum/movespeed_modifier/pai_spacewalk
 	multiplicative_slowdown = 2
 	flags = IGNORE_NOSLOW
