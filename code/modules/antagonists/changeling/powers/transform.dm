@@ -192,6 +192,7 @@
 		return
 
 	if(chosen_name == "Drop Flesh Disguise")
+		clear_clothing_disguise(user)
 		for(var/slot in slot2type)
 			if(istype(user.vars[slot], slot2type[slot]))
 				qdel(user.vars[slot])
