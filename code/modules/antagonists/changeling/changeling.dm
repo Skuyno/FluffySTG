@@ -105,6 +105,12 @@
 
 	///	Keeps track of the currently selected profile.
 	var/datum/changeling_profile/current_profile
+	/// Whether we can disguise clothing using stored icon snapshots
+	var/has_adaptive_wardrobe = FALSE
+	/// Snapshot currently applied as a clothing disguise overlay
+	var/datum/icon_snapshot/current_clothing_disguise
+	/// Mob currently using our clothing disguise overlay
+	var/mob/living/carbon/human/clothing_disguise_target
 
 /datum/antagonist/changeling/New()
 	. = ..()
@@ -119,6 +125,7 @@
 	QDEL_NULL(emporium_action)
 	QDEL_NULL(cellular_emporium)
 	current_profile = null
+	clear_clothing_disguise()
 	return ..()
 
 /datum/antagonist/changeling/on_gain()
@@ -142,6 +149,7 @@
 	RegisterSignal(living_mob, COMSIG_LIVING_LIFE, PROC_REF(on_life))
 	RegisterSignal(living_mob, COMSIG_LIVING_POST_FULLY_HEAL, PROC_REF(on_fullhealed))
 	RegisterSignal(living_mob, COMSIG_MOB_GET_STATUS_TAB_ITEMS, PROC_REF(get_status_tab_item))
+	RegisterSignal(living_mob, COMSIG_LIVING_DEATH, PROC_REF(on_owner_death))
 	RegisterSignals(living_mob, list(COMSIG_MOB_MIDDLECLICKON, COMSIG_MOB_ALTCLICKON), PROC_REF(on_click_sting))
 	ADD_TRAIT(living_mob, TRAIT_FAKE_SOULLESS, CHANGELING_TRAIT)
 
@@ -168,6 +176,36 @@
 	// Brains are optional for lings.
 	// This is automatically cleared if the ling is.
 	our_ling_brain.AddComponent(/datum/component/ling_decoy_brain, src)
+
+
+/// Applies a clothing disguise overlay onto the user using a stored snapshot.
+/datum/antagonist/changeling/proc/apply_clothing_disguise(mob/living/carbon/human/user, datum/icon_snapshot/disguise_snapshot)
+	if(!istype(user) || !disguise_snapshot)
+		return
+
+	clear_clothing_disguise(user)
+	clothing_disguise_target = user
+	current_clothing_disguise = disguise_snapshot
+	user.icon = disguise_snapshot.icon
+	user.icon_state = disguise_snapshot.icon_state
+	user.cut_overlays()
+	if(disguise_snapshot.overlays)
+		user.add_overlay(disguise_snapshot.overlays)
+	user.update_held_items()
+
+/// Clears any currently applied clothing disguise overlay.
+/datum/antagonist/changeling/proc/clear_clothing_disguise(mob/living/carbon/human/target)
+	var/mob/living/carbon/human/disguised = clothing_disguise_target
+	if(target)
+		disguised = target
+	else if(!disguised && owner && istype(owner.current, /mob/living/carbon/human))
+		disguised = owner.current
+	if(disguised && disguised == clothing_disguise_target && current_clothing_disguise)
+		disguised.cut_overlays()
+		disguised.regenerate_icons()
+		disguised.update_held_items()
+	clothing_disguise_target = null
+	current_clothing_disguise = null
 
 /datum/antagonist/changeling/proc/generate_name()
 	var/honorific
@@ -201,8 +239,12 @@
 /datum/antagonist/changeling/remove_innate_effects(mob/living/mob_override)
 	var/mob/living/living_mob = mob_override || owner.current
 	handle_clown_mutation(living_mob, removing = FALSE)
-	UnregisterSignal(living_mob, list(COMSIG_MOB_LOGIN, COMSIG_LIVING_LIFE, COMSIG_LIVING_POST_FULLY_HEAL, COMSIG_MOB_GET_STATUS_TAB_ITEMS, COMSIG_MOB_MIDDLECLICKON, COMSIG_MOB_ALTCLICKON))
+	UnregisterSignal(living_mob, list(COMSIG_MOB_LOGIN, COMSIG_LIVING_LIFE, COMSIG_LIVING_POST_FULLY_HEAL, COMSIG_MOB_GET_STATUS_TAB_ITEMS, COMSIG_MOB_MIDDLECLICKON, COMSIG_MOB_ALTCLICKON, COMSIG_LIVING_DEATH))
 	REMOVE_TRAIT(living_mob, TRAIT_FAKE_SOULLESS, CHANGELING_TRAIT)
+	if(istype(living_mob, /mob/living/carbon/human))
+		clear_clothing_disguise(living_mob)
+	else
+		clear_clothing_disguise()
 
 	if(living_mob.hud_used)
 		var/datum/hud/hud_used = living_mob.hud_used
@@ -291,6 +333,17 @@
 
 	// Makes sure the brain, if recreated, is a decoy as expected
 	make_brain_decoy(source)
+
+/**
+ * Signal proc for [COMSIG_LIVING_DEATH].
+ */
+/datum/antagonist/changeling/proc/on_owner_death(mob/living/source, gibbed)
+	SIGNAL_HANDLER
+
+	if(istype(source, /mob/living/carbon/human))
+		clear_clothing_disguise(source)
+	else
+		clear_clothing_disguise()
 
 /**
  * Signal proc for [COMSIG_MOB_MIDDLECLICKON] and [COMSIG_MOB_ALTCLICKON].
@@ -445,6 +498,7 @@
 		return FALSE
 
 	to_chat(owner.current, span_notice("We have removed our evolutions from this form, and are now ready to readapt."))
+	clear_clothing_disguise(owner.current)
 	remove_changeling_powers()
 	can_respec -= 1
 	SSblackbox.record_feedback("tally", "changeling_power_purchase", 1, "Readapt")
@@ -788,6 +842,9 @@
 		"s_store" = ITEM_SLOT_SUITSTORE,
 	)
 
+	clear_clothing_disguise(user)
+	var/use_clothing_disguise = has_adaptive_wardrobe && !isnull(chosen_profile.profile_snapshot)
+
 	var/datum/dna/chosen_dna = chosen_profile.dna
 	user.real_name = chosen_profile.name
 	user.underwear = chosen_profile.underwear
@@ -877,52 +934,57 @@
 			stack_trace("Failure to activate changeling skillchip from [chosen_profile] with skillchip [skillchip] using [chip] metadata. Error msg: [set_meta_msg]")
 			continue
 
-	//vars hackery. not pretty, but better than the alternative.
-	for(var/slot in slot2type)
-		if(istype(user.vars[slot], slot2type[slot]) && !(chosen_profile.exists_list[slot])) // Remove unnecessary flesh items
-			qdel(user.vars[slot])
-			continue
+	if(use_clothing_disguise)
+		for(var/slot in slot2type)
+			if(istype(user.vars[slot], slot2type[slot]))
+				qdel(user.vars[slot])
+	else
+		//vars hackery. not pretty, but better than the alternative.
+		for(var/slot in slot2type)
+			if(istype(user.vars[slot], slot2type[slot]) && !(chosen_profile.exists_list[slot])) // Remove unnecessary flesh items
+				qdel(user.vars[slot])
+				continue
 
-		if((user.vars[slot] && !istype(user.vars[slot], slot2type[slot])) || !(chosen_profile.exists_list[slot]))
-			continue
+			if((user.vars[slot] && !istype(user.vars[slot], slot2type[slot])) || !(chosen_profile.exists_list[slot]))
+				continue
 
-		if(istype(user.vars[slot], slot2type[slot]) && slot == "wear_id") // Always remove old flesh IDs - so they get properly updated.
-			qdel(user.vars[slot])
+			if(istype(user.vars[slot], slot2type[slot]) && slot == "wear_id") // Always remove old flesh IDs - so they get properly updated.
+				qdel(user.vars[slot])
 
-		var/obj/item/new_flesh_item
-		var/equip = FALSE
-		if(!user.vars[slot])
-			var/slot_type = slot2type[slot]
-			equip = TRUE
-			new_flesh_item = new slot_type(user)
+			var/obj/item/new_flesh_item
+			var/equip = FALSE
+			if(!user.vars[slot])
+				var/slot_type = slot2type[slot]
+				equip = TRUE
+				new_flesh_item = new slot_type(user)
 
-		else if(istype(user.vars[slot], slot2type[slot]))
-			new_flesh_item = user.vars[slot]
+			else if(istype(user.vars[slot], slot2type[slot]))
+				new_flesh_item = user.vars[slot]
 
-		new_flesh_item.appearance = chosen_profile.appearance_list[slot]
-		new_flesh_item.name = chosen_profile.name_list[slot]
-		new_flesh_item.flags_cover = chosen_profile.flags_cover_list[slot]
-		new_flesh_item.lefthand_file = chosen_profile.lefthand_file_list[slot]
-		new_flesh_item.righthand_file = chosen_profile.righthand_file_list[slot]
-		new_flesh_item.inhand_icon_state = chosen_profile.inhand_icon_state_list[slot]
-		new_flesh_item.worn_icon = chosen_profile.worn_icon_list[slot]
-		new_flesh_item.worn_icon_state = chosen_profile.worn_icon_state_list[slot]
-		// NOVA EDIT ADDITION START
-		new_flesh_item.worn_icon_digi = chosen_profile.worn_icon_digi_list[slot]
-		new_flesh_item.worn_icon_monkey = chosen_profile.worn_icon_monkey_list[slot]
-		new_flesh_item.worn_icon_teshari = chosen_profile.worn_icon_teshari_list[slot]
-		new_flesh_item.worn_icon_vox = chosen_profile.worn_icon_vox_list[slot]
-		new_flesh_item.supports_variations_flags = chosen_profile.supports_variations_flags_list[slot]
-		// NOVA EDIT ADDITION END
+			new_flesh_item.appearance = chosen_profile.appearance_list[slot]
+			new_flesh_item.name = chosen_profile.name_list[slot]
+			new_flesh_item.flags_cover = chosen_profile.flags_cover_list[slot]
+			new_flesh_item.lefthand_file = chosen_profile.lefthand_file_list[slot]
+			new_flesh_item.righthand_file = chosen_profile.righthand_file_list[slot]
+			new_flesh_item.inhand_icon_state = chosen_profile.inhand_icon_state_list[slot]
+			new_flesh_item.worn_icon = chosen_profile.worn_icon_list[slot]
+			new_flesh_item.worn_icon_state = chosen_profile.worn_icon_state_list[slot]
+			// NOVA EDIT ADDITION START
+			new_flesh_item.worn_icon_digi = chosen_profile.worn_icon_digi_list[slot]
+			new_flesh_item.worn_icon_monkey = chosen_profile.worn_icon_monkey_list[slot]
+			new_flesh_item.worn_icon_teshari = chosen_profile.worn_icon_teshari_list[slot]
+			new_flesh_item.worn_icon_vox = chosen_profile.worn_icon_vox_list[slot]
+			new_flesh_item.supports_variations_flags = chosen_profile.supports_variations_flags_list[slot]
+			// NOVA EDIT ADDITION END
 
-		if(istype(new_flesh_item, /obj/item/changeling/id) && chosen_profile.id_icon)
-			var/obj/item/changeling/id/flesh_id = new_flesh_item
-			flesh_id.hud_icon = chosen_profile.id_icon
+			if(istype(new_flesh_item, /obj/item/changeling/id) && chosen_profile.id_icon)
+				var/obj/item/changeling/id/flesh_id = new_flesh_item
+				flesh_id.hud_icon = chosen_profile.id_icon
 
-		if(equip)
-			user.equip_to_slot_or_del(new_flesh_item, slot2slot[slot], indirect_action = TRUE)
-			if(!QDELETED(new_flesh_item))
-				ADD_TRAIT(new_flesh_item, TRAIT_NODROP, CHANGELING_TRAIT)
+			if(equip)
+				user.equip_to_slot_or_del(new_flesh_item, slot2slot[slot], indirect_action = TRUE)
+				if(!QDELETED(new_flesh_item))
+					ADD_TRAIT(new_flesh_item, TRAIT_NODROP, CHANGELING_TRAIT)
 
 	for(var/stored_scar_line in chosen_profile.stored_scars)
 		var/datum/scar/attempted_fake_scar = user.load_scar(stored_scar_line)
@@ -944,6 +1006,9 @@
 	user.blooper_speed = chosen_profile.blooper_speed
 	user.blooper_pitch_range = chosen_profile.blooper_pitch_range
 	//THE FLUFFY FRONTIER EDIT END
+
+	if(use_clothing_disguise)
+		apply_clothing_disguise(user, chosen_profile.profile_snapshot)
 
 // Changeling profile themselves. Store a data to store what every DNA instance looked like.
 /datum/changeling_profile
