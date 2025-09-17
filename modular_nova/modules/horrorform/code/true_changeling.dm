@@ -35,7 +35,6 @@
 	butcher_results = list(/obj/item/food/meat/slab/human = 15) //It's a pretty big dude. Actually killing one is a feat.
 	gold_core_spawnable = FALSE //Should stay exclusive to changelings tbh, otherwise makes it much less significant to sight one
 	var/datum/action/innate/turn_to_human
-	var/obj/structure/destructible/horrorform/flesh_nest/active_nest
 	var/transformed_time = 0
 	var/playstyle_string = span_infoplain("<b><font size=3 color='red'>We have entered our true form!</font> We are unbelievably powerful, and regenerate life at a steady rate. However, most of \
 	our abilities are useless in this form, and we must utilise the abilities that we have gained as a result of our transformation. Currently, we are incapable of returning to a human. \
@@ -54,7 +53,6 @@
 	turn_to_human = new(src)
 	turn_to_human.Grant(src)
 	GRANT_ACTION(/datum/action/innate/devour)
-	GRANT_ACTION(/datum/action/innate/flesh_nest)
 	ADD_TRAIT(src, TRAIT_VENTCRAWLER_ALWAYS, INNATE_TRAIT)
 
 /mob/living/simple_animal/hostile/true_changeling/Life()
@@ -199,44 +197,12 @@
 		horrorform.balloon_alert(horrorform, "wait [round(timeleft/600)+1] minutes!")
 		return FALSE
 	horrorform.visible_message(span_warning("[horrorform] suddenly crunches and twists into a smaller form!"), \
-				span_danger("We return to our lesser form."))
-	if(horrorform.active_nest)
-		horrorform.active_nest.dissolve(horrorform)
+						span_danger("We return to our lesser form."))
 	horrorform.stored_changeling.loc = get_turf(horrorform)
 	horrorform.mind.transfer_to(horrorform.stored_changeling)
 	horrorform.stored_changeling.Stun(2 SECONDS)
 	REMOVE_TRAIT(horrorform.stored_changeling, TRAIT_GODMODE, "Changeling_True_Form")
 	qdel(horrorform)
-	return TRUE
-
-/datum/action/innate/flesh_nest
-	name = "Weave Flesh Nest"
-	desc = "We anchor a pulsing biomass into the station, creating an area that nurtures us and hinders prey."
-	button_icon = 'modular_nova/modules/horrorform/icons/actions_changeling.dmi'
-	background_icon_state = "bg_changeling"
-	button_icon_state = "hive"
-
-/datum/action/innate/flesh_nest/Trigger(trigger_flags)
-	var/mob/living/simple_animal/hostile/true_changeling/horrorform = owner
-	if(!istype(horrorform))
-		return FALSE
-	if(horrorform.stat != CONSCIOUS)
-		horrorform.balloon_alert(horrorform, "too hurt!")
-		return FALSE
-	var/turf/target_turf = get_turf(horrorform)
-	if(!target_turf || !isopenturf(target_turf))
-		horrorform.balloon_alert(horrorform, "need open ground!")
-		return FALSE
-	var/obj/structure/destructible/horrorform/flesh_nest/existing_nest = horrorform.active_nest
-	if(!do_after(horrorform, 3 SECONDS, target = horrorform, timed_action_flags = IGNORE_HELD_ITEM))
-		horrorform.balloon_alert(horrorform, "interrupted!")
-		return FALSE
-	if(existing_nest && !QDELETED(existing_nest))
-		existing_nest.dissolve(horrorform)
-	var/obj/structure/destructible/horrorform/flesh_nest/new_nest = new(target_turf, horrorform)
-	horrorform.active_nest = new_nest
-	horrorform.visible_message(span_warning("[horrorform] anchors a throbbing mass of biomass into the floor!"), \
-			span_userdanger("Our flesh nest begins to pulse with stolen strength."))
 	return TRUE
 
 /datum/action/innate/devour
