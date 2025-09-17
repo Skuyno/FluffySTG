@@ -8193,6 +8193,7 @@
 #include "modular_nova\modules\holdingfashion_port\code\recipes.dm"
 #include "modular_nova\modules\holidays\flora.dm"
 #include "modular_nova\modules\hop_drip\code\head_of_personnel.dm"
+#include "modular_nova\modules\horrorform\code\flesh_nest.dm"
 #include "modular_nova\modules\horrorform\code\horror_form.dm"
 #include "modular_nova\modules\horrorform\code\true_changeling.dm"
 #include "modular_nova\modules\huds\code\designs.dm"
