@@ -3363,6 +3363,7 @@
 #include "code\modules\antagonists\changeling\powers\mutations.dm"
 #include "code\modules\antagonists\changeling\powers\panacea.dm"
 #include "code\modules\antagonists\changeling\powers\pheromone_receptors.dm"
+#include "code\modules\antagonists\changeling\powers\projectile_absorption.dm"
 #include "code\modules\antagonists\changeling\powers\regenerate.dm"
 #include "code\modules\antagonists\changeling\powers\shriek.dm"
 #include "code\modules\antagonists\changeling\powers\spiders.dm"
