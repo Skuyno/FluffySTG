@@ -199,10 +199,11 @@ const AbilitiesSection = () => {
             <Stack.Divider />
             <Stack.Item textColor="label" grow>
               The
-              <span style={storestyle}>&ensp;Cellular Emporium</span> is where
-              you purchase more abilities beyond your starting kit. You have 10
-              genetic points to spend on abilities and you are able to readapt
-              after absorbing a body, refunding your points for different kits.
+              <span style={storestyle}>&ensp;Genetic Matrix</span> is where you
+              weave new adaptations, review synergies, and manage preset loadouts.
+              You have 10 genetic points to spend on abilities and you are able
+              to readapt after absorbing a body, refunding your points for
+              different kits.
             </Stack.Item>
           </Stack>
         </Stack.Item>

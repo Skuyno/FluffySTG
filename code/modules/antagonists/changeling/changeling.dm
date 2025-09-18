@@ -54,20 +54,24 @@
 	var/total_genetic_points = 10
 	/// List of all powers we start with.
 	var/list/innate_powers = list()
-	/// Associated list of all powers we have evolved / bought from the emporium. [path] = [instance of path]
+	/// Associated list of all powers we have evolved / integrated via the matrix. [path] = [instance of path]
 	var/list/purchased_powers = list()
-
+	
 	/// The voice we're mimicing via the changeling voice ability.
 	var/mimicing = ""
-	/// Whether we can currently respec in the cellular emporium.
+	/// Whether we can currently respec in the genetic matrix.
 	var/can_respec = 0
-
+	
 	/// The currently active changeling sting.
 	var/datum/action/changeling/sting/chosen_sting
-	/// A reference to our cellular emporium datum.
-	var/datum/cellular_emporium/cellular_emporium
-	/// A reference to our cellular emporium action (which opens the UI for the datum).
-	var/datum/action/cellular_emporium/emporium_action
+	/// A reference to our genetic matrix datum.
+	var/datum/genetic_matrix/genetic_matrix
+	/// A reference to our genetic matrix action (which opens the UI for the datum).
+	var/datum/action/genetic_matrix/genetic_matrix_action
+	/// Stored loadouts of purchased powers for quick swapping.
+	var/list/genetic_presets = list()
+	/// Maximum amount of presets we are willing to remember.
+	var/static/max_genetic_presets = 6
 
 	/// UI displaying how many chems we have
 	var/atom/movable/screen/ling/chems/lingchemdisplay
@@ -121,16 +125,19 @@
 		competitive_objectives = TRUE
 		break
 
+
+
 /datum/antagonist/changeling/Destroy()
-	QDEL_NULL(emporium_action)
-	QDEL_NULL(cellular_emporium)
+	QDEL_NULL(genetic_matrix_action)
+	QDEL_NULL(genetic_matrix)
+	genetic_presets.Cut()
 	current_profile = null
 	clear_clothing_disguise()
 	return ..()
 
 /datum/antagonist/changeling/on_gain()
 	generate_name()
-	create_emporium()
+	create_genetic_matrix()
 	create_innate_actions()
 	create_initial_profile()
 	if(give_objectives)
@@ -265,12 +272,89 @@
 		to_chat(owner.current, span_userdanger("You grow weak and lose your powers! You are no longer a changeling and are stuck in your current form!"))
 
 /*
- * Instantiate the cellular emporium for the changeling.
+ * Instantiate the genetic matrix for the changeling.
  */
-/datum/antagonist/changeling/proc/create_emporium()
-	cellular_emporium = new(src)
-	emporium_action = new(cellular_emporium)
-	emporium_action.Grant(owner.current)
+/datum/antagonist/changeling/proc/create_genetic_matrix()
+	genetic_matrix = new(src)
+	genetic_matrix_action = new(genetic_matrix)
+	genetic_matrix_action.Grant(owner.current)
+
+/datum/antagonist/changeling/proc/save_genetic_preset(preset_name)
+	if(!owner?.current)
+	return FALSE
+	var/list/current = assoc_to_keys(purchased_powers)
+	if(!LAZYLEN(current))
+	to_chat(owner.current, span_warning("We have no evolved abilities to imprint."))
+	return FALSE
+	for(var/list/preset as anything in genetic_presets)
+	if(preset["name"] == preset_name)
+	preset["abilities"] = current.Copy()
+	to_chat(owner.current, span_notice("We refine our [preset_name] genome matrix."))
+	return TRUE
+	if(LAZYLEN(genetic_presets) >= max_genetic_presets)
+	to_chat(owner.current, span_warning("We cannot remember more than [max_genetic_presets] adaptation templates."))
+	return FALSE
+	var/list/new_entry = list(
+	"name" = preset_name,
+	"abilities" = current.Copy(),
+	)
+	genetic_presets += list(new_entry)
+	to_chat(owner.current, span_notice("We archive the [preset_name] adaptation sequence."))
+	return TRUE
+
+/datum/antagonist/changeling/proc/delete_genetic_preset(index)
+	if(!isnum(index))
+	return FALSE
+	if(index < 1 || index > LAZYLEN(genetic_presets))
+	return FALSE
+	var/list/preset = genetic_presets[index]
+	genetic_presets.Cut(index, index + 1)
+	if(owner?.current && preset)
+	to_chat(owner.current, span_notice("We purge the [preset?["name"] : "lost"] template."))
+	return TRUE
+
+/datum/antagonist/changeling/proc/rename_genetic_preset(index, new_name)
+	if(!isnum(index))
+	return FALSE
+	if(index < 1 || index > LAZYLEN(genetic_presets))
+	return FALSE
+	var/list/preset = genetic_presets[index]
+	if(!preset)
+	return FALSE
+	preset["name"] = new_name
+	if(owner?.current)
+	to_chat(owner.current, span_notice("We rechristen our template as [new_name]."))
+	return TRUE
+
+/datum/antagonist/changeling/proc/apply_genetic_preset(index)
+	if(!isnum(index))
+	return FALSE
+	if(index < 1 || index > LAZYLEN(genetic_presets))
+	return FALSE
+	var/list/preset = genetic_presets[index]
+	var/list/abilities = islist(preset["abilities"]) ? preset["abilities"] : null
+	if(!LAZYLEN(abilities))
+	if(owner?.current)
+	to_chat(owner.current, span_warning("That template is empty."))
+	return FALSE
+	var/applied = 0
+	var/list/failures = list()
+	for(var/path as anything in abilities)
+	if(!ispath(path, /datum/action/changeling))
+	continue
+	if(purchased_powers[path])
+	continue
+	if(purchase_power(path))
+	applied++
+	else if(owner?.current)
+	failures += initial(path.name)
+	if(owner?.current)
+	var/preset_name = preset["name"]
+	if(applied)
+	to_chat(owner.current, span_notice("We align our genome with [preset_name], manifesting [applied] adaptation[applied == 1 ? "" : "s"]."))
+	if(LAZYLEN(failures))
+	to_chat(owner.current, span_warning("We lack the resources for [english_list(failures)]."))
+	return applied > 0
 
 /*
  * Instantiate all the default actions of a ling (transform, dna sting, absorb, etc)
@@ -409,7 +493,7 @@
  * For resetting all of the changeling's action buttons. (IE, re-granting them all.)
  */
 /datum/antagonist/changeling/proc/regain_powers()
-	emporium_action.Grant(owner.current)
+	genetic_matrix_action.Grant(owner.current)
 	for(var/datum/action/changeling/power as anything in innate_powers)
 		power.on_purchase(owner.current)
 
