@@ -25,6 +25,16 @@
 	inherent_factions = list(FACTION_MONKEY)
 	sexes = FALSE
 	species_language_holder = /datum/language_holder/monkey
+	changeling_biomaterial_profile = list(
+		list(
+			CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE,
+			CHANGELING_HARVEST_ID = "primate_stem_cells",
+			CHANGELING_HARVEST_NAME = "Primate Stem Cells",
+			CHANGELING_HARVEST_DESCRIPTION = "Mutable primate cultures brimming with evolutionary potential.",
+			CHANGELING_HARVEST_AMOUNT = 1,
+			CHANGELING_HARVEST_SIGNATURE = TRUE,
+		),
+	)
 
 	bodypart_overrides = list(
 		BODY_ZONE_L_ARM = /obj/item/bodypart/arm/left/monkey,

@@ -29,6 +29,16 @@
 	changesource_flags = MIRROR_BADMIN | WABBAJACK | MIRROR_PRIDE | MIRROR_MAGIC | RACE_SWAP | ERT_SPAWN | SLIME_EXTRACT
 	inherent_factions = list(FACTION_SLIME)
 	species_language_holder = /datum/language_holder/jelly
+	changeling_biomaterial_profile = list(
+		list(
+			CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_RESILIENCE,
+			CHANGELING_HARVEST_ID = "jelly_vacuole_sample",
+			CHANGELING_HARVEST_NAME = "Jelly Vacuole Sample",
+			CHANGELING_HARVEST_DESCRIPTION = "Stabilized cytoplasm drawn from an amorphous jelly physiology.",
+			CHANGELING_HARVEST_AMOUNT = 1,
+			CHANGELING_HARVEST_SIGNATURE = TRUE,
+		),
+	)
 	hair_color_mode = USE_MUTANT_COLOR
 	hair_alpha = 150
 	facial_hair_alpha = 150

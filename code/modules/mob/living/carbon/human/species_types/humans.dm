@@ -1,12 +1,22 @@
 /datum/species/human
-	name = "\improper Human"
-	id = SPECIES_HUMAN
-	inherent_traits = list(
-		TRAIT_USES_SKINTONES,
-	)
-	skinned_type = /obj/item/stack/sheet/animalhide/human
-	changesource_flags = MIRROR_BADMIN | WABBAJACK | MIRROR_MAGIC | MIRROR_PRIDE | ERT_SPAWN | RACE_SWAP | SLIME_EXTRACT
-	payday_modifier = 1.1
+        name = "\improper Human"
+        id = SPECIES_HUMAN
+        inherent_traits = list(
+                TRAIT_USES_SKINTONES,
+        )
+        skinned_type = /obj/item/stack/sheet/animalhide/human
+        changesource_flags = MIRROR_BADMIN | WABBAJACK | MIRROR_MAGIC | MIRROR_PRIDE | ERT_SPAWN | RACE_SWAP | SLIME_EXTRACT
+        payday_modifier = 1.1
+        changeling_biomaterial_profile = list(
+                list(
+                        CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE,
+                        CHANGELING_HARVEST_ID = "human_cytoplasm",
+                        CHANGELING_HARVEST_NAME = "Human Stem Cells",
+                        CHANGELING_HARVEST_DESCRIPTION = "Baseline cytology culture containing adaptable human stem cells.",
+                        CHANGELING_HARVEST_AMOUNT = 1,
+                        CHANGELING_HARVEST_SIGNATURE = TRUE,
+                ),
+        )
 
 /datum/species/human/prepare_human_for_preview(mob/living/carbon/human/human)
 	human.set_haircolor("#bb9966", update = FALSE) // brown

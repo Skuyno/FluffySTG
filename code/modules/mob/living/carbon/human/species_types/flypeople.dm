@@ -7,6 +7,16 @@
 	mutanteyes = /obj/item/organ/eyes/fly
 	changesource_flags = MIRROR_BADMIN | WABBAJACK | MIRROR_PRIDE | MIRROR_MAGIC | RACE_SWAP | ERT_SPAWN | SLIME_EXTRACT
 	species_language_holder = /datum/language_holder/fly
+	changeling_biomaterial_profile = list(
+		list(
+			CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_PREDATORY,
+			CHANGELING_HARVEST_ID = "fly_chitinous_cells",
+			CHANGELING_HARVEST_NAME = "Chitinous Predator Cells",
+			CHANGELING_HARVEST_DESCRIPTION = "Aggressive insectoid tissue laced with digestive enzymes and irritants.",
+			CHANGELING_HARVEST_AMOUNT = 1,
+			CHANGELING_HARVEST_SIGNATURE = TRUE,
+		),
+	)
 	payday_modifier = 1.0
 
 	mutanttongue = /obj/item/organ/tongue/fly

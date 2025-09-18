@@ -18,15 +18,25 @@
 	mutanteyes = /obj/item/organ/eyes/moth
 	changesource_flags = MIRROR_BADMIN | WABBAJACK | MIRROR_MAGIC | MIRROR_PRIDE | ERT_SPAWN | RACE_SWAP | SLIME_EXTRACT
 	species_cookie = /obj/item/food/muffin/moffin
-	species_language_holder = /datum/language_holder/moth
-	death_sound = 'sound/mobs/humanoids/moth/moth_death.ogg'
-	payday_modifier = 1.0
-	family_heirlooms = list(/obj/item/flashlight/lantern/heirloom_moth)
+        species_language_holder = /datum/language_holder/moth
+        death_sound = 'sound/mobs/humanoids/moth/moth_death.ogg'
+        payday_modifier = 1.0
+        family_heirlooms = list(/obj/item/flashlight/lantern/heirloom_moth)
+        changeling_biomaterial_profile = list(
+                list(
+                        CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_RESILIENCE,
+                        CHANGELING_HARVEST_ID = "moth_cytoplasm",
+                        CHANGELING_HARVEST_NAME = "Lepidopteran Cytoplasm",
+                        CHANGELING_HARVEST_DESCRIPTION = "Fibrous sample drawn from adaptable mothperson tissues.",
+                        CHANGELING_HARVEST_AMOUNT = 1,
+                        CHANGELING_HARVEST_SIGNATURE = TRUE,
+                ),
+        )
 
-	bodypart_overrides = list(
-		BODY_ZONE_HEAD = /obj/item/bodypart/head/moth,
-		BODY_ZONE_CHEST = /obj/item/bodypart/chest/moth,
-		BODY_ZONE_L_ARM = /obj/item/bodypart/arm/left/moth,
+        bodypart_overrides = list(
+                BODY_ZONE_HEAD = /obj/item/bodypart/head/moth,
+                BODY_ZONE_CHEST = /obj/item/bodypart/chest/moth,
+                BODY_ZONE_L_ARM = /obj/item/bodypart/arm/left/moth,
 		BODY_ZONE_R_ARM = /obj/item/bodypart/arm/right/moth,
 		BODY_ZONE_L_LEG = /obj/item/bodypart/leg/left/moth,
 		BODY_ZONE_R_LEG = /obj/item/bodypart/leg/right/moth,

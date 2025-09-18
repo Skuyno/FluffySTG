@@ -88,7 +88,9 @@
 	  */
 	var/incorporeal_move = FALSE
 
-	var/list/quirks = list()
+        var/list/quirks = list()
+        ///Predefined biomaterial yields harvested by changelings.
+        var/list/changeling_biomaterial_profile
 	///a list of surgery datums. generally empty, they're added when the player wants them.
 	var/list/surgeries = list()
 	///Mob specific surgery speed modifier
@@ -127,7 +129,7 @@
 	///How many hands hands does this mob currently have. Should only be changed through set_num_hands()
 	var/num_hands = 2
 	///How many usable hands does this mob currently have. Should only be changed through set_usable_hands()
-	var/usable_hands = 2
+        var/usable_hands = 2
 
 	var/list/pipes_shown = list()
 	var/last_played_vent = 0

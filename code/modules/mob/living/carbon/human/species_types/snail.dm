@@ -18,6 +18,16 @@
 	mutanttongue = /obj/item/organ/tongue/snail
 	mutantliver = /obj/item/organ/liver/snail
 	exotic_bloodtype = BLOOD_TYPE_SNAIL
+	changeling_biomaterial_profile = list(
+		list(
+			CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_RESILIENCE,
+			CHANGELING_HARVEST_ID = "snail_mucosal_cells",
+			CHANGELING_HARVEST_NAME = "Mucosal Resilience Cells",
+			CHANGELING_HARVEST_DESCRIPTION = "Viscoelastic snail tissues rich with hydration-preserving enzymes.",
+			CHANGELING_HARVEST_AMOUNT = 1,
+			CHANGELING_HARVEST_SIGNATURE = TRUE,
+		),
+	)
 
 	bodypart_overrides = list(
 		BODY_ZONE_HEAD = /obj/item/bodypart/head/snail,

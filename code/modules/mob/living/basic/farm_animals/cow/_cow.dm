@@ -12,6 +12,15 @@
 	speak_emote = list("moos","moos hauntingly")
 	speed = 1.1
 	butcher_results = list(/obj/item/food/meat/slab/grassfed = 6)
+	changeling_biomaterial_profile = list(
+		list(
+			CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_RESILIENCE,
+			CHANGELING_HARVEST_ID = "bovine_myocytes",
+			CHANGELING_HARVEST_NAME = "Bovine Myocytes",
+			CHANGELING_HARVEST_DESCRIPTION = "Dense ruminant muscle fibers ideal for reinforcing bulk biomass stores.",
+			CHANGELING_HARVEST_AMOUNT = 1,
+		),
+	)
 	response_help_continuous = "pets"
 	response_help_simple = "pet"
 	response_disarm_continuous = "gently pushes aside"
