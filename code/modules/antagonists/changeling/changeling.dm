@@ -10,42 +10,6 @@
 /// Blueprint payload key used when ingesting crafting data.
 #define CHANGELING_BUILD_BLUEPRINT "build"
 
-/proc/changeling_sanitize_identifier(raw_text)
-        if(isnull(raw_text))
-                return ""
-        var/textual = lowertext(text(raw_text))
-        textual = replacetext(textual, "\\improper ", "")
-        textual = replacetext(textual, " ", "_")
-        textual = replacetext(textual, "-", "_")
-        textual = replacetext(textual, "'", "")
-        textual = replacetext(textual, "\"", "")
-        textual = replacetext(textual, ".", "")
-        textual = replacetext(textual, ",", "")
-        while(findtext(textual, "__"))
-                textual = replacetext(textual, "__", "_")
-        return textual
-
-/proc/changeling_material_id_from_type(type_path, prefix = "sample")
-        var/path_text = changeling_sanitize_identifier("[type_path]")
-        return "[prefix]_[path_text]"
-
-/proc/changeling_category_for_biotypes(biotypes)
-        if(!(biotypes & MOB_ORGANIC))
-                return null
-        if(biotypes & (MOB_PLANT | MOB_MINERAL | MOB_SLIME))
-                return "resilience"
-        if(biotypes & (MOB_BEAST | MOB_REPTILE | MOB_AQUATIC | MOB_CRUSTACEAN | MOB_BUG | MOB_SPECIAL))
-                return "predatory"
-        return "adaptive"
-
-/proc/changeling_harvest_display_name(atom/target)
-        if(isliving(target))
-                var/mob/living/living_target = target
-                var/name_text = living_target.real_name || living_target.name || initial(living_target.name)
-                return replacetext(name_text, "\\improper ", "")
-        var/base_name = target?.name || initial(target.name)
-        return replacetext(base_name, "\\improper ", "")
-
 /datum/antagonist/changeling
 	name = "\improper Changeling"
 	roundend_category = "changelings"
@@ -515,111 +479,6 @@
         signature_cells[cell_id] = cell_entry
         return cell_entry["count"]
 
-/datum/antagonist/changeling/proc/harvest_biomaterials_from(atom/target, list/options)
-        if(!target)
-                return FALSE
-        var/list/outcome = build_harvest_outcome(target, options)
-        if(!islist(outcome))
-                return FALSE
-        var/has_yield = FALSE
-        var/list/material_categories = outcome["biomaterials"]
-        if(islist(material_categories))
-                for(var/category_id in material_categories)
-                        var/list/category_map = material_categories[category_id]
-                        if(islist(category_map) && category_map.len)
-                                has_yield = TRUE
-                                break
-        if(!has_yield)
-                var/list/signature_map = outcome["signature_cells"]
-                if(islist(signature_map) && signature_map.len)
-                        has_yield = TRUE
-        if(!has_yield)
-                return FALSE
-        register_crafting_outcome(outcome)
-        return TRUE
-
-/datum/antagonist/changeling/proc/build_harvest_outcome(atom/target, list/options)
-        if(isliving(target))
-                var/mob/living/living_target = target
-                var/list/living_outcome = living_target.build_changeling_harvest_profile(options)
-                if(islist(living_outcome))
-                        return living_outcome
-        return build_surface_harvest_outcome(target, options)
-
-/datum/antagonist/changeling/proc/build_surface_harvest_outcome(atom/target, list/options)
-        var/list/samples = list()
-        if(SEND_SIGNAL(target, COMSIG_SWAB_FOR_SAMPLES, samples) != COMPONENT_SWAB_FOUND)
-                return null
-        var/list/biomaterials = list()
-        for(var/entry in samples)
-                var/datum/biological_sample/sample = entry
-                if(!istype(sample))
-                        continue
-                for(var/datum/micro_organism/microbe as anything in sample.micro_organisms)
-                        if(!istype(microbe, /datum/micro_organism/cell_line))
-                                continue
-                        var/datum/micro_organism/cell_line/cell = microbe
-                        var/list/yield_data = resolve_cell_line_yield(cell)
-                        if(!islist(yield_data))
-                                continue
-                        var/category_id = yield_data["category"]
-                        if(isnull(category_id))
-                                continue
-                        var/material_id = yield_data["id"]
-                        if(isnull(material_id))
-                                continue
-                        var/list/category_map = biomaterials[category_id]
-                        if(!islist(category_map))
-                                category_map = list()
-                                biomaterials[category_id] = category_map
-                        var/list/material_entry = category_map[material_id]
-                        if(!islist(material_entry))
-                                material_entry = list(
-                                        "id" = material_id,
-                                        "count" = 0,
-                                        "name" = yield_data["name"],
-                                        "description" = yield_data["description"],
-                                )
-                        material_entry["count"] += 1
-                        if(yield_data["quality"])
-                                material_entry["quality"] = yield_data["quality"]
-                        category_map[material_id] = material_entry
-        QDEL_LIST(samples)
-        if(!biomaterials.len)
-                return null
-        return list("biomaterials" = biomaterials)
-
-/datum/antagonist/changeling/proc/resolve_cell_line_yield(datum/micro_organism/cell_line/cell)
-        if(!istype(cell))
-                return null
-        var/category_id
-        var/material_id
-        var/material_name
-        var/material_description = cell.desc
-        if(ispath(cell.resulting_atom, /mob/living))
-                var/mob_path = cell.resulting_atom
-                var/biotypes = initial(mob_path.mob_biotypes)
-                category_id = changeling_category_for_biotypes(biotypes) || "adaptive"
-                material_id = changeling_material_id_from_type(mob_path, category_id)
-                var/display_name = initial(mob_path.name) || cell.name
-                material_name = "[replacetext(display_name, "\\improper ", "")] Biomass Culture"
-        else if(ispath(cell.resulting_atom, /obj))
-                var/obj_path = cell.resulting_atom
-                category_id = "resilience"
-                material_id = changeling_material_id_from_type(obj_path, category_id)
-                var/display_title = initial(obj_path.name) || cell.name
-                material_name = "[replacetext(display_title, "\\improper ", "")] Residue"
-        else
-                category_id = "adaptive"
-                material_id = changeling_material_id_from_type(cell.type, category_id)
-                material_name = "[cell.name] Culture"
-        return list(
-                "category" = category_id,
-                "id" = material_id,
-                "name" = material_name,
-                "description" = material_description,
-        )
-
 /datum/antagonist/changeling/proc/export_build_blueprint()
         if(!islist(active_build_slots))
                 reset_active_build_slots()
@@ -1039,30 +898,22 @@
  * Allows the changeling to sting people with a click.
  */
 /datum/antagonist/changeling/proc/on_click_sting(mob/living/ling, atom/clicked)
-        SIGNAL_HANDLER
+	SIGNAL_HANDLER
 
-        // nothing to handle
-        if(!chosen_sting)
-                return
-        if(!isliving(ling) || ling.stat != CONSCIOUS)
-                return
-        if(clicked == ling)
-                return
-        var/is_living_target = isliving(clicked)
-        if(!is_living_target)
-                if(!chosen_sting.allow_nonliving_targets)
-                        return
-                if(!isobj(clicked) && !isturf(clicked))
-                        return
-        // sort-of hack done here: we use in_given_range here because it's quicker.
-        // actual ling stings do pathfinding to determine whether the target's "in range".
-        // however, this is "close enough" preliminary checks to not block click
-        if(!IN_GIVEN_RANGE(ling, clicked, sting_range))
-                return
+	// nothing to handle
+	if(!chosen_sting)
+		return
+	if(!isliving(ling) || clicked == ling || ling.stat != CONSCIOUS)
+		return
+	// sort-of hack done here: we use in_given_range here because it's quicker.
+	// actual ling stings do pathfinding to determine whether the target's "in range".
+	// however, this is "close enough" preliminary checks to not block click
+	if(!isliving(clicked) || !IN_GIVEN_RANGE(ling, clicked, sting_range))
+		return
 
-        INVOKE_ASYNC(chosen_sting, TYPE_PROC_REF(/datum/action/changeling/sting, try_to_sting), ling, clicked)
+	INVOKE_ASYNC(chosen_sting, TYPE_PROC_REF(/datum/action/changeling/sting, try_to_sting), ling, clicked)
 
-        return COMSIG_MOB_CANCEL_CLICKON
+	return COMSIG_MOB_CANCEL_CLICKON
 
 /datum/antagonist/changeling/proc/get_status_tab_item(mob/living/source, list/items)
 	SIGNAL_HANDLER

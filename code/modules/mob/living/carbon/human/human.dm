@@ -63,55 +63,13 @@
 	randomize_human_normie(src, randomize_mutations = TRUE, update_body = FALSE)
 
 /mob/living/carbon/human/Destroy()
-        QDEL_NULL(physiology)
-        GLOB.human_list -= src
+	QDEL_NULL(physiology)
+	GLOB.human_list -= src
 
-        if (mob_mood)
-                QDEL_NULL(mob_mood)
+	if (mob_mood)
+		QDEL_NULL(mob_mood)
 
-        return ..()
-
-/mob/living/carbon/human/build_changeling_harvest_profile(list/options)
-        var/list/outcome = ..()
-        if(!islist(outcome))
-                outcome = list()
-        var/category_id = changeling_category_for_biotypes(mob_biotypes)
-        if(!isnull(category_id))
-                var/datum/species/species = dna?.species
-                var/species_id = changeling_sanitize_identifier(species?.id || "human")
-                var/material_id = "[category_id]_[species_id]_cells"
-                var/species_name = species?.name || "Humanoid"
-                var/display_name = changeling_harvest_display_name(src) || "a host"
-                var/material_name = "[species_name] Tissue Sample"
-                var/material_desc = "Cytology material harvested from [display_name]'s [lowertext(species_name)]."
-                outcome["biomaterials"] = list(
-                        category_id = list(
-                                material_id = list(
-                                        "id" = material_id,
-                                        "count" = 1,
-                                        "name" = material_name,
-                                        "description" = material_desc,
-                                ),
-                        ),
-                )
-        var/list/signatures = outcome["signature_cells"]
-        if(!islist(signatures))
-                signatures = list()
-                outcome["signature_cells"] = signatures
-        var/unique_source = dna?.unique_enzymes || real_name || name
-        var/signature_id = "signature_[changeling_sanitize_identifier(unique_source)]"
-        var/display_label = changeling_harvest_display_name(src) || "our mark"
-        var/list/signature_entry = signatures[signature_id]
-        if(!islist(signature_entry))
-                signature_entry = list(
-                        "id" = signature_id,
-                        "count" = 0,
-                )
-        signature_entry["count"] += 1
-        signature_entry["name"] = "[display_label]'s Signature Cells"
-        signature_entry["description"] = "Encodes the unique genetic resonances of [display_label]."
-        signatures[signature_id] = signature_entry
-        return outcome
+	return ..()
 
 /mob/living/carbon/human/prepare_data_huds()
 	//Update med hud images...
