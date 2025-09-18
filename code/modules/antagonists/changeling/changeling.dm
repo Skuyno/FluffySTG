@@ -12,22 +12,22 @@
 
 /// Normalizes identifiers for biomaterial records.
 /proc/changeling_sanitize_material_id(identifier)
-        if(isnull(identifier))
-                return "biomaterial"
-        var/id_text = lowertext("[identifier]")
-        id_text = replacetext(id_text, " ", "_")
-        id_text = replacetext(id_text, "-", "_")
-        id_text = replacetext(id_text, "/", "_")
-        id_text = replacetext(id_text, "\\", "_")
-        id_text = replacetext(id_text, "'", "")
-        id_text = replacetext(id_text, "\"", "")
-        id_text = replacetext(id_text, "[", "")
-        id_text = replacetext(id_text, "]", "")
-        while(length(id_text) && copytext(id_text, 1, 2) == "_")
-                id_text = copytext(id_text, 2)
-        if(!length(id_text))
-                return "biomaterial"
-        return id_text
+	if(isnull(identifier))
+		return "biomaterial"
+	var/id_text = lowertext("[identifier]")
+	id_text = replacetext(id_text, " ", "_")
+	id_text = replacetext(id_text, "-", "_")
+	id_text = replacetext(id_text, "/", "_")
+	id_text = replacetext(id_text, "\\", "_")
+	id_text = replacetext(id_text, "'", "")
+	id_text = replacetext(id_text, "\"", "")
+	id_text = replacetext(id_text, "[", "")
+	id_text = replacetext(id_text, "]", "")
+	while(length(id_text) && copytext(id_text, 1, 2) == "_")
+		id_text = copytext(id_text, 2)
+	if(!length(id_text))
+		return "biomaterial"
+	return id_text
 
 /datum/antagonist/changeling
 	name = "\improper Changeling"
@@ -96,47 +96,47 @@
 	var/datum/genetic_matrix/genetic_matrix
 	/// A reference to our genetic matrix action (which opens the UI for the datum).
 	var/datum/action/genetic_matrix/genetic_matrix_action
-        /// Stored loadouts of purchased powers for quick swapping.
-        var/list/genetic_presets = list()
-        /// Maximum amount of presets we are willing to remember.
-        var/static/max_genetic_presets = 6
-        /// Predefined genetic presets that every changeling begins with.
-        var/static/list/default_genetic_build_presets = list(
-                list(
-                        "name" = "Rapid Responder",
-                        CHANGELING_BUILD_BLUEPRINT = list(
-                                CHANGELING_KEY_BUILD_SLOT = /datum/action/changeling/adrenaline,
-                                CHANGELING_SECONDARY_BUILD_SLOTS = list(
-                                        /datum/action/changeling/fleshmend,
-                                        /datum/action/changeling/augmented_eyesight,
-                                        /datum/action/changeling/sting/extract_dna,
-                                ),
-                        ),
-                ),
-                list(
-                        "name" = "Silent Infiltrator",
-                        CHANGELING_BUILD_BLUEPRINT = list(
-                                CHANGELING_KEY_BUILD_SLOT = /datum/action/changeling/digitalcamo,
-                                CHANGELING_SECONDARY_BUILD_SLOTS = list(
-                                        /datum/action/changeling/mimicvoice,
-                                        /datum/action/changeling/adaptive_wardrobe,
-                                        /datum/action/changeling/sting/mute,
-                                ),
-                        ),
-                ),
-        )
-        /// Default biomaterial categories tracked within the changeling genetic matrix.
-        var/static/list/default_biomaterial_categories = list(
-                list("id" = "predatory", "name" = "Predatory Biomass"),
-                list("id" = "adaptive", "name" = "Adaptive Tissue"),
-                list("id" = "resilience", "name" = "Resilience Samples"),
-        )
-        /// Categorised biomaterial inventory seeded for the changeling.
-        var/list/biomaterial_inventory
-        /// Signature cells archived from unique targets.
-        var/list/signature_cells
-        /// Snapshot of the currently slotted abilities (key + secondary slots).
-        var/list/active_build_slots
+	/// Stored loadouts of purchased powers for quick swapping.
+	var/list/genetic_presets = list()
+	/// Maximum amount of presets we are willing to remember.
+	var/static/max_genetic_presets = 6
+	/// Predefined genetic presets that every changeling begins with.
+	var/static/list/default_genetic_build_presets = list(
+		list(
+			"name" = "Rapid Responder",
+			CHANGELING_BUILD_BLUEPRINT = list(
+				CHANGELING_KEY_BUILD_SLOT = /datum/action/changeling/adrenaline,
+				CHANGELING_SECONDARY_BUILD_SLOTS = list(
+					/datum/action/changeling/fleshmend,
+					/datum/action/changeling/augmented_eyesight,
+					/datum/action/changeling/sting/extract_dna,
+				),
+			),
+		),
+		list(
+			"name" = "Silent Infiltrator",
+			CHANGELING_BUILD_BLUEPRINT = list(
+				CHANGELING_KEY_BUILD_SLOT = /datum/action/changeling/digitalcamo,
+				CHANGELING_SECONDARY_BUILD_SLOTS = list(
+					/datum/action/changeling/mimicvoice,
+					/datum/action/changeling/adaptive_wardrobe,
+					/datum/action/changeling/sting/mute,
+				),
+			),
+		),
+	)
+	/// Default biomaterial categories tracked within the changeling genetic matrix.
+	var/static/list/default_biomaterial_categories = list(
+		list("id" = "predatory", "name" = "Predatory Biomass"),
+		list("id" = "adaptive", "name" = "Adaptive Tissue"),
+		list("id" = "resilience", "name" = "Resilience Samples"),
+	)
+	/// Categorised biomaterial inventory seeded for the changeling.
+	var/list/biomaterial_inventory
+	/// Signature cells archived from unique targets.
+	var/list/signature_cells
+	/// Snapshot of the currently slotted abilities (key + secondary slots).
+	var/list/active_build_slots
 
 	/// UI displaying how many chems we have
 	var/atom/movable/screen/ling/chems/lingchemdisplay
@@ -182,34 +182,34 @@
 	var/mob/living/carbon/human/clothing_disguise_target
 
 /datum/antagonist/changeling/New()
-        . = ..()
-        initialize_changeling_inventories()
-        hive_name = hive_name()
-        for(var/datum/antagonist/changeling/other_ling in GLOB.antagonists)
-                if(!other_ling.owner || other_ling.owner == owner)
-                        continue
-                competitive_objectives = TRUE
-                break
+	. = ..()
+	initialize_changeling_inventories()
+	hive_name = hive_name()
+	for(var/datum/antagonist/changeling/other_ling in GLOB.antagonists)
+		if(!other_ling.owner || other_ling.owner == owner)
+			continue
+		competitive_objectives = TRUE
+		break
 
 
 
 /datum/antagonist/changeling/Destroy()
-        QDEL_NULL(genetic_matrix_action)
-        QDEL_NULL(genetic_matrix)
-        genetic_presets.Cut()
-        biomaterial_inventory?.Cut()
-        signature_cells?.Cut()
-        active_build_slots?.Cut()
-        current_profile = null
-        clear_clothing_disguise()
-        return ..()
+	QDEL_NULL(genetic_matrix_action)
+	QDEL_NULL(genetic_matrix)
+	genetic_presets.Cut()
+	biomaterial_inventory?.Cut()
+	signature_cells?.Cut()
+	active_build_slots?.Cut()
+	current_profile = null
+	clear_clothing_disguise()
+	return ..()
 
 /datum/antagonist/changeling/on_gain()
-        generate_name()
-        ensure_default_presets_loaded()
-        create_genetic_matrix()
-        create_innate_actions()
-        create_initial_profile()
+	generate_name()
+	ensure_default_presets_loaded()
+	create_genetic_matrix()
+	create_innate_actions()
+	create_initial_profile()
 	if(give_objectives)
 		forge_objectives()
 	owner.current.get_language_holder().omnitongue = TRUE
@@ -345,71 +345,71 @@
  * Instantiate the genetic matrix for the changeling.
  */
 /datum/antagonist/changeling/proc/create_genetic_matrix()
-        genetic_matrix = new(src)
-        genetic_matrix_action = new(genetic_matrix)
-        genetic_matrix_action.Grant(owner.current)
-        synchronize_build_state()
+	genetic_matrix = new(src)
+	genetic_matrix_action = new(genetic_matrix)
+	genetic_matrix_action.Grant(owner.current)
+	synchronize_build_state()
 
 /datum/antagonist/changeling/proc/initialize_changeling_inventories()
-        biomaterial_inventory = list()
-        if(LAZYLEN(default_biomaterial_categories))
-                for(var/list/category as anything in default_biomaterial_categories)
-                        var/category_id = category["id"]
-                        var/category_name = category["name"]
-                        biomaterial_inventory[category_id] = list(
-                                "id" = category_id,
-                                "name" = category_name,
-                                "items" = list(),
-                        )
-        signature_cells = list()
-        reset_active_build_slots()
+	biomaterial_inventory = list()
+	if(LAZYLEN(default_biomaterial_categories))
+		for(var/list/category as anything in default_biomaterial_categories)
+			var/category_id = category["id"]
+			var/category_name = category["name"]
+			biomaterial_inventory[category_id] = list(
+				"id" = category_id,
+				"name" = category_name,
+				"items" = list(),
+			)
+	signature_cells = list()
+	reset_active_build_slots()
 
 /datum/antagonist/changeling/proc/reset_active_build_slots()
-        active_build_slots = list(
-                CHANGELING_KEY_BUILD_SLOT = null,
-                CHANGELING_SECONDARY_BUILD_SLOTS = list(),
-        )
+	active_build_slots = list(
+		CHANGELING_KEY_BUILD_SLOT = null,
+		CHANGELING_SECONDARY_BUILD_SLOTS = list(),
+	)
 
 /datum/antagonist/changeling/proc/get_secondary_build_slots()
-        if(!islist(active_build_slots))
-                reset_active_build_slots()
-        var/list/secondary = active_build_slots[CHANGELING_SECONDARY_BUILD_SLOTS]
-        if(!islist(secondary))
-                secondary = list()
-                active_build_slots[CHANGELING_SECONDARY_BUILD_SLOTS] = secondary
-        return secondary
+	if(!islist(active_build_slots))
+		reset_active_build_slots()
+	var/list/secondary = active_build_slots[CHANGELING_SECONDARY_BUILD_SLOTS]
+	if(!islist(secondary))
+		secondary = list()
+		active_build_slots[CHANGELING_SECONDARY_BUILD_SLOTS] = secondary
+	return secondary
 
 /datum/antagonist/changeling/proc/ensure_default_presets_loaded()
-        if(LAZYLEN(genetic_presets))
-                return
-        for(var/list/preset as anything in default_genetic_build_presets)
-                var/list/build_blueprint = sanitize_build_blueprint(preset[CHANGELING_BUILD_BLUEPRINT])
-                genetic_presets += list(list(
-                        "name" = preset["name"],
-                        CHANGELING_BUILD_BLUEPRINT = build_blueprint,
-                ))
+	if(LAZYLEN(genetic_presets))
+		return
+	for(var/list/preset as anything in default_genetic_build_presets)
+		var/list/build_blueprint = sanitize_build_blueprint(preset[CHANGELING_BUILD_BLUEPRINT])
+		genetic_presets += list(list(
+			"name" = preset["name"],
+			CHANGELING_BUILD_BLUEPRINT = build_blueprint,
+		))
 
 /datum/antagonist/changeling/proc/sanitize_build_blueprint(list/raw_build)
-        var/list/build = list()
-        var/key_path = null
-        if(islist(raw_build))
-                if(ispath(raw_build[CHANGELING_KEY_BUILD_SLOT], /datum/action/changeling))
-                        key_path = raw_build[CHANGELING_KEY_BUILD_SLOT]
-                var/list/secondary_paths = list()
-                if(islist(raw_build[CHANGELING_SECONDARY_BUILD_SLOTS]))
-                        for(var/path in raw_build[CHANGELING_SECONDARY_BUILD_SLOTS])
-                                if(!ispath(path, /datum/action/changeling))
-                                        continue
-                                if(path == key_path || (path in secondary_paths))
-                                        continue
-                                secondary_paths += path
-                                if(secondary_paths.len >= CHANGELING_SECONDARY_SLOT_LIMIT)
-                                        break
-                build[CHANGELING_SECONDARY_BUILD_SLOTS] = secondary_paths
-        else
-                build[CHANGELING_SECONDARY_BUILD_SLOTS] = list()
-        build[CHANGELING_KEY_BUILD_SLOT] = key_path
-        return build
+	var/list/build = list()
+	var/key_path = null
+	if(islist(raw_build))
+		if(ispath(raw_build[CHANGELING_KEY_BUILD_SLOT], /datum/action/changeling))
+			key_path = raw_build[CHANGELING_KEY_BUILD_SLOT]
+		var/list/secondary_paths = list()
+		if(islist(raw_build[CHANGELING_SECONDARY_BUILD_SLOTS]))
+			for(var/path in raw_build[CHANGELING_SECONDARY_BUILD_SLOTS])
+				if(!ispath(path, /datum/action/changeling))
+					continue
+				if(path == key_path || (path in secondary_paths))
+					continue
+				secondary_paths += path
+				if(secondary_paths.len >= CHANGELING_SECONDARY_SLOT_LIMIT)
+					break
+		build[CHANGELING_SECONDARY_BUILD_SLOTS] = secondary_paths
+	else
+		build[CHANGELING_SECONDARY_BUILD_SLOTS] = list()
+	build[CHANGELING_KEY_BUILD_SLOT] = key_path
+	return build
 
 /datum/antagonist/changeling/proc/synchronize_build_state()
 	if(!islist(active_build_slots))
@@ -432,382 +432,382 @@
 	active_build_slots[CHANGELING_SECONDARY_BUILD_SLOTS] = valid_secondary
 
 /datum/antagonist/changeling/proc/get_biomaterial_category(category_id)
-        if(!biomaterial_inventory)
-                biomaterial_inventory = list()
-        var/list/category_entry = biomaterial_inventory[category_id]
-        if(!islist(category_entry))
-                var/display_name
-                for(var/list/default_entry as anything in default_biomaterial_categories)
-                        if(lowertext(text(default_entry["id"])) == lowertext(text(category_id)))
-                                display_name = default_entry["name"]
-                                break
-                category_entry = list(
-                        "id" = category_id,
-                        "name" = display_name || capitalize(replacetext(text(category_id), "_", " ")),
-                        "items" = list(),
-                )
-                biomaterial_inventory[category_id] = category_entry
-        return category_entry
+	if(!biomaterial_inventory)
+		biomaterial_inventory = list()
+	var/list/category_entry = biomaterial_inventory[category_id]
+	if(!islist(category_entry))
+		var/display_name
+		for(var/list/default_entry as anything in default_biomaterial_categories)
+			if(lowertext(text(default_entry["id"])) == lowertext(text(category_id)))
+				display_name = default_entry["name"]
+				break
+		category_entry = list(
+			"id" = category_id,
+			"name" = display_name || capitalize(replacetext(text(category_id), "_", " ")),
+			"items" = list(),
+		)
+		biomaterial_inventory[category_id] = category_entry
+	return category_entry
 
 /datum/antagonist/changeling/proc/adjust_biomaterial_entry(category_id, material_id, amount = 1, list/metadata)
-        if(isnull(category_id) || isnull(material_id) || !isnum(amount))
-                return 0
-        var/list/category_entry = get_biomaterial_category(category_id)
-        var/list/items = category_entry["items"]
-        if(!islist(items))
-                items = list()
-                category_entry["items"] = items
-        var/list/item_entry = items[material_id]
-        if(!islist(item_entry))
-                item_entry = list(
-                        "id" = material_id,
-                        "count" = 0,
-                )
-        if(islist(metadata))
-                for(var/key in metadata)
-                        if(isnull(metadata[key]))
-                                continue
-                        item_entry[key] = metadata[key]
-        item_entry["count"] = (item_entry["count"] || 0) + amount
-        if(item_entry["count"] <= 0)
-                items -= material_id
-                return 0
-        items[material_id] = item_entry
-        return item_entry["count"]
+	if(isnull(category_id) || isnull(material_id) || !isnum(amount))
+		return 0
+	var/list/category_entry = get_biomaterial_category(category_id)
+	var/list/items = category_entry["items"]
+	if(!islist(items))
+		items = list()
+		category_entry["items"] = items
+	var/list/item_entry = items[material_id]
+	if(!islist(item_entry))
+		item_entry = list(
+			"id" = material_id,
+			"count" = 0,
+		)
+	if(islist(metadata))
+		for(var/key in metadata)
+			if(isnull(metadata[key]))
+				continue
+			item_entry[key] = metadata[key]
+	item_entry["count"] = (item_entry["count"] || 0) + amount
+	if(item_entry["count"] <= 0)
+		items -= material_id
+		return 0
+	items[material_id] = item_entry
+	return item_entry["count"]
 
 /datum/antagonist/changeling/proc/adjust_signature_cell(cell_id, amount = 1, list/metadata)
-        if(isnull(cell_id) || !isnum(amount))
-                return 0
-        if(!islist(signature_cells))
-                signature_cells = list()
-        var/list/cell_entry = signature_cells[cell_id]
-        if(!islist(cell_entry))
-                cell_entry = list(
-                        "id" = cell_id,
-                        "count" = 0,
-                )
-        if(islist(metadata))
-                for(var/key in metadata)
-                        if(isnull(metadata[key]))
-                                continue
-                        cell_entry[key] = metadata[key]
-        cell_entry["count"] = (cell_entry["count"] || 0) + amount
-        if(cell_entry["count"] <= 0)
-                signature_cells -= cell_id
-                return 0
-        signature_cells[cell_id] = cell_entry
-        return cell_entry["count"]
+	if(isnull(cell_id) || !isnum(amount))
+		return 0
+	if(!islist(signature_cells))
+		signature_cells = list()
+	var/list/cell_entry = signature_cells[cell_id]
+	if(!islist(cell_entry))
+		cell_entry = list(
+			"id" = cell_id,
+			"count" = 0,
+		)
+	if(islist(metadata))
+		for(var/key in metadata)
+			if(isnull(metadata[key]))
+				continue
+			cell_entry[key] = metadata[key]
+	cell_entry["count"] = (cell_entry["count"] || 0) + amount
+	if(cell_entry["count"] <= 0)
+		signature_cells -= cell_id
+		return 0
+	signature_cells[cell_id] = cell_entry
+	return cell_entry["count"]
 
 /datum/antagonist/changeling/proc/can_harvest_biomaterials(mob/living/target, verbose = TRUE)
-        if(!target || QDELETED(target))
-                return FALSE
-        if(target.stat == DEAD)
-                if(verbose && owner?.current)
-                        to_chat(owner.current, span_warning("We require a living specimen."))
-                return FALSE
-        var/list/profile = target.get_changeling_biomaterial_profile()
-        if(!LAZYLEN(profile))
-                if(verbose && owner?.current)
-                        to_chat(owner.current, span_warning("No viable biomaterial detected within [target]."))
-                return FALSE
-        return TRUE
+	if(!target || QDELETED(target))
+		return FALSE
+	if(target.stat == DEAD)
+		if(verbose && owner?.current)
+			to_chat(owner.current, span_warning("We require a living specimen."))
+		return FALSE
+	var/list/profile = target.get_changeling_biomaterial_profile()
+	if(!LAZYLEN(profile))
+		if(verbose && owner?.current)
+			to_chat(owner.current, span_warning("No viable biomaterial detected within [target]."))
+		return FALSE
+	return TRUE
 
 /datum/antagonist/changeling/proc/harvest_biomaterials_from_mob(mob/living/target)
-        if(!target)
-                return list()
-        var/list/profile = target.get_changeling_biomaterial_profile()
-        if(!LAZYLEN(profile))
-                return list()
-        var/list/results = list()
-        var/base_name = initial(target.name) || "specimen"
-        for(var/list/entry as anything in profile)
-                if(!islist(entry))
-                        continue
-                var/category = entry[CHANGELING_HARVEST_CATEGORY] || CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE
-                var/material_id = entry[CHANGELING_HARVEST_ID]
-                if(!istext(material_id) || !length(material_id))
-                        material_id = changeling_sanitize_material_id(target.type)
-                var/amount = max(1, entry[CHANGELING_HARVEST_AMOUNT] || 1)
-                var/sample_name = entry[CHANGELING_HARVEST_NAME]
-                if(!istext(sample_name) || !length(sample_name))
-                        sample_name = "[base_name] biomaterial"
-                var/sample_description = entry[CHANGELING_HARVEST_DESCRIPTION]
-                if(!istext(sample_description) || !length(sample_description))
-                        sample_description = "Biomaterial harvested from [base_name]."
-                var/list/metadata = list(
-                        "name" = sample_name,
-                        "description" = sample_description,
-                )
-                if(entry[CHANGELING_HARVEST_QUALITY])
-                        metadata["quality"] = entry[CHANGELING_HARVEST_QUALITY]
-                adjust_biomaterial_entry(category, material_id, amount, metadata)
-                results += list(list(
-                        CHANGELING_HARVEST_CATEGORY = category,
-                        CHANGELING_HARVEST_ID = material_id,
-                        CHANGELING_HARVEST_NAME = sample_name,
-                        CHANGELING_HARVEST_DESCRIPTION = sample_description,
-                        CHANGELING_HARVEST_AMOUNT = amount,
-                ))
-                if(entry[CHANGELING_HARVEST_SIGNATURE] && target.dna)
-                        var/signature_id = target.dna.unique_enzymes || changeling_sanitize_material_id(target.real_name || material_id)
-                        var/list/signature_metadata = list(
-                                "name" = target.real_name || sample_name,
-                                "description" = "A distinctive cytology signature harvested from [target].",
-                        )
-                        adjust_signature_cell(signature_id, 1, signature_metadata)
-        return results
+	if(!target)
+		return list()
+	var/list/profile = target.get_changeling_biomaterial_profile()
+	if(!LAZYLEN(profile))
+		return list()
+	var/list/results = list()
+	var/base_name = initial(target.name) || "specimen"
+	for(var/list/entry as anything in profile)
+		if(!islist(entry))
+			continue
+		var/category = entry[CHANGELING_HARVEST_CATEGORY] || CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE
+		var/material_id = entry[CHANGELING_HARVEST_ID]
+		if(!istext(material_id) || !length(material_id))
+			material_id = changeling_sanitize_material_id(target.type)
+		var/amount = max(1, entry[CHANGELING_HARVEST_AMOUNT] || 1)
+		var/sample_name = entry[CHANGELING_HARVEST_NAME]
+		if(!istext(sample_name) || !length(sample_name))
+			sample_name = "[base_name] biomaterial"
+		var/sample_description = entry[CHANGELING_HARVEST_DESCRIPTION]
+		if(!istext(sample_description) || !length(sample_description))
+			sample_description = "Biomaterial harvested from [base_name]."
+		var/list/metadata = list(
+			"name" = sample_name,
+			"description" = sample_description,
+		)
+		if(entry[CHANGELING_HARVEST_QUALITY])
+			metadata["quality"] = entry[CHANGELING_HARVEST_QUALITY]
+		adjust_biomaterial_entry(category, material_id, amount, metadata)
+		results += list(list(
+			CHANGELING_HARVEST_CATEGORY = category,
+			CHANGELING_HARVEST_ID = material_id,
+			CHANGELING_HARVEST_NAME = sample_name,
+			CHANGELING_HARVEST_DESCRIPTION = sample_description,
+			CHANGELING_HARVEST_AMOUNT = amount,
+		))
+		if(entry[CHANGELING_HARVEST_SIGNATURE] && target.dna)
+			var/signature_id = target.dna.unique_enzymes || changeling_sanitize_material_id(target.real_name || material_id)
+			var/list/signature_metadata = list(
+				"name" = target.real_name || sample_name,
+				"description" = "A distinctive cytology signature harvested from [target].",
+			)
+			adjust_signature_cell(signature_id, 1, signature_metadata)
+	return results
 
 /datum/antagonist/changeling/proc/harvest_biomaterials_from_samples(list/samples, atom/source)
-        var/list/results = list()
-        if(!islist(samples))
-                return results
-        for(var/sample_entry in samples)
-                if(!istype(sample_entry, /datum/biological_sample))
-                        continue
-                var/datum/biological_sample/sample = sample_entry
-                for(var/datum/micro_organism/MO as anything in sample.micro_organisms)
-                        if(!istype(MO, /datum/micro_organism/cell_line))
-                                continue
-                        var/list/info = resolve_cell_line_biomaterial(MO, source)
-                        if(!islist(info))
-                                continue
-                        var/list/metadata = info["metadata"]
-                        adjust_biomaterial_entry(info[CHANGELING_HARVEST_CATEGORY], info[CHANGELING_HARVEST_ID], info[CHANGELING_HARVEST_AMOUNT], metadata)
-                        results += list(list(
-                                CHANGELING_HARVEST_CATEGORY = info[CHANGELING_HARVEST_CATEGORY],
-                                CHANGELING_HARVEST_ID = info[CHANGELING_HARVEST_ID],
-                                CHANGELING_HARVEST_NAME = info[CHANGELING_HARVEST_NAME],
-                                CHANGELING_HARVEST_DESCRIPTION = info[CHANGELING_HARVEST_DESCRIPTION],
-                                CHANGELING_HARVEST_AMOUNT = info[CHANGELING_HARVEST_AMOUNT],
-                        ))
-                qdel(sample)
-        return results
+	var/list/results = list()
+	if(!islist(samples))
+		return results
+	for(var/sample_entry in samples)
+		if(!istype(sample_entry, /datum/biological_sample))
+			continue
+		var/datum/biological_sample/sample = sample_entry
+		for(var/datum/micro_organism/MO as anything in sample.micro_organisms)
+			if(!istype(MO, /datum/micro_organism/cell_line))
+				continue
+			var/list/info = resolve_cell_line_biomaterial(MO, source)
+			if(!islist(info))
+				continue
+			var/list/metadata = info["metadata"]
+			adjust_biomaterial_entry(info[CHANGELING_HARVEST_CATEGORY], info[CHANGELING_HARVEST_ID], info[CHANGELING_HARVEST_AMOUNT], metadata)
+			results += list(list(
+				CHANGELING_HARVEST_CATEGORY = info[CHANGELING_HARVEST_CATEGORY],
+				CHANGELING_HARVEST_ID = info[CHANGELING_HARVEST_ID],
+				CHANGELING_HARVEST_NAME = info[CHANGELING_HARVEST_NAME],
+				CHANGELING_HARVEST_DESCRIPTION = info[CHANGELING_HARVEST_DESCRIPTION],
+				CHANGELING_HARVEST_AMOUNT = info[CHANGELING_HARVEST_AMOUNT],
+			))
+		qdel(sample)
+	return results
 
 /datum/antagonist/changeling/proc/resolve_cell_line_biomaterial(datum/micro_organism/cell_line/cell_line, atom/source)
-        var/category = determine_cell_line_category(cell_line)
-        var/material_id = changeling_sanitize_material_id(cell_line.type)
-        var/display_name = cell_line.desc || "Cell culture"
-        var/source_name = source ? source.name : "the environment"
-        var/description = "[display_name] collected from [source_name]."
-        var/list/metadata = list(
-                "name" = display_name,
-                "description" = description,
-        )
-        return list(
-                CHANGELING_HARVEST_CATEGORY = category,
-                CHANGELING_HARVEST_ID = material_id,
-                CHANGELING_HARVEST_NAME = display_name,
-                CHANGELING_HARVEST_DESCRIPTION = description,
-                CHANGELING_HARVEST_AMOUNT = 1,
-                "metadata" = metadata,
-        )
+	var/category = determine_cell_line_category(cell_line)
+	var/material_id = changeling_sanitize_material_id(cell_line.type)
+	var/display_name = cell_line.desc || "Cell culture"
+	var/source_name = source ? source.name : "the environment"
+	var/description = "[display_name] collected from [source_name]."
+	var/list/metadata = list(
+		"name" = display_name,
+		"description" = description,
+	)
+	return list(
+		CHANGELING_HARVEST_CATEGORY = category,
+		CHANGELING_HARVEST_ID = material_id,
+		CHANGELING_HARVEST_NAME = display_name,
+		CHANGELING_HARVEST_DESCRIPTION = description,
+		CHANGELING_HARVEST_AMOUNT = 1,
+		"metadata" = metadata,
+	)
 
 /datum/antagonist/changeling/proc/determine_cell_line_category(datum/micro_organism/cell_line/cell_line)
-        if(istype(cell_line, /datum/micro_organism/cell_line/blob_spore) ||
-                istype(cell_line, /datum/micro_organism/cell_line/blobbernaut) ||
-                istype(cell_line, /datum/micro_organism/cell_line/bear) ||
-                istype(cell_line, /datum/micro_organism/cell_line/carp) ||
-                istype(cell_line, /datum/micro_organism/cell_line/megacarp) ||
-                istype(cell_line, /datum/micro_organism/cell_line/snake) ||
-                istype(cell_line, /datum/micro_organism/cell_line/glockroach) ||
-                istype(cell_line, /datum/micro_organism/cell_line/hauberoach) ||
-                istype(cell_line, /datum/micro_organism/cell_line/vat_beast) ||
-                istype(cell_line, /datum/micro_organism/cell_line/netherworld) ||
-                istype(cell_line, /datum/micro_organism/cell_line/clown/glutton) ||
-                istype(cell_line, /datum/micro_organism/cell_line/mega_arachnid))
-                return CHANGELING_BIOMATERIAL_CATEGORY_PREDATORY
-        if(istype(cell_line, /datum/micro_organism/cell_line/cockroach) ||
-                istype(cell_line, /datum/micro_organism/cell_line/mouse) ||
-                istype(cell_line, /datum/micro_organism/cell_line/pine) ||
-                istype(cell_line, /datum/micro_organism/cell_line/snail) ||
-                istype(cell_line, /datum/micro_organism/cell_line/gelatinous_cube) ||
-                istype(cell_line, /datum/micro_organism/cell_line/walking_mushroom) ||
-                istype(cell_line, /datum/micro_organism/cell_line/axolotl) ||
-                istype(cell_line, /datum/micro_organism/cell_line/frog) ||
-                istype(cell_line, /datum/micro_organism/cell_line/sholean_grapes))
-                return CHANGELING_BIOMATERIAL_CATEGORY_RESILIENCE
-        return CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE
+	if(istype(cell_line, /datum/micro_organism/cell_line/blob_spore) ||
+		istype(cell_line, /datum/micro_organism/cell_line/blobbernaut) ||
+		istype(cell_line, /datum/micro_organism/cell_line/bear) ||
+		istype(cell_line, /datum/micro_organism/cell_line/carp) ||
+		istype(cell_line, /datum/micro_organism/cell_line/megacarp) ||
+		istype(cell_line, /datum/micro_organism/cell_line/snake) ||
+		istype(cell_line, /datum/micro_organism/cell_line/glockroach) ||
+		istype(cell_line, /datum/micro_organism/cell_line/hauberoach) ||
+		istype(cell_line, /datum/micro_organism/cell_line/vat_beast) ||
+		istype(cell_line, /datum/micro_organism/cell_line/netherworld) ||
+		istype(cell_line, /datum/micro_organism/cell_line/clown/glutton) ||
+		istype(cell_line, /datum/micro_organism/cell_line/mega_arachnid))
+		return CHANGELING_BIOMATERIAL_CATEGORY_PREDATORY
+	if(istype(cell_line, /datum/micro_organism/cell_line/cockroach) ||
+		istype(cell_line, /datum/micro_organism/cell_line/mouse) ||
+		istype(cell_line, /datum/micro_organism/cell_line/pine) ||
+		istype(cell_line, /datum/micro_organism/cell_line/snail) ||
+		istype(cell_line, /datum/micro_organism/cell_line/gelatinous_cube) ||
+		istype(cell_line, /datum/micro_organism/cell_line/walking_mushroom) ||
+		istype(cell_line, /datum/micro_organism/cell_line/axolotl) ||
+		istype(cell_line, /datum/micro_organism/cell_line/frog) ||
+		istype(cell_line, /datum/micro_organism/cell_line/sholean_grapes))
+		return CHANGELING_BIOMATERIAL_CATEGORY_RESILIENCE
+	return CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE
 
 /datum/antagonist/changeling/proc/build_harvest_summary(list/results)
-        if(!LAZYLEN(results))
-                return ""
-        var/list/fragments = list()
-        for(var/list/result as anything in results)
-                if(!islist(result))
-                        continue
-                var/amount = result[CHANGELING_HARVEST_AMOUNT] || 1
-                var/name = result[CHANGELING_HARVEST_NAME]
-                if(!istext(name) || !length(name))
-                        name = capitalize(replacetext(result[CHANGELING_HARVEST_ID], "_", " "))
-                var/category = result[CHANGELING_HARVEST_CATEGORY] || CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE
-                fragments += "[name] x[amount] ([category])"
-        return english_list(fragments)
+	if(!LAZYLEN(results))
+		return ""
+	var/list/fragments = list()
+	for(var/list/result as anything in results)
+		if(!islist(result))
+			continue
+		var/amount = result[CHANGELING_HARVEST_AMOUNT] || 1
+		var/name = result[CHANGELING_HARVEST_NAME]
+		if(!istext(name) || !length(name))
+			name = capitalize(replacetext(result[CHANGELING_HARVEST_ID], "_", " "))
+		var/category = result[CHANGELING_HARVEST_CATEGORY] || CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE
+		fragments += "[name] x[amount] ([category])"
+	return english_list(fragments)
 
 /datum/antagonist/changeling/proc/export_build_blueprint()
-        if(!islist(active_build_slots))
-                reset_active_build_slots()
-        var/list/blueprint = list()
-        if(ispath(active_build_slots[CHANGELING_KEY_BUILD_SLOT], /datum/action/changeling))
-                blueprint[CHANGELING_KEY_BUILD_SLOT] = active_build_slots[CHANGELING_KEY_BUILD_SLOT]
-        else
-                blueprint[CHANGELING_KEY_BUILD_SLOT] = null
-        var/list/secondary_paths = list()
-        for(var/path in get_secondary_build_slots())
-                if(ispath(path, /datum/action/changeling))
-                        secondary_paths += path
-        blueprint[CHANGELING_SECONDARY_BUILD_SLOTS] = secondary_paths
-        return blueprint
+	if(!islist(active_build_slots))
+		reset_active_build_slots()
+	var/list/blueprint = list()
+	if(ispath(active_build_slots[CHANGELING_KEY_BUILD_SLOT], /datum/action/changeling))
+		blueprint[CHANGELING_KEY_BUILD_SLOT] = active_build_slots[CHANGELING_KEY_BUILD_SLOT]
+	else
+		blueprint[CHANGELING_KEY_BUILD_SLOT] = null
+	var/list/secondary_paths = list()
+	for(var/path in get_secondary_build_slots())
+		if(ispath(path, /datum/action/changeling))
+			secondary_paths += path
+	blueprint[CHANGELING_SECONDARY_BUILD_SLOTS] = secondary_paths
+	return blueprint
 
 /datum/antagonist/changeling/proc/build_slot_payload(power_path, datum/action/changeling/power, slot_id, slot_index)
-        var/list/payload = list(
-                "slot" = slot_id,
-                "index" = slot_index,
-                "path" = power_path,
-        )
-        if(power)
-                payload["name"] = power.name
-                payload["desc"] = power.desc
-                payload["helptext"] = power.helptext
-                payload["dna_cost"] = power.dna_cost
-                payload["chemical_cost"] = power.chemical_cost
-        else if(ispath(power_path, /datum/action/changeling))
-                payload["name"] = initial(power_path.name)
-                payload["desc"] = initial(power_path.desc)
-                payload["helptext"] = initial(power_path.helptext)
-                payload["dna_cost"] = initial(power_path.dna_cost)
-                payload["chemical_cost"] = initial(power_path.chemical_cost)
-        return payload
+	var/list/payload = list(
+		"slot" = slot_id,
+		"index" = slot_index,
+		"path" = power_path,
+	)
+	if(power)
+		payload["name"] = power.name
+		payload["desc"] = power.desc
+		payload["helptext"] = power.helptext
+		payload["dna_cost"] = power.dna_cost
+		payload["chemical_cost"] = power.chemical_cost
+	else if(ispath(power_path, /datum/action/changeling))
+		payload["name"] = initial(power_path.name)
+		payload["desc"] = initial(power_path.desc)
+		payload["helptext"] = initial(power_path.helptext)
+		payload["dna_cost"] = initial(power_path.dna_cost)
+		payload["chemical_cost"] = initial(power_path.chemical_cost)
+	return payload
 
 /datum/antagonist/changeling/proc/export_active_build_state()
-        var/list/state = list()
-        var/datum/action/changeling/key_path = active_build_slots?[CHANGELING_KEY_BUILD_SLOT]
-        if(ispath(key_path, /datum/action/changeling) && purchased_powers[key_path])
-                state[CHANGELING_KEY_BUILD_SLOT] = build_slot_payload(key_path, purchased_powers[key_path], CHANGELING_KEY_BUILD_SLOT, 1)
-        else
-                state[CHANGELING_KEY_BUILD_SLOT] = null
-        var/list/secondary_payload = list()
-        var/index = 1
-        for(var/path in get_secondary_build_slots())
-                if(!ispath(path, /datum/action/changeling))
-                        continue
-                var/datum/action/changeling/ability = purchased_powers[path]
-                secondary_payload += list(build_slot_payload(path, ability, CHANGELING_SECONDARY_BUILD_SLOTS, index))
-                index++
-        state[CHANGELING_SECONDARY_BUILD_SLOTS] = secondary_payload
-        state["secondary_capacity"] = CHANGELING_SECONDARY_SLOT_LIMIT
-        return state
+	var/list/state = list()
+	var/datum/action/changeling/key_path = active_build_slots?[CHANGELING_KEY_BUILD_SLOT]
+	if(ispath(key_path, /datum/action/changeling) && purchased_powers[key_path])
+		state[CHANGELING_KEY_BUILD_SLOT] = build_slot_payload(key_path, purchased_powers[key_path], CHANGELING_KEY_BUILD_SLOT, 1)
+	else
+		state[CHANGELING_KEY_BUILD_SLOT] = null
+	var/list/secondary_payload = list()
+	var/index = 1
+	for(var/path in get_secondary_build_slots())
+		if(!ispath(path, /datum/action/changeling))
+			continue
+		var/datum/action/changeling/ability = purchased_powers[path]
+		secondary_payload += list(build_slot_payload(path, ability, CHANGELING_SECONDARY_BUILD_SLOTS, index))
+		index++
+	state[CHANGELING_SECONDARY_BUILD_SLOTS] = secondary_payload
+	state["secondary_capacity"] = CHANGELING_SECONDARY_SLOT_LIMIT
+	return state
 
 /datum/antagonist/changeling/proc/build_biomaterial_payload()
-        var/list/output = list()
-        if(!islist(biomaterial_inventory))
-                return output
-        for(var/category_id in biomaterial_inventory)
-                var/list/category_entry = biomaterial_inventory[category_id]
-                if(!islist(category_entry))
-                        continue
-                var/list/items_payload = list()
-                var/list/items = category_entry["items"]
-                if(islist(items))
-                        for(var/material_id in items)
-                                var/list/item_entry = items[material_id]
-                                if(!islist(item_entry))
-                                        continue
-                                var/list/item_payload = list(
-                                        "id" = item_entry["id"] || material_id,
-                                        "name" = item_entry["name"] || capitalize(replacetext(text(material_id), "_", " ")),
-                                        "count" = max(0, item_entry["count"] || 0),
-                                )
-                                if(item_entry["description"])
-                                        item_payload["description"] = item_entry["description"]
-                                if(item_entry["quality"])
-                                        item_payload["quality"] = item_entry["quality"]
-                                items_payload += list(item_payload)
-                var/list/category_payload = list(
-                        "id" = category_entry["id"] || category_id,
-                        "name" = category_entry["name"] || capitalize(replacetext(text(category_id), "_", " ")),
-                        "items" = items_payload,
-                )
-                output += list(category_payload)
-        return output
+	var/list/output = list()
+	if(!islist(biomaterial_inventory))
+		return output
+	for(var/category_id in biomaterial_inventory)
+		var/list/category_entry = biomaterial_inventory[category_id]
+		if(!islist(category_entry))
+			continue
+		var/list/items_payload = list()
+		var/list/items = category_entry["items"]
+		if(islist(items))
+			for(var/material_id in items)
+				var/list/item_entry = items[material_id]
+				if(!islist(item_entry))
+					continue
+				var/list/item_payload = list(
+					"id" = item_entry["id"] || material_id,
+					"name" = item_entry["name"] || capitalize(replacetext(text(material_id), "_", " ")),
+					"count" = max(0, item_entry["count"] || 0),
+				)
+				if(item_entry["description"])
+					item_payload["description"] = item_entry["description"]
+				if(item_entry["quality"])
+					item_payload["quality"] = item_entry["quality"]
+				items_payload += list(item_payload)
+		var/list/category_payload = list(
+			"id" = category_entry["id"] || category_id,
+			"name" = category_entry["name"] || capitalize(replacetext(text(category_id), "_", " ")),
+			"items" = items_payload,
+		)
+		output += list(category_payload)
+	return output
 
 /datum/antagonist/changeling/proc/build_signature_payload()
-        var/list/output = list()
-        if(!islist(signature_cells))
-                return output
-        for(var/cell_id in signature_cells)
-                var/list/cell_entry = signature_cells[cell_id]
-                if(!islist(cell_entry))
-                        continue
-                var/list/entry_payload = list(
-                        "id" = cell_entry["id"] || cell_id,
-                        "name" = cell_entry["name"] || capitalize(replacetext(text(cell_id), "_", " ")),
-                        "count" = max(0, cell_entry["count"] || 0),
-                )
-                if(cell_entry["description"])
-                        entry_payload["description"] = cell_entry["description"]
-                output += list(entry_payload)
-        return output
+	var/list/output = list()
+	if(!islist(signature_cells))
+		return output
+	for(var/cell_id in signature_cells)
+		var/list/cell_entry = signature_cells[cell_id]
+		if(!islist(cell_entry))
+			continue
+		var/list/entry_payload = list(
+			"id" = cell_entry["id"] || cell_id,
+			"name" = cell_entry["name"] || capitalize(replacetext(text(cell_id), "_", " ")),
+			"count" = max(0, cell_entry["count"] || 0),
+		)
+		if(cell_entry["description"])
+			entry_payload["description"] = cell_entry["description"]
+		output += list(entry_payload)
+	return output
 
 /datum/antagonist/changeling/proc/register_crafting_outcome(list/outcome_data, apply_immediately = FALSE)
-        if(!islist(outcome_data))
-                return FALSE
-        if(islist(outcome_data["biomaterials"]))
-                var/list/material_map = outcome_data["biomaterials"]
-                for(var/category_id in material_map)
-                        var/value = material_map[category_id]
-                        if(islist(value))
-                                for(var/material_id in value)
-                                        var/entry = value[material_id]
-                                        if(isnum(entry))
-                                                adjust_biomaterial_entry(category_id, material_id, entry)
-                                        else if(islist(entry))
-                                                var/amount = entry["count"] || entry["amount"] || 1
-                                                adjust_biomaterial_entry(category_id, material_id, amount, entry)
-                        else if(isnum(value))
-                                adjust_biomaterial_entry(category_id, category_id, value)
-        if(islist(outcome_data["signature_cells"]))
-                var/list/signature_map = outcome_data["signature_cells"]
-                for(var/cell_id in signature_map)
-                        var/sig_value = signature_map[cell_id]
-                        if(isnum(sig_value))
-                                adjust_signature_cell(cell_id, sig_value)
-                        else if(islist(sig_value))
-                                var/sig_amount = sig_value["count"] || sig_value["amount"] || 1
-                                adjust_signature_cell(cell_id, sig_amount, sig_value)
-        var/apply_flag = apply_immediately || outcome_data["apply_build"]
-        if(apply_flag && islist(outcome_data[CHANGELING_BUILD_BLUEPRINT]))
-                apply_build(outcome_data[CHANGELING_BUILD_BLUEPRINT])
-        return TRUE
+	if(!islist(outcome_data))
+		return FALSE
+	if(islist(outcome_data["biomaterials"]))
+		var/list/material_map = outcome_data["biomaterials"]
+		for(var/category_id in material_map)
+			var/value = material_map[category_id]
+			if(islist(value))
+				for(var/material_id in value)
+					var/entry = value[material_id]
+					if(isnum(entry))
+						adjust_biomaterial_entry(category_id, material_id, entry)
+					else if(islist(entry))
+						var/amount = entry["count"] || entry["amount"] || 1
+						adjust_biomaterial_entry(category_id, material_id, amount, entry)
+			else if(isnum(value))
+				adjust_biomaterial_entry(category_id, category_id, value)
+	if(islist(outcome_data["signature_cells"]))
+		var/list/signature_map = outcome_data["signature_cells"]
+		for(var/cell_id in signature_map)
+			var/sig_value = signature_map[cell_id]
+			if(isnum(sig_value))
+				adjust_signature_cell(cell_id, sig_value)
+			else if(islist(sig_value))
+				var/sig_amount = sig_value["count"] || sig_value["amount"] || 1
+				adjust_signature_cell(cell_id, sig_amount, sig_value)
+	var/apply_flag = apply_immediately || outcome_data["apply_build"]
+	if(apply_flag && islist(outcome_data[CHANGELING_BUILD_BLUEPRINT]))
+		apply_build(outcome_data[CHANGELING_BUILD_BLUEPRINT])
+	return TRUE
 
 /datum/antagonist/changeling/proc/register_power_slot(power_path, slot_identifier, force = FALSE)
-        if(!ispath(power_path, /datum/action/changeling))
-                return FALSE
-        if(!islist(active_build_slots))
-                reset_active_build_slots()
-        remove_slot_assignment(power_path)
-        if(slot_identifier == CHANGELING_KEY_BUILD_SLOT)
-                var/current_key = active_build_slots[CHANGELING_KEY_BUILD_SLOT]
-                if(current_key && current_key != power_path && !force)
-                        return FALSE
-                active_build_slots[CHANGELING_KEY_BUILD_SLOT] = power_path
-                return TRUE
-        var/list/secondary_slots = get_secondary_build_slots()
-        if(secondary_slots.len >= CHANGELING_SECONDARY_SLOT_LIMIT && !force)
-                return FALSE
-        if(force && secondary_slots.len >= CHANGELING_SECONDARY_SLOT_LIMIT)
-                secondary_slots.Cut(CHANGELING_SECONDARY_SLOT_LIMIT, CHANGELING_SECONDARY_SLOT_LIMIT + 1)
-        secondary_slots += power_path
-        return TRUE
+	if(!ispath(power_path, /datum/action/changeling))
+		return FALSE
+	if(!islist(active_build_slots))
+		reset_active_build_slots()
+	remove_slot_assignment(power_path)
+	if(slot_identifier == CHANGELING_KEY_BUILD_SLOT)
+		var/current_key = active_build_slots[CHANGELING_KEY_BUILD_SLOT]
+		if(current_key && current_key != power_path && !force)
+			return FALSE
+		active_build_slots[CHANGELING_KEY_BUILD_SLOT] = power_path
+		return TRUE
+	var/list/secondary_slots = get_secondary_build_slots()
+	if(secondary_slots.len >= CHANGELING_SECONDARY_SLOT_LIMIT && !force)
+		return FALSE
+	if(force && secondary_slots.len >= CHANGELING_SECONDARY_SLOT_LIMIT)
+		secondary_slots.Cut(CHANGELING_SECONDARY_SLOT_LIMIT, CHANGELING_SECONDARY_SLOT_LIMIT + 1)
+	secondary_slots += power_path
+	return TRUE
 
 /datum/antagonist/changeling/proc/remove_slot_assignment(power_path)
-        if(!islist(active_build_slots) || !power_path)
-                return
-        if(active_build_slots[CHANGELING_KEY_BUILD_SLOT] == power_path)
-                active_build_slots[CHANGELING_KEY_BUILD_SLOT] = null
-        var/list/secondary_slots = get_secondary_build_slots()
-        for(var/index = secondary_slots.len, index > 0, index--)
-                if(secondary_slots[index] == power_path)
-                        secondary_slots.Cut(index, index + 1)
+	if(!islist(active_build_slots) || !power_path)
+		return
+	if(active_build_slots[CHANGELING_KEY_BUILD_SLOT] == power_path)
+		active_build_slots[CHANGELING_KEY_BUILD_SLOT] = null
+	var/list/secondary_slots = get_secondary_build_slots()
+	for(var/index = secondary_slots.len, index > 0, index--)
+		if(secondary_slots[index] == power_path)
+			secondary_slots.Cut(index, index + 1)
 
 /datum/antagonist/changeling/proc/remove_power(power_path, refund_points = TRUE)
 	var/datum/action/changeling/power = purchased_powers[power_path]
@@ -953,7 +953,7 @@
 	var/list/preset = genetic_presets[index]
 	genetic_presets.Cut(index, index + 1)
 	if(owner?.current && preset)
-		to_chat(owner.current, span_notice("We purge the [preset?["name"] : "lost"] template."))
+		to_chat(owner.current, span_notice("We purge the [preset ? preset[\"name\"] : \"lost\"] template."))
 	return TRUE
 
 /datum/antagonist/changeling/proc/rename_genetic_preset(index, new_name)
@@ -1859,8 +1859,8 @@
 	/*
 	var/changeling_win = TRUE
 	if(!owner.current)
-		changeling_win = FALSE
-	*/
+	changeling_win = FALSE
+	 */
 	// NOVA EDIT REMOVAL END
 
 	parts += printplayer(owner)
@@ -1872,9 +1872,9 @@
 			// NOVA EDIT START - No greentext
 			/*
 			if(!objective.check_completion())
-				changeling_win = FALSE
+			changeling_win = FALSE
 			parts += "<b>Objective #[count]</b>: [objective.explanation_text] [objective.get_roundend_success_suffix()]"
-			*/
+			 */
 			parts += "<b>Objective #[count]</b>: [objective.explanation_text]"
 			// NOVA EDIT END - No greentext
 			count++
@@ -1882,10 +1882,10 @@
 	// NOVA EDIT REMOVAL START - No greentext
 	/*
 	if(changeling_win)
-		parts += span_greentext("The changeling was successful!")
+	parts += span_greentext("The changeling was successful!")
 	else
-		parts += span_redtext("The changeling has failed.")
-	*/
+	parts += span_redtext("The changeling has failed.")
+	 */
 	// NOVA EDIT REMOVAL END - No greentext
 
 	return parts.Join("<br>")
