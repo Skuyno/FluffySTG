@@ -30,12 +30,10 @@
 	var/req_stat = CONSCIOUS
 	/// usable when the changeling is in death coma
 	var/ignores_fakedeath = FALSE
-        /// used by a few powers that toggle
-        var/active = FALSE
-        /// Does this ability stop working if you are burning?
-        var/disabled_by_fire = TRUE
-        /// Whether this sting may be used on non-living targets.
-        var/allow_nonliving_targets = FALSE
+	/// used by a few powers that toggle
+	var/active = FALSE
+	/// Does this ability stop working if you are burning?
+	var/disabled_by_fire = TRUE
 
 /*
 changeling code now relies on on_purchase to grant powers.
@@ -62,37 +60,37 @@ the same goes for Remove(). if you override Remove(), call parent or else your p
  *The deduction of the cost of this power.
  *Returns TRUE on a successful activation.
  */
-/datum/action/changeling/proc/try_to_sting(mob/living/user, atom/target)
-        if(!can_sting(user, target))
-                return FALSE
-        if(disabled_by_fire && user.fire_stacks && user.on_fire)
-                user.balloon_alert(user, "on fire!")
-                return FALSE
-        var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
-        if(sting_action(user, target))
+/datum/action/changeling/proc/try_to_sting(mob/living/user, mob/living/target)
+	if(!can_sting(user, target))
+		return FALSE
+	if(disabled_by_fire && user.fire_stacks && user.on_fire)
+		user.balloon_alert(user, "on fire!")
+		return FALSE
+	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
+	if(sting_action(user, target))
 		sting_feedback(user, target)
 		changeling.adjust_chemicals(-chemical_cost)
 		user.changeNext_move(CLICK_CD_MELEE)
 		return TRUE
 	return FALSE
 
-/datum/action/changeling/proc/sting_action(mob/living/user, atom/target)
-        SHOULD_CALL_PARENT(TRUE)
-        SSblackbox.record_feedback("nested tally", "changeling_powers", 1, list("[name]"))
-        return FALSE
+/datum/action/changeling/proc/sting_action(mob/living/user, mob/living/target)
+	SHOULD_CALL_PARENT(TRUE)
+	SSblackbox.record_feedback("nested tally", "changeling_powers", 1, list("[name]"))
+	return FALSE
 
-/datum/action/changeling/proc/sting_feedback(mob/living/user, atom/target)
-        return FALSE
+/datum/action/changeling/proc/sting_feedback(mob/living/user, mob/living/target)
+	return FALSE
 
 // Fairly important to remember to return 1 on success >.< // Return TRUE not 1 >.<
-/datum/action/changeling/proc/can_sting(mob/living/user, atom/target)
-        if(!can_be_used_by(user))
-                return FALSE
-        var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
-        if(changeling.chem_charges < chemical_cost)
-                user.balloon_alert(user, "needs [chemical_cost] chemicals!")
-                return FALSE
-        if(changeling.absorbed_count < req_dna)
+/datum/action/changeling/proc/can_sting(mob/living/user, mob/living/target)
+	if(!can_be_used_by(user))
+		return FALSE
+	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
+	if(changeling.chem_charges < chemical_cost)
+		user.balloon_alert(user, "needs [chemical_cost] chemicals!")
+		return FALSE
+	if(changeling.absorbed_count < req_dna)
 		user.balloon_alert(user, "needs [req_dna] dna sample\s!")
 		return FALSE
 	if(changeling.true_absorbs < req_absorbs)

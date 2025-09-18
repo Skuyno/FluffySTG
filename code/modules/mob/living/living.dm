@@ -26,10 +26,10 @@
 	med_hud_set_status()
 
 /mob/living/Destroy()
-        for(var/datum/status_effect/effect as anything in status_effects)
-                // The status effect calls on_remove when its mob is deleted
-                if(effect.on_remove_on_mob_delete)
-                        qdel(effect)
+	for(var/datum/status_effect/effect as anything in status_effects)
+		// The status effect calls on_remove when its mob is deleted
+		if(effect.on_remove_on_mob_delete)
+			qdel(effect)
 
 		else
 			effect.be_replaced()
@@ -43,30 +43,9 @@
 		imaginary_group -= src
 		QDEL_LIST(imaginary_group)
 	QDEL_LAZYLIST(diseases)
-        QDEL_LIST(surgeries)
-        QDEL_LIST(quirks)
-        return ..()
-
-/mob/living/proc/build_changeling_harvest_profile(list/options)
-        if(mob_biotypes & MOB_ROBOTIC)
-                return null
-        if(HAS_TRAIT(src, TRAIT_HUSK) || HAS_TRAIT(src, TRAIT_BADDNA))
-                return null
-        var/category_id = changeling_category_for_biotypes(mob_biotypes)
-        if(isnull(category_id))
-                return null
-        var/list/category_map = list()
-        var/material_id = changeling_material_id_from_type(type, category_id)
-        var/display_name = changeling_harvest_display_name(src) || "unknown host"
-        var/material_name = "[display_name] Tissue Sample"
-        var/material_desc = "Biomaterial harvested from [display_name]."
-        category_map[material_id] = list(
-                "id" = material_id,
-                "count" = 1,
-                "name" = material_name,
-                "description" = material_desc,
-        )
-        return list("biomaterials" = list(category_id = category_map))
+	QDEL_LIST(surgeries)
+	QDEL_LIST(quirks)
+	return ..()
 
 /mob/living/onZImpact(turf/impacted_turf, levels, impact_flags = NONE)
 	if(!isgroundlessturf(impacted_turf))
