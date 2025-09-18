@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -48,12 +48,56 @@ type SynergyTip = {
   abilities: string[];
 };
 
+type BuildSlot = {
+  slot: string;
+  index: number;
+  path: typePath | null;
+  name?: string;
+  desc?: string;
+  helptext?: string;
+  dna_cost?: number;
+  chemical_cost?: number;
+};
+
+type ActiveBuildState = {
+  key: BuildSlot | null;
+  secondary: BuildSlot[];
+  secondary_capacity: number;
+};
+
+type BuildBlueprint = {
+  key?: typePath | null;
+  secondary?: typePath[];
+};
+
+type BiomaterialItem = {
+  id: string;
+  name: string;
+  count: number;
+  description?: string;
+  quality?: string | number;
+};
+
+type BiomaterialCategory = {
+  id: string;
+  name: string;
+  items: BiomaterialItem[];
+};
+
+type SignatureCell = {
+  id: string;
+  name: string;
+  count: number;
+  description?: string;
+};
+
 type GeneticPreset = {
   id: number;
   name: string;
-  abilities: typePath[];
-  ability_names: string[];
+  primary: BuildSlot | null;
+  secondaries: BuildSlot[];
   ability_count: number;
+  blueprint?: BuildBlueprint;
 };
 
 type GeneticMatrixData = {
@@ -73,6 +117,9 @@ type GeneticMatrixData = {
   incompatibilities: string[];
   presets: GeneticPreset[];
   preset_limit: number;
+  active_build: ActiveBuildState;
+  biomaterials: BiomaterialCategory[];
+  signature_cells: SignatureCell[];
 };
 
 export const GeneticMatrix = () => {
@@ -105,6 +152,7 @@ export const GeneticMatrix = () => {
                   filteredAbilities={filteredAbilities}
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
+                  activeBuild={data.active_build}
                 />
               </Stack.Item>
               <Stack.Item grow>
@@ -119,13 +167,22 @@ export const GeneticMatrix = () => {
                 <ResourceSection />
               </Stack.Item>
               <Stack.Item>
+                <ActiveBuildSection />
+              </Stack.Item>
+              <Stack.Item grow>
+                <PresetSection />
+              </Stack.Item>
+              <Stack.Item>
+                <BiomaterialSection />
+              </Stack.Item>
+              <Stack.Item>
+                <SignatureSection />
+              </Stack.Item>
+              <Stack.Item>
                 <SynergySection />
               </Stack.Item>
               <Stack.Item>
                 <WarningsSection />
-              </Stack.Item>
-              <Stack.Item grow>
-                <PresetSection />
               </Stack.Item>
             </Stack>
           </Stack.Item>
@@ -139,9 +196,10 @@ const AbilityCatalogSection = (props: {
   filteredAbilities: Ability[];
   searchQuery: string;
   setSearchQuery: (value: string) => void;
+  activeBuild: ActiveBuildState;
 }) => {
   const { act, data } = useBackend<GeneticMatrixData>();
-  const { filteredAbilities, searchQuery, setSearchQuery } = props;
+  const { filteredAbilities, searchQuery, setSearchQuery, activeBuild } = props;
   const {
     owned_abilities,
     genetic_points_count,
@@ -189,6 +247,7 @@ const AbilityCatalogSection = (props: {
             const hasAbsorbs = ability.absorbs_required <= absorb_count;
             const hasDna = ability.dna_required <= dna_count;
             const canEvolve = hasPoints && hasAbsorbs && hasDna && !owned;
+            const keyAvailable = !activeBuild?.key;
 
             return (
               <Stack.Item
@@ -231,10 +290,33 @@ const AbilityCatalogSection = (props: {
                         onClick={() =>
                           act('evolve', {
                             path: ability.path,
+                            slot: 'secondary',
                           })
                         }
                       />
                     </Stack.Item>
+                    {!owned && (
+                      <Stack.Item>
+                        <Button
+                          icon="star"
+                          content="Primary"
+                          disabled={!canEvolve || !keyAvailable}
+                          tooltip={
+                            !canEvolve
+                              ? 'Meet the evolution requirements first.'
+                              : keyAvailable
+                              ? 'Bind this ability as our key adaptation.'
+                              : 'Primary slot already occupied.'
+                          }
+                          onClick={() =>
+                            act('evolve', {
+                              path: ability.path,
+                              slot: 'key',
+                            })
+                          }
+                        />
+                      </Stack.Item>
+                    )}
                   </Stack>
                   <Box>{ability.desc}</Box>
                   {!!ability.helptext && (
@@ -399,6 +481,213 @@ const ResourceSection = () => {
   );
 };
 
+const ActiveBuildSection = () => {
+  const { act, data } = useBackend<GeneticMatrixData>();
+  const { active_build } = data;
+  const keySlot = active_build?.key;
+  const secondary = active_build?.secondary || [];
+  const capacity = active_build?.secondary_capacity || 0;
+
+  return (
+    <Section title="Active Genome" scrollable>
+      <Stack vertical spacing={1}>
+        <Stack.Item>
+          <BuildSlotCard
+            title="Primary Adaptation"
+            slot={keySlot}
+            actions={
+              keySlot?.path ? (
+                <Button.Confirm
+                  icon="trash"
+                  color="bad"
+                  onClick={() => act('retire_power', { path: keySlot.path })}
+                >
+                  Retire
+                </Button.Confirm>
+              ) : undefined
+            }
+          />
+        </Stack.Item>
+        <Stack.Item>
+          <Box bold>
+            Secondary Sequences ({secondary.length}/{capacity})
+          </Box>
+          {!secondary.length ? (
+            <NoticeBox>Manifest secondary evolutions to fill this matrix.</NoticeBox>
+          ) : (
+            <Stack vertical spacing={1}>
+              {secondary.map((slot) => (
+                <Stack.Item key={`${slot.path}-${slot.index}`}>
+                  <BuildSlotCard
+                    title={`Secondary #${slot.index}`}
+                    slot={slot}
+                    actions={
+                      <Stack align="center" spacing={0.5}>
+                        <Stack.Item>
+                          <Button
+                            icon="star"
+                            disabled={!slot.path}
+                            tooltip="Promote to primary slot."
+                            onClick={() =>
+                              act('set_primary', {
+                                path: slot.path,
+                              })
+                            }
+                          >
+                            Promote
+                          </Button>
+                        </Stack.Item>
+                        <Stack.Item>
+                          <Button.Confirm
+                            icon="trash"
+                            color="bad"
+                            disabled={!slot.path}
+                            onClick={() =>
+                              act('retire_power', {
+                                path: slot.path,
+                              })
+                            }
+                          />
+                        </Stack.Item>
+                      </Stack>
+                    }
+                  />
+                </Stack.Item>
+              ))}
+            </Stack>
+          )}
+        </Stack.Item>
+      </Stack>
+    </Section>
+  );
+};
+
+const BuildSlotCard = (props: {
+  title: string;
+  slot: BuildSlot | null;
+  actions?: ReactNode;
+}) => {
+  const { title, slot, actions } = props;
+
+  return (
+    <Stack vertical spacing={0.5} className="candystripe">
+      <Stack align="center">
+        <Stack.Item grow>
+          <Box bold>{title}</Box>
+        </Stack.Item>
+        {actions && <Stack.Item>{actions}</Stack.Item>}
+      </Stack>
+      {slot?.name ? (
+        <Box>{slot.name}</Box>
+      ) : (
+        <Box italic color="label">
+          No adaptation slotted.
+        </Box>
+      )}
+      {slot?.desc && <Box>{slot.desc}</Box>}
+      {slot?.helptext && <Box color="good">{slot.helptext}</Box>}
+      {slot && (slot.dna_cost || slot.chemical_cost) ? (
+        <LabeledList>
+          {slot.dna_cost ? (
+            <LabeledList.Item label="DNA Cost">
+              {slot.dna_cost}
+            </LabeledList.Item>
+          ) : null}
+          {slot.chemical_cost ? (
+            <LabeledList.Item label="Chemical Cost">
+              {slot.chemical_cost}
+            </LabeledList.Item>
+          ) : null}
+        </LabeledList>
+      ) : null}
+    </Stack>
+  );
+};
+
+const BiomaterialSection = () => {
+  const { data } = useBackend<GeneticMatrixData>();
+  const { biomaterials } = data;
+
+  return (
+    <Section title="Biomaterial Stores" scrollable>
+      {!biomaterials.length ? (
+        <NoticeBox>No biomaterial harvested.</NoticeBox>
+      ) : (
+        <Stack vertical spacing={1}>
+          {biomaterials.map((category) => (
+            <Stack.Item key={category.id} className="candystripe">
+              <Stack vertical spacing={0.5}>
+                <Box bold>{category.name}</Box>
+                {!category.items.length ? (
+                  <Box italic color="label">
+                    No samples catalogued.
+                  </Box>
+                ) : (
+                  <Stack vertical spacing={0.5}>
+                    {category.items.map((item) => (
+                      <Stack.Item key={`${category.id}-${item.id}`}>
+                        <Stack align="baseline" justify="space-between">
+                          <Stack.Item grow>
+                            <Box>{item.name}</Box>
+                          </Stack.Item>
+                          <Stack.Item>
+                            <Box bold>{item.count}</Box>
+                          </Stack.Item>
+                        </Stack>
+                        {item.description && (
+                          <Box color="label">{item.description}</Box>
+                        )}
+                        {item.quality && (
+                          <Box color="good">
+                            Quality: {String(item.quality)}
+                          </Box>
+                        )}
+                      </Stack.Item>
+                    ))}
+                  </Stack>
+                )}
+              </Stack>
+            </Stack.Item>
+          ))}
+        </Stack>
+      )}
+    </Section>
+  );
+};
+
+const SignatureSection = () => {
+  const { data } = useBackend<GeneticMatrixData>();
+  const { signature_cells } = data;
+
+  return (
+    <Section title="Signature Cells" scrollable>
+      {!signature_cells.length ? (
+        <NoticeBox>No harvested signatures stored.</NoticeBox>
+      ) : (
+        <Stack vertical spacing={1}>
+          {signature_cells.map((cell) => (
+            <Stack.Item key={cell.id} className="candystripe">
+              <Stack vertical spacing={0.5}>
+                <Stack align="baseline" justify="space-between">
+                  <Stack.Item grow>
+                    <Box bold>{cell.name}</Box>
+                  </Stack.Item>
+                  <Stack.Item>
+                    <Box bold>{cell.count}</Box>
+                  </Stack.Item>
+                </Stack>
+                {cell.description && (
+                  <Box color="label">{cell.description}</Box>
+                )}
+              </Stack>
+            </Stack.Item>
+          ))}
+        </Stack>
+      )}
+    </Section>
+  );
+};
+
 const SynergySection = () => {
   const { data } = useBackend<GeneticMatrixData>();
   const { synergy_tips } = data;
@@ -524,6 +813,7 @@ const PresetRow = (props: { preset: GeneticPreset }) => {
   const { preset } = props;
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(preset.name);
+  const { primary, secondaries } = preset;
 
   useEffect(() => {
     setDraftName(preset.name);
@@ -536,6 +826,21 @@ const PresetRow = (props: { preset: GeneticPreset }) => {
     });
     setEditing(false);
   };
+
+  const blueprintSummary = useMemo(() => {
+    const lines: string[] = [];
+    if (primary) {
+      lines.push(`Primary: ${primary.name ?? 'Uncatalogued sequence'}`);
+    }
+    if (secondaries?.length) {
+      for (const slot of secondaries) {
+        lines.push(
+          `Secondary #${slot.index}: ${slot.name ?? 'Uncatalogued sequence'}`,
+        );
+      }
+    }
+    return lines;
+  }, [primary, secondaries]);
 
   return (
     <Stack vertical spacing={0.5}>
@@ -588,11 +893,19 @@ const PresetRow = (props: { preset: GeneticPreset }) => {
           />
         </Stack.Item>
       </Stack>
-      <Box italic color="label">
-        {preset.ability_count > 0
-          ? preset.ability_names.join(', ')
-          : 'No sequences imprinted.'}
-      </Box>
+      {blueprintSummary.length ? (
+        <Stack vertical spacing={0.25}>
+          {blueprintSummary.map((line, index) => (
+            <Box key={`${preset.id}-summary-${index}`} color="label">
+              {line}
+            </Box>
+          ))}
+        </Stack>
+      ) : (
+        <Box italic color="label">
+          No sequences imprinted.
+        </Box>
+      )}
     </Stack>
   );
 };

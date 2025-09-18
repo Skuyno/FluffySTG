@@ -46,13 +46,15 @@
 	data["chem_storage"] = changeling.total_chem_storage
 	data["chem_recharge_rate"] = changeling.chem_recharge_rate
 	data["chem_recharge_slowdown"] = changeling.chem_recharge_slowdown
-
 	data["active_effects"] = build_active_effects()
 	var/list/catalog = get_ability_catalog()
 	data["synergy_tips"] = build_synergy_tips(catalog)
 	data["incompatibilities"] = collect_incompatibilities(catalog)
 	data["presets"] = build_preset_payload()
 	data["preset_limit"] = changeling.max_genetic_presets
+	data["active_build"] = changeling.export_active_build_state()
+	data["biomaterials"] = changeling.build_biomaterial_payload()
+	data["signature_cells"] = changeling.build_signature_payload()
 
 	return data
 
@@ -260,21 +262,24 @@
 		var/list/entry = list()
 		entry["id"] = index
 		entry["name"] = preset["name"]
-
-		var/list/preset_abilities = list()
-		var/list/preset_names = list()
-		if(islist(preset["abilities"]))
-			for(var/path as anything in preset["abilities"])
-			preset_abilities += path
-			if(ispath(path))
-			preset_names += initial(path.name)
-			else
-			preset_names += path
-
-		entry["abilities"] = preset_abilities
-		entry["ability_names"] = preset_names
-		entry["ability_count"] = length(preset_names)
-
+		var/list/blueprint = changeling.sanitize_build_blueprint(preset[CHANGELING_BUILD_BLUEPRINT])
+		var/datum/action/changeling/key_path = blueprint[CHANGELING_KEY_BUILD_SLOT]
+		var/list/secondary_paths = blueprint[CHANGELING_SECONDARY_BUILD_SLOTS]
+		if(ispath(key_path, /datum/action/changeling))
+			entry["primary"] = changeling.build_slot_payload(key_path, changeling.purchased_powers[key_path], CHANGELING_KEY_BUILD_SLOT, 1)
+		else
+			entry["primary"] = null
+		var/list/secondary_payload = list()
+		var/slot_index = 1
+		if(islist(secondary_paths))
+			for(var/path in secondary_paths)
+				if(!ispath(path, /datum/action/changeling))
+					continue
+				secondary_payload += list(changeling.build_slot_payload(path, changeling.purchased_powers[path], CHANGELING_SECONDARY_BUILD_SLOTS, slot_index))
+				slot_index++
+		entry["secondaries"] = secondary_payload
+		entry["ability_count"] = slot_index - 1 + (entry["primary"] ? 1 : 0)
+		entry[CHANGELING_BUILD_BLUEPRINT] = blueprint
 		output += list(entry)
 		index++
 
@@ -283,7 +288,7 @@
 /datum/genetic_matrix/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	. = ..()
 	if(.)
-	return
+		return
 
 	switch(action)
 	if("readapt")
@@ -291,13 +296,29 @@
 			changeling.readapt()
 
 	if("evolve")
-		changeling.purchase_power(text2path(params["path"]))
+		var/datum/action/changeling/power_path = text2path(params["path"])
+		if(power_path)
+			var/slot_choice = lowertext(params["slot"])
+			var/slot_identifier = CHANGELING_SECONDARY_BUILD_SLOTS
+			if(slot_choice == CHANGELING_KEY_BUILD_SLOT || slot_choice == "primary")
+				slot_identifier = CHANGELING_KEY_BUILD_SLOT
+			changeling.purchase_power(power_path, slot_identifier)
+
+	if("set_primary")
+		var/datum/action/changeling/promote_path = text2path(params["path"])
+		if(promote_path)
+			changeling.set_active_key_power(promote_path)
+
+	if("retire_power")
+		var/datum/action/changeling/retire_path = text2path(params["path"])
+		if(retire_path)
+			changeling.remove_power(retire_path)
 
 	if("save_preset")
 		var/preset_name = sanitize_text(params["name"], "")
 		preset_name = htmlrendertext(preset_name)
 		if(!length(preset_name))
-		preset_name = "Matrix Preset [length(changeling.genetic_presets) + 1]"
+			preset_name = "Matrix Preset [length(changeling.genetic_presets) + 1]"
 		changeling.save_genetic_preset(preset_name)
 
 	if("apply_preset")

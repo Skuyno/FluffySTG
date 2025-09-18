@@ -1,6 +1,15 @@
 /// Helper to format the text that gets thrown onto the chem hud element.
 #define FORMAT_CHEM_CHARGES_TEXT(charges) MAPTEXT("<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#dd66dd'>[round(charges)]</font></div>")
 
+/// Identifier used for the active key slot within a changeling's build.
+#define CHANGELING_KEY_BUILD_SLOT "key"
+/// Identifier used for the set of secondary slots within a changeling's build.
+#define CHANGELING_SECONDARY_BUILD_SLOTS "secondary"
+/// Maximum number of secondary slots a changeling can maintain concurrently.
+#define CHANGELING_SECONDARY_SLOT_LIMIT 7
+/// Blueprint payload key used when ingesting crafting data.
+#define CHANGELING_BUILD_BLUEPRINT "build"
+
 /datum/antagonist/changeling
 	name = "\improper Changeling"
 	roundend_category = "changelings"
@@ -68,10 +77,47 @@
 	var/datum/genetic_matrix/genetic_matrix
 	/// A reference to our genetic matrix action (which opens the UI for the datum).
 	var/datum/action/genetic_matrix/genetic_matrix_action
-	/// Stored loadouts of purchased powers for quick swapping.
-	var/list/genetic_presets = list()
-	/// Maximum amount of presets we are willing to remember.
-	var/static/max_genetic_presets = 6
+        /// Stored loadouts of purchased powers for quick swapping.
+        var/list/genetic_presets = list()
+        /// Maximum amount of presets we are willing to remember.
+        var/static/max_genetic_presets = 6
+        /// Predefined genetic presets that every changeling begins with.
+        var/static/list/default_genetic_build_presets = list(
+                list(
+                        "name" = "Rapid Responder",
+                        CHANGELING_BUILD_BLUEPRINT = list(
+                                CHANGELING_KEY_BUILD_SLOT = /datum/action/changeling/adrenaline,
+                                CHANGELING_SECONDARY_BUILD_SLOTS = list(
+                                        /datum/action/changeling/fleshmend,
+                                        /datum/action/changeling/augmented_eyesight,
+                                        /datum/action/changeling/sting/extract_dna,
+                                ),
+                        ),
+                ),
+                list(
+                        "name" = "Silent Infiltrator",
+                        CHANGELING_BUILD_BLUEPRINT = list(
+                                CHANGELING_KEY_BUILD_SLOT = /datum/action/changeling/digitalcamo,
+                                CHANGELING_SECONDARY_BUILD_SLOTS = list(
+                                        /datum/action/changeling/mimicvoice,
+                                        /datum/action/changeling/adaptive_wardrobe,
+                                        /datum/action/changeling/sting/mute,
+                                ),
+                        ),
+                ),
+        )
+        /// Default biomaterial categories tracked within the changeling genetic matrix.
+        var/static/list/default_biomaterial_categories = list(
+                list("id" = "predatory", "name" = "Predatory Biomass"),
+                list("id" = "adaptive", "name" = "Adaptive Tissue"),
+                list("id" = "resilience", "name" = "Resilience Samples"),
+        )
+        /// Categorised biomaterial inventory seeded for the changeling.
+        var/list/biomaterial_inventory
+        /// Signature cells archived from unique targets.
+        var/list/signature_cells
+        /// Snapshot of the currently slotted abilities (key + secondary slots).
+        var/list/active_build_slots
 
 	/// UI displaying how many chems we have
 	var/atom/movable/screen/ling/chems/lingchemdisplay
@@ -117,29 +163,34 @@
 	var/mob/living/carbon/human/clothing_disguise_target
 
 /datum/antagonist/changeling/New()
-	. = ..()
-	hive_name = hive_name()
-	for(var/datum/antagonist/changeling/other_ling in GLOB.antagonists)
-		if(!other_ling.owner || other_ling.owner == owner)
-			continue
-		competitive_objectives = TRUE
-		break
+        . = ..()
+        initialize_changeling_inventories()
+        hive_name = hive_name()
+        for(var/datum/antagonist/changeling/other_ling in GLOB.antagonists)
+                if(!other_ling.owner || other_ling.owner == owner)
+                        continue
+                competitive_objectives = TRUE
+                break
 
 
 
 /datum/antagonist/changeling/Destroy()
-	QDEL_NULL(genetic_matrix_action)
-	QDEL_NULL(genetic_matrix)
-	genetic_presets.Cut()
-	current_profile = null
-	clear_clothing_disguise()
-	return ..()
+        QDEL_NULL(genetic_matrix_action)
+        QDEL_NULL(genetic_matrix)
+        genetic_presets.Cut()
+        biomaterial_inventory?.Cut()
+        signature_cells?.Cut()
+        active_build_slots?.Cut()
+        current_profile = null
+        clear_clothing_disguise()
+        return ..()
 
 /datum/antagonist/changeling/on_gain()
-	generate_name()
-	create_genetic_matrix()
-	create_innate_actions()
-	create_initial_profile()
+        generate_name()
+        ensure_default_presets_loaded()
+        create_genetic_matrix()
+        create_innate_actions()
+        create_initial_profile()
 	if(give_objectives)
 		forge_objectives()
 	owner.current.get_language_holder().omnitongue = TRUE
@@ -275,28 +326,456 @@
  * Instantiate the genetic matrix for the changeling.
  */
 /datum/antagonist/changeling/proc/create_genetic_matrix()
-	genetic_matrix = new(src)
-	genetic_matrix_action = new(genetic_matrix)
-	genetic_matrix_action.Grant(owner.current)
+        genetic_matrix = new(src)
+        genetic_matrix_action = new(genetic_matrix)
+        genetic_matrix_action.Grant(owner.current)
+        synchronize_build_state()
+
+/datum/antagonist/changeling/proc/initialize_changeling_inventories()
+        biomaterial_inventory = list()
+        if(LAZYLEN(default_biomaterial_categories))
+                for(var/list/category as anything in default_biomaterial_categories)
+                        var/category_id = category["id"]
+                        var/category_name = category["name"]
+                        biomaterial_inventory[category_id] = list(
+                                "id" = category_id,
+                                "name" = category_name,
+                                "items" = list(),
+                        )
+        signature_cells = list()
+        reset_active_build_slots()
+
+/datum/antagonist/changeling/proc/reset_active_build_slots()
+        active_build_slots = list(
+                CHANGELING_KEY_BUILD_SLOT = null,
+                CHANGELING_SECONDARY_BUILD_SLOTS = list(),
+        )
+
+/datum/antagonist/changeling/proc/get_secondary_build_slots()
+        if(!islist(active_build_slots))
+                reset_active_build_slots()
+        var/list/secondary = active_build_slots[CHANGELING_SECONDARY_BUILD_SLOTS]
+        if(!islist(secondary))
+                secondary = list()
+                active_build_slots[CHANGELING_SECONDARY_BUILD_SLOTS] = secondary
+        return secondary
+
+/datum/antagonist/changeling/proc/ensure_default_presets_loaded()
+        if(LAZYLEN(genetic_presets))
+                return
+        for(var/list/preset as anything in default_genetic_build_presets)
+                var/list/build_blueprint = sanitize_build_blueprint(preset[CHANGELING_BUILD_BLUEPRINT])
+                genetic_presets += list(list(
+                        "name" = preset["name"],
+                        CHANGELING_BUILD_BLUEPRINT = build_blueprint,
+                ))
+
+/datum/antagonist/changeling/proc/sanitize_build_blueprint(list/raw_build)
+        var/list/build = list()
+        var/key_path = null
+        if(islist(raw_build))
+                if(ispath(raw_build[CHANGELING_KEY_BUILD_SLOT], /datum/action/changeling))
+                        key_path = raw_build[CHANGELING_KEY_BUILD_SLOT]
+                var/list/secondary_paths = list()
+                if(islist(raw_build[CHANGELING_SECONDARY_BUILD_SLOTS]))
+                        for(var/path in raw_build[CHANGELING_SECONDARY_BUILD_SLOTS])
+                                if(!ispath(path, /datum/action/changeling))
+                                        continue
+                                if(path == key_path || (path in secondary_paths))
+                                        continue
+                                secondary_paths += path
+                                if(secondary_paths.len >= CHANGELING_SECONDARY_SLOT_LIMIT)
+                                        break
+                build[CHANGELING_SECONDARY_BUILD_SLOTS] = secondary_paths
+        else
+                build[CHANGELING_SECONDARY_BUILD_SLOTS] = list()
+        build[CHANGELING_KEY_BUILD_SLOT] = key_path
+        return build
+
+/datum/antagonist/changeling/proc/synchronize_build_state()
+	if(!islist(active_build_slots))
+		reset_active_build_slots()
+	var/datum/action/changeling/key_path = active_build_slots[CHANGELING_KEY_BUILD_SLOT]
+	if(!ispath(key_path, /datum/action/changeling) || !purchased_powers[key_path])
+		key_path = null
+	var/list/valid_secondary = list()
+	for(var/path in get_secondary_build_slots())
+		if(!ispath(path, /datum/action/changeling))
+			continue
+		if(!purchased_powers[path])
+			continue
+		if(path == key_path)
+			continue
+		if(valid_secondary.len >= CHANGELING_SECONDARY_SLOT_LIMIT)
+			break
+		valid_secondary += path
+	active_build_slots[CHANGELING_KEY_BUILD_SLOT] = key_path
+	active_build_slots[CHANGELING_SECONDARY_BUILD_SLOTS] = valid_secondary
+
+/datum/antagonist/changeling/proc/get_biomaterial_category(category_id)
+        if(!biomaterial_inventory)
+                biomaterial_inventory = list()
+        var/list/category_entry = biomaterial_inventory[category_id]
+        if(!islist(category_entry))
+                var/display_name
+                for(var/list/default_entry as anything in default_biomaterial_categories)
+                        if(lowertext(text(default_entry["id"])) == lowertext(text(category_id)))
+                                display_name = default_entry["name"]
+                                break
+                category_entry = list(
+                        "id" = category_id,
+                        "name" = display_name || capitalize(replacetext(text(category_id), "_", " ")),
+                        "items" = list(),
+                )
+                biomaterial_inventory[category_id] = category_entry
+        return category_entry
+
+/datum/antagonist/changeling/proc/adjust_biomaterial_entry(category_id, material_id, amount = 1, list/metadata)
+        if(isnull(category_id) || isnull(material_id) || !isnum(amount))
+                return 0
+        var/list/category_entry = get_biomaterial_category(category_id)
+        var/list/items = category_entry["items"]
+        if(!islist(items))
+                items = list()
+                category_entry["items"] = items
+        var/list/item_entry = items[material_id]
+        if(!islist(item_entry))
+                item_entry = list(
+                        "id" = material_id,
+                        "count" = 0,
+                )
+        if(islist(metadata))
+                for(var/key in metadata)
+                        if(isnull(metadata[key]))
+                                continue
+                        item_entry[key] = metadata[key]
+        item_entry["count"] = (item_entry["count"] || 0) + amount
+        if(item_entry["count"] <= 0)
+                items -= material_id
+                return 0
+        items[material_id] = item_entry
+        return item_entry["count"]
+
+/datum/antagonist/changeling/proc/adjust_signature_cell(cell_id, amount = 1, list/metadata)
+        if(isnull(cell_id) || !isnum(amount))
+                return 0
+        if(!islist(signature_cells))
+                signature_cells = list()
+        var/list/cell_entry = signature_cells[cell_id]
+        if(!islist(cell_entry))
+                cell_entry = list(
+                        "id" = cell_id,
+                        "count" = 0,
+                )
+        if(islist(metadata))
+                for(var/key in metadata)
+                        if(isnull(metadata[key]))
+                                continue
+                        cell_entry[key] = metadata[key]
+        cell_entry["count"] = (cell_entry["count"] || 0) + amount
+        if(cell_entry["count"] <= 0)
+                signature_cells -= cell_id
+                return 0
+        signature_cells[cell_id] = cell_entry
+        return cell_entry["count"]
+
+/datum/antagonist/changeling/proc/export_build_blueprint()
+        if(!islist(active_build_slots))
+                reset_active_build_slots()
+        var/list/blueprint = list()
+        if(ispath(active_build_slots[CHANGELING_KEY_BUILD_SLOT], /datum/action/changeling))
+                blueprint[CHANGELING_KEY_BUILD_SLOT] = active_build_slots[CHANGELING_KEY_BUILD_SLOT]
+        else
+                blueprint[CHANGELING_KEY_BUILD_SLOT] = null
+        var/list/secondary_paths = list()
+        for(var/path in get_secondary_build_slots())
+                if(ispath(path, /datum/action/changeling))
+                        secondary_paths += path
+        blueprint[CHANGELING_SECONDARY_BUILD_SLOTS] = secondary_paths
+        return blueprint
+
+/datum/antagonist/changeling/proc/build_slot_payload(power_path, datum/action/changeling/power, slot_id, slot_index)
+        var/list/payload = list(
+                "slot" = slot_id,
+                "index" = slot_index,
+                "path" = power_path,
+        )
+        if(power)
+                payload["name"] = power.name
+                payload["desc"] = power.desc
+                payload["helptext"] = power.helptext
+                payload["dna_cost"] = power.dna_cost
+                payload["chemical_cost"] = power.chemical_cost
+        else if(ispath(power_path, /datum/action/changeling))
+                payload["name"] = initial(power_path.name)
+                payload["desc"] = initial(power_path.desc)
+                payload["helptext"] = initial(power_path.helptext)
+                payload["dna_cost"] = initial(power_path.dna_cost)
+                payload["chemical_cost"] = initial(power_path.chemical_cost)
+        return payload
+
+/datum/antagonist/changeling/proc/export_active_build_state()
+        var/list/state = list()
+        var/datum/action/changeling/key_path = active_build_slots?[CHANGELING_KEY_BUILD_SLOT]
+        if(ispath(key_path, /datum/action/changeling) && purchased_powers[key_path])
+                state[CHANGELING_KEY_BUILD_SLOT] = build_slot_payload(key_path, purchased_powers[key_path], CHANGELING_KEY_BUILD_SLOT, 1)
+        else
+                state[CHANGELING_KEY_BUILD_SLOT] = null
+        var/list/secondary_payload = list()
+        var/index = 1
+        for(var/path in get_secondary_build_slots())
+                if(!ispath(path, /datum/action/changeling))
+                        continue
+                var/datum/action/changeling/ability = purchased_powers[path]
+                secondary_payload += list(build_slot_payload(path, ability, CHANGELING_SECONDARY_BUILD_SLOTS, index))
+                index++
+        state[CHANGELING_SECONDARY_BUILD_SLOTS] = secondary_payload
+        state["secondary_capacity"] = CHANGELING_SECONDARY_SLOT_LIMIT
+        return state
+
+/datum/antagonist/changeling/proc/build_biomaterial_payload()
+        var/list/output = list()
+        if(!islist(biomaterial_inventory))
+                return output
+        for(var/category_id in biomaterial_inventory)
+                var/list/category_entry = biomaterial_inventory[category_id]
+                if(!islist(category_entry))
+                        continue
+                var/list/items_payload = list()
+                var/list/items = category_entry["items"]
+                if(islist(items))
+                        for(var/material_id in items)
+                                var/list/item_entry = items[material_id]
+                                if(!islist(item_entry))
+                                        continue
+                                var/list/item_payload = list(
+                                        "id" = item_entry["id"] || material_id,
+                                        "name" = item_entry["name"] || capitalize(replacetext(text(material_id), "_", " ")),
+                                        "count" = max(0, item_entry["count"] || 0),
+                                )
+                                if(item_entry["description"])
+                                        item_payload["description"] = item_entry["description"]
+                                if(item_entry["quality"])
+                                        item_payload["quality"] = item_entry["quality"]
+                                items_payload += list(item_payload)
+                var/list/category_payload = list(
+                        "id" = category_entry["id"] || category_id,
+                        "name" = category_entry["name"] || capitalize(replacetext(text(category_id), "_", " ")),
+                        "items" = items_payload,
+                )
+                output += list(category_payload)
+        return output
+
+/datum/antagonist/changeling/proc/build_signature_payload()
+        var/list/output = list()
+        if(!islist(signature_cells))
+                return output
+        for(var/cell_id in signature_cells)
+                var/list/cell_entry = signature_cells[cell_id]
+                if(!islist(cell_entry))
+                        continue
+                var/list/entry_payload = list(
+                        "id" = cell_entry["id"] || cell_id,
+                        "name" = cell_entry["name"] || capitalize(replacetext(text(cell_id), "_", " ")),
+                        "count" = max(0, cell_entry["count"] || 0),
+                )
+                if(cell_entry["description"])
+                        entry_payload["description"] = cell_entry["description"]
+                output += list(entry_payload)
+        return output
+
+/datum/antagonist/changeling/proc/register_crafting_outcome(list/outcome_data, apply_immediately = FALSE)
+        if(!islist(outcome_data))
+                return FALSE
+        if(islist(outcome_data["biomaterials"]))
+                var/list/material_map = outcome_data["biomaterials"]
+                for(var/category_id in material_map)
+                        var/value = material_map[category_id]
+                        if(islist(value))
+                                for(var/material_id in value)
+                                        var/entry = value[material_id]
+                                        if(isnum(entry))
+                                                adjust_biomaterial_entry(category_id, material_id, entry)
+                                        else if(islist(entry))
+                                                var/amount = entry["count"] || entry["amount"] || 1
+                                                adjust_biomaterial_entry(category_id, material_id, amount, entry)
+                        else if(isnum(value))
+                                adjust_biomaterial_entry(category_id, category_id, value)
+        if(islist(outcome_data["signature_cells"]))
+                var/list/signature_map = outcome_data["signature_cells"]
+                for(var/cell_id in signature_map)
+                        var/sig_value = signature_map[cell_id]
+                        if(isnum(sig_value))
+                                adjust_signature_cell(cell_id, sig_value)
+                        else if(islist(sig_value))
+                                var/sig_amount = sig_value["count"] || sig_value["amount"] || 1
+                                adjust_signature_cell(cell_id, sig_amount, sig_value)
+        var/apply_flag = apply_immediately || outcome_data["apply_build"]
+        if(apply_flag && islist(outcome_data[CHANGELING_BUILD_BLUEPRINT]))
+                apply_build(outcome_data[CHANGELING_BUILD_BLUEPRINT])
+        return TRUE
+
+/datum/antagonist/changeling/proc/register_power_slot(power_path, slot_identifier, force = FALSE)
+        if(!ispath(power_path, /datum/action/changeling))
+                return FALSE
+        if(!islist(active_build_slots))
+                reset_active_build_slots()
+        remove_slot_assignment(power_path)
+        if(slot_identifier == CHANGELING_KEY_BUILD_SLOT)
+                var/current_key = active_build_slots[CHANGELING_KEY_BUILD_SLOT]
+                if(current_key && current_key != power_path && !force)
+                        return FALSE
+                active_build_slots[CHANGELING_KEY_BUILD_SLOT] = power_path
+                return TRUE
+        var/list/secondary_slots = get_secondary_build_slots()
+        if(secondary_slots.len >= CHANGELING_SECONDARY_SLOT_LIMIT && !force)
+                return FALSE
+        if(force && secondary_slots.len >= CHANGELING_SECONDARY_SLOT_LIMIT)
+                secondary_slots.Cut(CHANGELING_SECONDARY_SLOT_LIMIT, CHANGELING_SECONDARY_SLOT_LIMIT + 1)
+        secondary_slots += power_path
+        return TRUE
+
+/datum/antagonist/changeling/proc/remove_slot_assignment(power_path)
+        if(!islist(active_build_slots) || !power_path)
+                return
+        if(active_build_slots[CHANGELING_KEY_BUILD_SLOT] == power_path)
+                active_build_slots[CHANGELING_KEY_BUILD_SLOT] = null
+        var/list/secondary_slots = get_secondary_build_slots()
+        for(var/index = secondary_slots.len, index > 0, index--)
+                if(secondary_slots[index] == power_path)
+                        secondary_slots.Cut(index, index + 1)
+
+/datum/antagonist/changeling/proc/remove_power(power_path, refund_points = TRUE)
+	var/datum/action/changeling/power = purchased_powers[power_path]
+	if(!power)
+		return FALSE
+	remove_slot_assignment(power_path)
+	if(owner?.current)
+		power.Remove(owner.current)
+	qdel(power)
+	purchased_powers -= power_path
+	if(refund_points)
+		var/refund = max(0, initial(power_path.dna_cost))
+		if(refund)
+			genetic_points = clamp(genetic_points + refund, 0, total_genetic_points)
+	synchronize_build_state()
+	return TRUE
+
+/datum/antagonist/changeling/proc/get_power_display_name(power_path)
+	if(purchased_powers[power_path])
+		return purchased_powers[power_path].name
+	if(ispath(power_path, /datum/action/changeling))
+		return initial(power_path.name)
+	return "sequence"
+
+/datum/antagonist/changeling/proc/set_active_key_power(power_path)
+	if(!ispath(power_path, /datum/action/changeling))
+		return FALSE
+	var/datum/action/changeling/power = purchased_powers[power_path]
+	if(!power)
+		if(owner?.current)
+			to_chat(owner.current, span_warning("We must evolve that sequence before we can promote it."))
+		return FALSE
+	if(active_build_slots?[CHANGELING_KEY_BUILD_SLOT] == power_path)
+		if(owner?.current)
+			to_chat(owner.current, span_notice("[power.name] already anchors our primary matrix."))
+		synchronize_build_state()
+		return TRUE
+	var/previous_key = active_build_slots?[CHANGELING_KEY_BUILD_SLOT]
+	if(!register_power_slot(power_path, CHANGELING_KEY_BUILD_SLOT, TRUE))
+		if(owner?.current)
+			to_chat(owner.current, span_warning("We fail to bind [power.name] as our key adaptation."))
+		return FALSE
+	if(previous_key && previous_key != power_path && purchased_powers[previous_key])
+		var/list/secondary_slots = get_secondary_build_slots()
+		if(secondary_slots.len >= CHANGELING_SECONDARY_SLOT_LIMIT)
+			var/old_name = get_power_display_name(previous_key)
+			remove_power(previous_key)
+			if(owner?.current)
+				to_chat(owner.current, span_warning("We shed [old_name] to maintain stability in our matrix."))
+		else
+			register_power_slot(previous_key, CHANGELING_SECONDARY_BUILD_SLOTS)
+	synchronize_build_state()
+	if(owner?.current)
+		to_chat(owner.current, span_notice("We elevate [power.name] as our key adaptation."))
+	return TRUE
+
+/datum/antagonist/changeling/proc/apply_build(list/build_blueprint, replace_existing = TRUE)
+	if(!islist(build_blueprint))
+		return list("applied" = 0, "failed" = list())
+	var/list/clean_blueprint = sanitize_build_blueprint(build_blueprint)
+	var/datum/action/changeling/key_path = clean_blueprint[CHANGELING_KEY_BUILD_SLOT]
+	var/list/secondary_paths = clean_blueprint[CHANGELING_SECONDARY_BUILD_SLOTS]
+	var/list/desired_paths = list()
+	if(ispath(key_path, /datum/action/changeling))
+		desired_paths += key_path
+	for(var/path in secondary_paths)
+		if(path in desired_paths)
+			continue
+		desired_paths += path
+	if(replace_existing)
+		for(var/existing_path in assoc_to_keys(purchased_powers))
+			if(!(existing_path in desired_paths))
+				remove_power(existing_path)
+	var/applied = 0
+	var/list/failures = list()
+	if(ispath(key_path, /datum/action/changeling))
+		if(!purchased_powers[key_path])
+			if(purchase_power(key_path, CHANGELING_KEY_BUILD_SLOT, TRUE))
+				applied++
+			else
+				failures += initial(key_path.name)
+		else
+			register_power_slot(key_path, CHANGELING_KEY_BUILD_SLOT, TRUE)
+	else
+		active_build_slots[CHANGELING_KEY_BUILD_SLOT] = null
+	var/list/validated_secondaries = list()
+	for(var/path in secondary_paths)
+		if(path == key_path)
+			continue
+		if(!purchased_powers[path])
+			if(purchase_power(path, CHANGELING_SECONDARY_BUILD_SLOTS, TRUE))
+				applied++
+			else
+				failures += initial(path.name)
+				continue
+		validated_secondaries += path
+	reset_active_build_slots()
+	if(ispath(key_path, /datum/action/changeling) && purchased_powers[key_path])
+		active_build_slots[CHANGELING_KEY_BUILD_SLOT] = key_path
+	var/list/final_secondaries = list()
+	for(var/path in validated_secondaries)
+		if(path == active_build_slots[CHANGELING_KEY_BUILD_SLOT])
+			continue
+		if(!purchased_powers[path])
+			continue
+		if(final_secondaries.len >= CHANGELING_SECONDARY_SLOT_LIMIT)
+			break
+		final_secondaries += path
+	active_build_slots[CHANGELING_SECONDARY_BUILD_SLOTS] = final_secondaries
+	synchronize_build_state()
+	return list("applied" = applied, "failed" = failures, CHANGELING_BUILD_BLUEPRINT = clean_blueprint)
 
 /datum/antagonist/changeling/proc/save_genetic_preset(preset_name)
 	if(!owner?.current)
-	return FALSE
-	var/list/current = assoc_to_keys(purchased_powers)
-	if(!LAZYLEN(current))
-	to_chat(owner.current, span_warning("We have no evolved abilities to imprint."))
-	return FALSE
+		return FALSE
+	var/list/current_blueprint = export_build_blueprint()
+	var/list/secondary_paths = current_blueprint[CHANGELING_SECONDARY_BUILD_SLOTS]
+	if(!ispath(current_blueprint[CHANGELING_KEY_BUILD_SLOT], /datum/action/changeling) && !LAZYLEN(secondary_paths))
+		to_chat(owner.current, span_warning("We have no manifested adaptations to archive."))
+		return FALSE
+	var/list/sanitized = sanitize_build_blueprint(current_blueprint)
 	for(var/list/preset as anything in genetic_presets)
-	if(preset["name"] == preset_name)
-	preset["abilities"] = current.Copy()
-	to_chat(owner.current, span_notice("We refine our [preset_name] genome matrix."))
-	return TRUE
+		if(preset["name"] == preset_name)
+			preset[CHANGELING_BUILD_BLUEPRINT] = sanitized
+			to_chat(owner.current, span_notice("We refine our [preset_name] genome matrix."))
+			return TRUE
 	if(LAZYLEN(genetic_presets) >= max_genetic_presets)
-	to_chat(owner.current, span_warning("We cannot remember more than [max_genetic_presets] adaptation templates."))
-	return FALSE
+		to_chat(owner.current, span_warning("We cannot remember more than [max_genetic_presets] adaptation templates."))
+		return FALSE
 	var/list/new_entry = list(
-	"name" = preset_name,
-	"abilities" = current.Copy(),
+		"name" = preset_name,
+		CHANGELING_BUILD_BLUEPRINT = sanitized,
 	)
 	genetic_presets += list(new_entry)
 	to_chat(owner.current, span_notice("We archive the [preset_name] adaptation sequence."))
@@ -304,62 +783,47 @@
 
 /datum/antagonist/changeling/proc/delete_genetic_preset(index)
 	if(!isnum(index))
-	return FALSE
+		return FALSE
 	if(index < 1 || index > LAZYLEN(genetic_presets))
-	return FALSE
+		return FALSE
 	var/list/preset = genetic_presets[index]
 	genetic_presets.Cut(index, index + 1)
 	if(owner?.current && preset)
-	to_chat(owner.current, span_notice("We purge the [preset?["name"] : "lost"] template."))
+		to_chat(owner.current, span_notice("We purge the [preset?["name"] : "lost"] template."))
 	return TRUE
 
 /datum/antagonist/changeling/proc/rename_genetic_preset(index, new_name)
 	if(!isnum(index))
-	return FALSE
+		return FALSE
 	if(index < 1 || index > LAZYLEN(genetic_presets))
-	return FALSE
+		return FALSE
 	var/list/preset = genetic_presets[index]
 	if(!preset)
-	return FALSE
+		return FALSE
 	preset["name"] = new_name
 	if(owner?.current)
-	to_chat(owner.current, span_notice("We rechristen our template as [new_name]."))
+		to_chat(owner.current, span_notice("We rechristen our template as [new_name]."))
 	return TRUE
 
 /datum/antagonist/changeling/proc/apply_genetic_preset(index)
 	if(!isnum(index))
-	return FALSE
+		return FALSE
 	if(index < 1 || index > LAZYLEN(genetic_presets))
-	return FALSE
+		return FALSE
 	var/list/preset = genetic_presets[index]
-	var/list/abilities = islist(preset["abilities"]) ? preset["abilities"] : null
-	if(!LAZYLEN(abilities))
+	var/list/blueprint = sanitize_build_blueprint(preset[CHANGELING_BUILD_BLUEPRINT])
+	var/list/result = apply_build(blueprint)
+	preset[CHANGELING_BUILD_BLUEPRINT] = result[CHANGELING_BUILD_BLUEPRINT]
+	var/applied = result["applied"] || 0
+	var/list/failures = result["failed"] || list()
 	if(owner?.current)
-	to_chat(owner.current, span_warning("That template is empty."))
-	return FALSE
-	var/applied = 0
-	var/list/failures = list()
-	for(var/path as anything in abilities)
-	if(!ispath(path, /datum/action/changeling))
-	continue
-	if(purchased_powers[path])
-	continue
-	if(purchase_power(path))
-	applied++
-	else if(owner?.current)
-	failures += initial(path.name)
-	if(owner?.current)
-	var/preset_name = preset["name"]
-	if(applied)
-	to_chat(owner.current, span_notice("We align our genome with [preset_name], manifesting [applied] adaptation[applied == 1 ? "" : "s"]."))
-	if(LAZYLEN(failures))
-	to_chat(owner.current, span_warning("We lack the resources for [english_list(failures)]."))
+		var/preset_name = preset["name"]
+		if(applied)
+			to_chat(owner.current, span_notice("We align our genome with [preset_name], manifesting [applied] adaptation[applied == 1 ? "" : "s"]."))
+		if(LAZYLEN(failures))
+			to_chat(owner.current, span_warning("We lack the resources for [english_list(failures)]."))
 	return applied > 0
 
-/*
- * Instantiate all the default actions of a ling (transform, dna sting, absorb, etc)
- * Any Changeling action with dna_cost = CHANGELING_POWER_INNATE will be added here automatically
- */
 /datum/antagonist/changeling/proc/create_innate_actions()
 	for(var/datum/action/changeling/path as anything in all_powers)
 		if(initial(path.dna_cost) != CHANGELING_POWER_INNATE)
@@ -481,6 +945,7 @@
 		chosen_sting.unset_sting(owner.current)
 
 	QDEL_LIST_ASSOC_VAL(purchased_powers)
+	purchased_powers = list()
 	if(include_innate)
 		QDEL_LIST(innate_powers)
 
@@ -488,10 +953,13 @@
 	chem_charges = min(chem_charges, total_chem_storage)
 	chem_recharge_rate = initial(chem_recharge_rate)
 	chem_recharge_slowdown = initial(chem_recharge_slowdown)
+	reset_active_build_slots()
+	synchronize_build_state()
 
 /*
  * For resetting all of the changeling's action buttons. (IE, re-granting them all.)
  */
+
 /datum/antagonist/changeling/proc/regain_powers()
 	genetic_matrix_action.Grant(owner.current)
 	for(var/datum/action/changeling/power as anything in innate_powers)
@@ -507,13 +975,25 @@
  *
  * [sting_path] - the power that's being purchased / evolved.
  */
-/datum/antagonist/changeling/proc/purchase_power(datum/action/changeling/sting_path)
+/datum/antagonist/changeling/proc/purchase_power(datum/action/changeling/sting_path, slot_identifier, force_slot = FALSE)
 	if(!ispath(sting_path, /datum/action/changeling))
 		CRASH("Changeling purchase_power attempted to purchase an invalid typepath! (got: [sting_path])")
 
 	if(purchased_powers[sting_path])
 		to_chat(owner.current, span_warning("We have already evolved this ability!"))
 		return FALSE
+
+	var/slot_choice = (slot_identifier == CHANGELING_KEY_BUILD_SLOT) ? CHANGELING_KEY_BUILD_SLOT : CHANGELING_SECONDARY_BUILD_SLOTS
+	if(slot_choice == CHANGELING_KEY_BUILD_SLOT)
+		var/current_key = active_build_slots?[CHANGELING_KEY_BUILD_SLOT]
+		if(current_key && current_key != sting_path && !force_slot)
+			to_chat(owner.current, span_warning("Our primary adaptation slot is already occupied."))
+			return FALSE
+	else
+		var/list/secondary_slots = get_secondary_build_slots()
+		if(secondary_slots.len >= CHANGELING_SECONDARY_SLOT_LIMIT && !force_slot)
+			to_chat(owner.current, span_warning("We cannot integrate more than [CHANGELING_SECONDARY_SLOT_LIMIT] secondary sequences at once."))
+			return FALSE
 
 	if(genetic_points < initial(sting_path.dna_cost))
 		to_chat(owner.current, span_warning("We have reached our capacity for abilities!"))
@@ -538,7 +1018,12 @@
 
 	var/success = give_power(sting_path)
 	if(success)
+		if(!register_power_slot(sting_path, slot_choice, force_slot))
+			remove_power(sting_path, FALSE)
+			to_chat(owner.current, span_warning("We cannot stabilize this sequence within our current matrix."))
+			return FALSE
 		genetic_points -= initial(sting_path.dna_cost)
+		synchronize_build_state()
 	return success
 
 /**
