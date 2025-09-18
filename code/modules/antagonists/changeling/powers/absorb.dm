@@ -1,10 +1,10 @@
 /datum/action/changeling/absorb_dna
-	name = "Absorb DNA"
-	desc = "Absorb the DNA of our victim. Requires us to strangle them."
-	button_icon_state = "absorb_dna"
-	chemical_cost = 0
-	dna_cost = CHANGELING_POWER_INNATE
-	req_human = TRUE
+        name = "Absorb DNA"
+        desc = "Completely drain a restrained victim, harvesting their biomass for the hive. Requires us to strangle them."
+        button_icon_state = "absorb_dna"
+        chemical_cost = 0
+        dna_cost = CHANGELING_POWER_INNATE
+        req_human = TRUE
 	///if we're currently absorbing, used for sanity
 	var/is_absorbing = FALSE
 	var/datum/looping_sound/changeling_absorb/absorbing_loop
@@ -39,12 +39,16 @@
 		return
 
 	SSblackbox.record_feedback("nested tally", "changeling_powers", 1, list("Absorb DNA", "4"))
-	owner.visible_message(span_danger("[owner] sucks the fluids from [target]!"), span_notice("We have absorbed [target]."))
-	to_chat(target, span_userdanger("You are absorbed by the changeling!"))
+        owner.visible_message(span_danger("[owner] siphons every drop from [target]!"), span_notice("We claim the whole of [target]."))
+        to_chat(target, span_userdanger("You are consumed by the changeling, your cells stolen for the hive!"))
 
-	var/true_absorbtion = (!isnull(target.client) || !isnull(target.mind) || !isnull(target.last_mind))
-	if (!true_absorbtion)
-		to_chat(owner, span_changeling(span_bold("You absorb [target], but their weak DNA is not enough to satisfy your hunger.")))
+        var/harvested = changeling.harvest_biomaterials_from(target)
+        if(!harvested)
+                to_chat(owner, span_warning("[target]'s remains offer little useful biomass."))
+
+        var/true_absorbtion = (!isnull(target.client) || !isnull(target.mind) || !isnull(target.last_mind))
+        if (!true_absorbtion)
+                to_chat(owner, span_changeling(span_bold("You absorb [target], but their weak DNA is not enough to satisfy your hunger.")))
 
 	if(!changeling.has_profile_with_dna(target.dna))
 		changeling.add_new_profile(target)
@@ -63,9 +67,8 @@
 	qdel(absorbing_loop)
 	is_absorbing = FALSE
 
-	changeling.adjust_chemicals(10)
-	if (true_absorbtion)
-		changeling.can_respec++
+        if (true_absorbtion)
+                changeling.can_respec++
 
 	if(target.stat != DEAD)
 		target.investigate_log("has died from being changeling absorbed.", INVESTIGATE_DEATHS)
