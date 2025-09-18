@@ -10,6 +10,25 @@
 /// Blueprint payload key used when ingesting crafting data.
 #define CHANGELING_BUILD_BLUEPRINT "build"
 
+/// Normalizes identifiers for biomaterial records.
+/proc/changeling_sanitize_material_id(identifier)
+        if(isnull(identifier))
+                return "biomaterial"
+        var/id_text = lowertext("[identifier]")
+        id_text = replacetext(id_text, " ", "_")
+        id_text = replacetext(id_text, "-", "_")
+        id_text = replacetext(id_text, "/", "_")
+        id_text = replacetext(id_text, "\\", "_")
+        id_text = replacetext(id_text, "'", "")
+        id_text = replacetext(id_text, "\"", "")
+        id_text = replacetext(id_text, "[", "")
+        id_text = replacetext(id_text, "]", "")
+        while(length(id_text) && copytext(id_text, 1, 2) == "_")
+                id_text = copytext(id_text, 2)
+        if(!length(id_text))
+                return "biomaterial"
+        return id_text
+
 /datum/antagonist/changeling
 	name = "\improper Changeling"
 	roundend_category = "changelings"
@@ -478,6 +497,151 @@
                 return 0
         signature_cells[cell_id] = cell_entry
         return cell_entry["count"]
+
+/datum/antagonist/changeling/proc/can_harvest_biomaterials(mob/living/target, verbose = TRUE)
+        if(!target || QDELETED(target))
+                return FALSE
+        if(target.stat == DEAD)
+                if(verbose && owner?.current)
+                        to_chat(owner.current, span_warning("We require a living specimen."))
+                return FALSE
+        var/list/profile = target.get_changeling_biomaterial_profile()
+        if(!LAZYLEN(profile))
+                if(verbose && owner?.current)
+                        to_chat(owner.current, span_warning("No viable biomaterial detected within [target]."))
+                return FALSE
+        return TRUE
+
+/datum/antagonist/changeling/proc/harvest_biomaterials_from_mob(mob/living/target)
+        if(!target)
+                return list()
+        var/list/profile = target.get_changeling_biomaterial_profile()
+        if(!LAZYLEN(profile))
+                return list()
+        var/list/results = list()
+        var/base_name = initial(target.name) || "specimen"
+        for(var/list/entry as anything in profile)
+                if(!islist(entry))
+                        continue
+                var/category = entry[CHANGELING_HARVEST_CATEGORY] || CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE
+                var/material_id = entry[CHANGELING_HARVEST_ID]
+                if(!istext(material_id) || !length(material_id))
+                        material_id = changeling_sanitize_material_id(target.type)
+                var/amount = max(1, entry[CHANGELING_HARVEST_AMOUNT] || 1)
+                var/sample_name = entry[CHANGELING_HARVEST_NAME]
+                if(!istext(sample_name) || !length(sample_name))
+                        sample_name = "[base_name] biomaterial"
+                var/sample_description = entry[CHANGELING_HARVEST_DESCRIPTION]
+                if(!istext(sample_description) || !length(sample_description))
+                        sample_description = "Biomaterial harvested from [base_name]."
+                var/list/metadata = list(
+                        "name" = sample_name,
+                        "description" = sample_description,
+                )
+                if(entry[CHANGELING_HARVEST_QUALITY])
+                        metadata["quality"] = entry[CHANGELING_HARVEST_QUALITY]
+                adjust_biomaterial_entry(category, material_id, amount, metadata)
+                results += list(list(
+                        CHANGELING_HARVEST_CATEGORY = category,
+                        CHANGELING_HARVEST_ID = material_id,
+                        CHANGELING_HARVEST_NAME = sample_name,
+                        CHANGELING_HARVEST_DESCRIPTION = sample_description,
+                        CHANGELING_HARVEST_AMOUNT = amount,
+                ))
+                if(entry[CHANGELING_HARVEST_SIGNATURE] && target.dna)
+                        var/signature_id = target.dna.unique_enzymes || changeling_sanitize_material_id(target.real_name || material_id)
+                        var/list/signature_metadata = list(
+                                "name" = target.real_name || sample_name,
+                                "description" = "A distinctive cytology signature harvested from [target].",
+                        )
+                        adjust_signature_cell(signature_id, 1, signature_metadata)
+        return results
+
+/datum/antagonist/changeling/proc/harvest_biomaterials_from_samples(list/samples, atom/source)
+        var/list/results = list()
+        if(!islist(samples))
+                return results
+        for(var/sample_entry in samples)
+                if(!istype(sample_entry, /datum/biological_sample))
+                        continue
+                var/datum/biological_sample/sample = sample_entry
+                for(var/datum/micro_organism/MO as anything in sample.micro_organisms)
+                        if(!istype(MO, /datum/micro_organism/cell_line))
+                                continue
+                        var/list/info = resolve_cell_line_biomaterial(MO, source)
+                        if(!islist(info))
+                                continue
+                        var/list/metadata = info["metadata"]
+                        adjust_biomaterial_entry(info[CHANGELING_HARVEST_CATEGORY], info[CHANGELING_HARVEST_ID], info[CHANGELING_HARVEST_AMOUNT], metadata)
+                        results += list(list(
+                                CHANGELING_HARVEST_CATEGORY = info[CHANGELING_HARVEST_CATEGORY],
+                                CHANGELING_HARVEST_ID = info[CHANGELING_HARVEST_ID],
+                                CHANGELING_HARVEST_NAME = info[CHANGELING_HARVEST_NAME],
+                                CHANGELING_HARVEST_DESCRIPTION = info[CHANGELING_HARVEST_DESCRIPTION],
+                                CHANGELING_HARVEST_AMOUNT = info[CHANGELING_HARVEST_AMOUNT],
+                        ))
+                qdel(sample)
+        return results
+
+/datum/antagonist/changeling/proc/resolve_cell_line_biomaterial(datum/micro_organism/cell_line/cell_line, atom/source)
+        var/category = determine_cell_line_category(cell_line)
+        var/material_id = changeling_sanitize_material_id(cell_line.type)
+        var/display_name = cell_line.desc || "Cell culture"
+        var/source_name = source ? source.name : "the environment"
+        var/description = "[display_name] collected from [source_name]."
+        var/list/metadata = list(
+                "name" = display_name,
+                "description" = description,
+        )
+        return list(
+                CHANGELING_HARVEST_CATEGORY = category,
+                CHANGELING_HARVEST_ID = material_id,
+                CHANGELING_HARVEST_NAME = display_name,
+                CHANGELING_HARVEST_DESCRIPTION = description,
+                CHANGELING_HARVEST_AMOUNT = 1,
+                "metadata" = metadata,
+        )
+
+/datum/antagonist/changeling/proc/determine_cell_line_category(datum/micro_organism/cell_line/cell_line)
+        if(istype(cell_line, /datum/micro_organism/cell_line/blob_spore) ||
+                istype(cell_line, /datum/micro_organism/cell_line/blobbernaut) ||
+                istype(cell_line, /datum/micro_organism/cell_line/bear) ||
+                istype(cell_line, /datum/micro_organism/cell_line/carp) ||
+                istype(cell_line, /datum/micro_organism/cell_line/megacarp) ||
+                istype(cell_line, /datum/micro_organism/cell_line/snake) ||
+                istype(cell_line, /datum/micro_organism/cell_line/glockroach) ||
+                istype(cell_line, /datum/micro_organism/cell_line/hauberoach) ||
+                istype(cell_line, /datum/micro_organism/cell_line/vat_beast) ||
+                istype(cell_line, /datum/micro_organism/cell_line/netherworld) ||
+                istype(cell_line, /datum/micro_organism/cell_line/clown/glutton) ||
+                istype(cell_line, /datum/micro_organism/cell_line/mega_arachnid))
+                return CHANGELING_BIOMATERIAL_CATEGORY_PREDATORY
+        if(istype(cell_line, /datum/micro_organism/cell_line/cockroach) ||
+                istype(cell_line, /datum/micro_organism/cell_line/mouse) ||
+                istype(cell_line, /datum/micro_organism/cell_line/pine) ||
+                istype(cell_line, /datum/micro_organism/cell_line/snail) ||
+                istype(cell_line, /datum/micro_organism/cell_line/gelatinous_cube) ||
+                istype(cell_line, /datum/micro_organism/cell_line/walking_mushroom) ||
+                istype(cell_line, /datum/micro_organism/cell_line/axolotl) ||
+                istype(cell_line, /datum/micro_organism/cell_line/frog) ||
+                istype(cell_line, /datum/micro_organism/cell_line/sholean_grapes))
+                return CHANGELING_BIOMATERIAL_CATEGORY_RESILIENCE
+        return CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE
+
+/datum/antagonist/changeling/proc/build_harvest_summary(list/results)
+        if(!LAZYLEN(results))
+                return ""
+        var/list/fragments = list()
+        for(var/list/result as anything in results)
+                if(!islist(result))
+                        continue
+                var/amount = result[CHANGELING_HARVEST_AMOUNT] || 1
+                var/name = result[CHANGELING_HARVEST_NAME]
+                if(!istext(name) || !length(name))
+                        name = capitalize(replacetext(result[CHANGELING_HARVEST_ID], "_", " "))
+                var/category = result[CHANGELING_HARVEST_CATEGORY] || CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE
+                fragments += "[name] x[amount] ([category])"
+        return english_list(fragments)
 
 /datum/antagonist/changeling/proc/export_build_blueprint()
         if(!islist(active_build_slots))

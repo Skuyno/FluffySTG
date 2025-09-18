@@ -44,8 +44,33 @@
 		QDEL_LIST(imaginary_group)
 	QDEL_LAZYLIST(diseases)
 	QDEL_LIST(surgeries)
-	QDEL_LIST(quirks)
-	return ..()
+        QDEL_LIST(quirks)
+        return ..()
+
+/mob/living/proc/get_changeling_biomaterial_profile()
+        if(islist(changeling_biomaterial_profile) && LAZYLEN(changeling_biomaterial_profile))
+                var/list/output = list()
+                for(var/list/entry as anything in changeling_biomaterial_profile)
+                        if(!islist(entry))
+                                continue
+                        output += list(entry.Copy())
+                return output
+        return list(generate_default_changeling_profile())
+
+/mob/living/proc/generate_default_changeling_profile()
+        var/display_name = initial(name)
+        if(!istext(display_name) || !length(display_name))
+                display_name = "organism"
+        var/id_seed = changeling_sanitize_material_id(copytext(type2text(type), 6))
+        if(!length(id_seed))
+                id_seed = "biomaterial"
+        return list(
+                CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_RESILIENCE,
+                CHANGELING_HARVEST_ID = id_seed,
+                CHANGELING_HARVEST_NAME = "[capitalize(display_name)] Cytology Sample",
+                CHANGELING_HARVEST_DESCRIPTION = "A baseline cellular sample drawn from [display_name].",
+                CHANGELING_HARVEST_AMOUNT = 1,
+        )
 
 /mob/living/onZImpact(turf/impacted_turf, levels, impact_flags = NONE)
 	if(!isgroundlessturf(impacted_turf))

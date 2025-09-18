@@ -21,6 +21,16 @@
 	species_language_holder = /datum/language_holder/felinid
 	payday_modifier = 1.0
 	family_heirlooms = list(/obj/item/toy/cattoy)
+	changeling_biomaterial_profile = list(
+		list(
+			CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_PREDATORY,
+			CHANGELING_HARVEST_ID = "felinid_myofibrils",
+			CHANGELING_HARVEST_NAME = "Felinid Myofibrils",
+			CHANGELING_HARVEST_DESCRIPTION = "Hyperresponsive muscle fibers adapted for precise pounces.",
+			CHANGELING_HARVEST_AMOUNT = 1,
+			CHANGELING_HARVEST_SIGNATURE = TRUE,
+		),
+	)
 	/// When false, this is a felinid created by mass-purrbation
 	var/original_felinid = TRUE
 	/// Yummy!

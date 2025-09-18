@@ -162,11 +162,14 @@ GLOBAL_LIST_EMPTY(features_by_species)
 	///Unique cookie given by admins through prayers
 	var/species_cookie = /obj/item/food/cookie
 
-	/// List of family heirlooms this species can get with the family heirloom quirk. List of types.
-	var/list/family_heirlooms
+        /// List of family heirlooms this species can get with the family heirloom quirk. List of types.
+        var/list/family_heirlooms
 
-	///List of results you get from knife-butchering. null means you cant butcher it. Associated by resulting type - value of amount
-	var/list/knife_butcher_results
+        ///List of results you get from knife-butchering. null means you cant butcher it. Associated by resulting type - value of amount
+        var/list/knife_butcher_results
+
+        ///Default changeling biomaterial yields produced by this species.
+        var/list/changeling_biomaterial_profile
 
 	/// Should we preload this species's organs?
 	var/preload = TRUE
@@ -196,12 +199,24 @@ GLOBAL_LIST_EMPTY(features_by_species)
 
 
 /datum/species/New()
-	if(!plural_form)
-		plural_form = "[name]\s"
-	if(!examine_limb_id)
-		examine_limb_id = id
+        if(!plural_form)
+                plural_form = "[name]\s"
+        if(!examine_limb_id)
+                examine_limb_id = id
 
-	return ..()
+        if(!islist(changeling_biomaterial_profile) || !LAZYLEN(changeling_biomaterial_profile))
+                var/species_name = name || "Unknown"
+                var/species_id = changeling_sanitize_material_id(id || species_name)
+                changeling_biomaterial_profile = list(list(
+                        CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE,
+                        CHANGELING_HARVEST_ID = "species_[species_id]",
+                        CHANGELING_HARVEST_NAME = "[species_name] Cytology Sample",
+                        CHANGELING_HARVEST_DESCRIPTION = "Cultured cells derived from [species_name] biology.",
+                        CHANGELING_HARVEST_AMOUNT = 1,
+                        CHANGELING_HARVEST_SIGNATURE = TRUE,
+                ))
+
+        return ..()
 
 /// Gets a list of all species id's available to choose in roundstart.
 /proc/get_selectable_species()
@@ -386,12 +401,21 @@ GLOBAL_LIST_EMPTY(features_by_species)
 	human_who_gained_species.living_flags |= STOP_OVERLAY_UPDATE_BODY_PARTS //Don't call update_body_parts() for every single bodypart overlay added.
 
 	// Drop the items the new species can't wear
-	human_who_gained_species.mob_biotypes = inherent_biotypes
-	human_who_gained_species.mob_respiration_type = inherent_respiration_type
-	human_who_gained_species.butcher_results = knife_butcher_results?.Copy()
+        human_who_gained_species.mob_biotypes = inherent_biotypes
+        human_who_gained_species.mob_respiration_type = inherent_respiration_type
+        human_who_gained_species.butcher_results = knife_butcher_results?.Copy()
+        if(islist(changeling_biomaterial_profile))
+                var/list/profile_copy = list()
+                for(var/list/entry as anything in changeling_biomaterial_profile)
+                        if(!islist(entry))
+                                continue
+                        profile_copy += list(entry.Copy())
+                human_who_gained_species.changeling_biomaterial_profile = profile_copy
+        else
+                human_who_gained_species.changeling_biomaterial_profile = null
 
-	//update body zones to match what they are supposed to have
-	human_who_gained_species.hud_used?.healthdoll.update_body_zones()
+        //update body zones to match what they are supposed to have
+        human_who_gained_species.hud_used?.healthdoll.update_body_zones()
 
 	if(old_species.type != type)
 		replace_body(human_who_gained_species, src)

@@ -16,6 +16,15 @@ GLOBAL_VAR_INIT(chicken_count, 0)
 	icon_dead = "chicken_brown_dead"
 	density = FALSE
 	butcher_results = list(/obj/item/food/meat/slab/chicken = 2)
+	changeling_biomaterial_profile = list(
+		list(
+			CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE,
+			CHANGELING_HARVEST_ID = "avian_quill_cells",
+			CHANGELING_HARVEST_NAME = "Avian Quill Cells",
+			CHANGELING_HARVEST_DESCRIPTION = "Feather follicle cultures steeped in rapid growth hormones.",
+			CHANGELING_HARVEST_AMOUNT = 1,
+		),
+	)
 	response_help_continuous = "pets"
 	response_help_simple = "pet"
 	response_disarm_continuous = "gently pushes aside"

@@ -18,6 +18,16 @@
 	changesource_flags = MIRROR_BADMIN | WABBAJACK | MIRROR_PRIDE | MIRROR_MAGIC | RACE_SWAP | ERT_SPAWN | SLIME_EXTRACT
 	species_cookie = /obj/item/food/energybar
 	species_language_holder = /datum/language_holder/ethereal
+	changeling_biomaterial_profile = list(
+		list(
+			CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE,
+			CHANGELING_HARVEST_ID = "ethereal_plasma_lattice",
+			CHANGELING_HARVEST_NAME = "Ethereal Plasma Lattice",
+			CHANGELING_HARVEST_DESCRIPTION = "Ionized tissue matrix pulsing with stored radiation.",
+			CHANGELING_HARVEST_AMOUNT = 1,
+			CHANGELING_HARVEST_SIGNATURE = TRUE,
+		),
+	)
 	sexes = FALSE //no fetish content allowed
 	// Body temperature for ethereals is much higher than humans as they like hotter environments
 	bodytemp_normal = (BODYTEMP_NORMAL + 50)

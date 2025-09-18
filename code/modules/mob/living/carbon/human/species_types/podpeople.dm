@@ -19,6 +19,16 @@
 	exotic_bloodtype = BLOOD_TYPE_H2O
 	changesource_flags = MIRROR_BADMIN | WABBAJACK | MIRROR_MAGIC | MIRROR_PRIDE | RACE_SWAP | ERT_SPAWN | SLIME_EXTRACT
 	species_language_holder = /datum/language_holder/plant
+	changeling_biomaterial_profile = list(
+		list(
+			CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_RESILIENCE,
+			CHANGELING_HARVEST_ID = "pod_chloroplast_matrix",
+			CHANGELING_HARVEST_NAME = "Chloroplast Matrix",
+			CHANGELING_HARVEST_DESCRIPTION = "Photosynthetic tissues saturated with regenerative plant growth factors.",
+			CHANGELING_HARVEST_AMOUNT = 1,
+			CHANGELING_HARVEST_SIGNATURE = TRUE,
+		),
+	)
 
 	mutantappendix = /obj/item/organ/appendix/pod
 	mutantbrain = /obj/item/organ/brain/pod

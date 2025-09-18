@@ -13,6 +13,20 @@
 /// Min players requireed for nukes to declare war
 #define CHALLENGE_MIN_PLAYERS 50
 
+// Changeling biomaterial inventory defines
+#define CHANGELING_BIOMATERIAL_CATEGORY_PREDATORY "predatory"
+#define CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE "adaptive"
+#define CHANGELING_BIOMATERIAL_CATEGORY_RESILIENCE "resilience"
+
+#define CHANGELING_HARVEST_CATEGORY "category"
+#define CHANGELING_HARVEST_ID "id"
+#define CHANGELING_HARVEST_NAME "name"
+#define CHANGELING_HARVEST_DESCRIPTION "description"
+#define CHANGELING_HARVEST_AMOUNT "amount"
+#define CHANGELING_HARVEST_CELL_DEFINE "cell_define"
+#define CHANGELING_HARVEST_SIGNATURE "signature"
+#define CHANGELING_HARVEST_QUALITY "quality"
+
 //fugitive end results
 #define FUGITIVE_RESULT_BADASS_HUNTER 0
 #define FUGITIVE_RESULT_POSTMORTEM_HUNTER 1

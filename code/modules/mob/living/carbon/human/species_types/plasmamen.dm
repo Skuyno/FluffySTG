@@ -33,6 +33,16 @@
 	species_cookie = /obj/item/reagent_containers/condiment/milk
 	outfit_important_for_life = /datum/outfit/plasmaman
 	species_language_holder = /datum/language_holder/skeleton
+	changeling_biomaterial_profile = list(
+		list(
+			CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_RESILIENCE,
+			CHANGELING_HARVEST_ID = "plasmaman_colonids",
+			CHANGELING_HARVEST_NAME = "Plasmaman Colonid Matrix",
+			CHANGELING_HARVEST_DESCRIPTION = "Fungal biomatter binding to an exoskeletal frame and suffused with plasma energy.",
+			CHANGELING_HARVEST_AMOUNT = 1,
+			CHANGELING_HARVEST_SIGNATURE = TRUE,
+		),
+	)
 
 	bodypart_overrides = list(
 		BODY_ZONE_L_ARM = /obj/item/bodypart/arm/left/plasmaman,

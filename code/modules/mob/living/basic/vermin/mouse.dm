@@ -17,6 +17,15 @@
 	gold_core_spawnable = FRIENDLY_SPAWN
 	faction = list(FACTION_RAT, FACTION_MAINT_CREATURES)
 	butcher_results = list(/obj/item/food/meat/slab/mouse = 1)
+	changeling_biomaterial_profile = list(
+		list(
+			CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE,
+			CHANGELING_HARVEST_ID = "rodent_neurotissue",
+			CHANGELING_HARVEST_NAME = "Rodent Neurotissue",
+			CHANGELING_HARVEST_DESCRIPTION = "Quick-firing synaptic cultures harvested from opportunistic vermin.",
+			CHANGELING_HARVEST_AMOUNT = 1,
+		),
+	)
 
 	speak_emote = list("squeaks")
 	response_help_continuous = "pets"
