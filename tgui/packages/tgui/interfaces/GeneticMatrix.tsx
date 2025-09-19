@@ -70,18 +70,14 @@ type BuildBlueprint = {
   secondary?: typePath[];
 };
 
-type BiomaterialItem = {
+type BiomaterialEntry = {
   id: string;
   name: string;
   count: number;
+  category: string;
+  category_name?: string;
   description?: string;
   quality?: string | number;
-};
-
-type BiomaterialCategory = {
-  id: string;
-  name: string;
-  items: BiomaterialItem[];
 };
 
 type SignatureCell = {
@@ -169,7 +165,7 @@ type GeneticMatrixData = {
   presets: GeneticPreset[];
   preset_limit: number;
   active_build: ActiveBuildState;
-  biomaterials: BiomaterialCategory[];
+  biomaterials: BiomaterialEntry[];
   signature_cells: SignatureCell[];
   crafting_recipes?: CraftingRecipe[];
   crafting_result?: CraftingResult | null;
@@ -710,14 +706,24 @@ const CraftingSection = () => {
   const biomaterialLookup = useMemo(() => {
     const lookup = new Map<
       string,
-      { category: BiomaterialCategory; itemMap: Map<string, BiomaterialItem> }
+      { categoryName: string; itemMap: Map<string, BiomaterialEntry> }
     >();
-    biomaterials.forEach((category) => {
-      const itemMap = new Map<string, BiomaterialItem>();
-      (category.items ?? []).forEach((item) => {
-        itemMap.set(item.id, item);
-      });
-      lookup.set(category.id, { category, itemMap });
+    biomaterials.forEach((entry) => {
+      const categoryId = entry.category;
+      if (!categoryId) {
+        return;
+      }
+      let bucket = lookup.get(categoryId);
+      if (!bucket) {
+        bucket = {
+          categoryName: entry.category_name ?? categoryId,
+          itemMap: new Map<string, BiomaterialEntry>(),
+        };
+        lookup.set(categoryId, bucket);
+      } else if (entry.category_name && bucket.categoryName !== entry.category_name) {
+        bucket.categoryName = entry.category_name;
+      }
+      bucket.itemMap.set(entry.id, entry);
     });
     return lookup;
   }, [biomaterials]);
@@ -858,7 +864,7 @@ const CraftingSection = () => {
     }> = [];
     for (const [categoryId, items] of Object.entries(materialSelection)) {
       const lookupEntry = biomaterialLookup.get(categoryId);
-      const categoryName = lookupEntry?.category.name ?? categoryId;
+      const categoryName = lookupEntry?.categoryName ?? categoryId;
       for (const [itemId, count] of Object.entries(items)) {
         if (count <= 0) {
           continue;
@@ -1354,45 +1360,91 @@ const CraftingSection = () => {
 const BiomaterialSection = () => {
   const { data } = useBackend<GeneticMatrixData>();
   const biomaterials = data.biomaterials ?? [];
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredBiomaterials = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    const matches = biomaterials.filter((entry) => {
+      if (!query) {
+        return true;
+      }
+      const name = entry.name.toLowerCase();
+      const description = entry.description?.toLowerCase() ?? '';
+      const category = (entry.category_name ?? entry.category ?? '').toLowerCase();
+      return (
+        name.includes(query) ||
+        description.includes(query) ||
+        category.includes(query)
+      );
+    });
+    return matches
+      .slice()
+      .sort((a, b) => {
+        const categoryA = (a.category_name ?? a.category ?? '').toLowerCase();
+        const categoryB = (b.category_name ?? b.category ?? '').toLowerCase();
+        if (categoryA !== categoryB) {
+          return categoryA.localeCompare(categoryB);
+        }
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        if (nameA !== nameB) {
+          return nameA.localeCompare(nameB);
+        }
+        return a.id.localeCompare(b.id);
+      });
+  }, [biomaterials, searchQuery]);
+
+  const hasBiomaterials = biomaterials.length > 0;
+  const trimmedQuery = searchQuery.trim();
 
   return (
-    <Section title="Biomaterial Stores" scrollable>
-      {!biomaterials.length ? (
+    <Section
+      title="Biomaterial Stores"
+      scrollable
+      buttons={
+        <Input
+          width="220px"
+          placeholder="Search samples..."
+          value={searchQuery}
+          onChange={setSearchQuery}
+        />
+      }
+    >
+      {!hasBiomaterials ? (
         <NoticeBox>No biomaterial harvested.</NoticeBox>
+      ) : !filteredBiomaterials.length ? (
+        <NoticeBox>
+          {trimmedQuery.length
+            ? 'No biomaterial matched those search terms.'
+            : 'No biomaterial catalogued.'}
+        </NoticeBox>
       ) : (
         <Stack vertical spacing={1}>
-          {biomaterials.map((category) => (
-            <Stack.Item key={category.id} className="candystripe">
+          {filteredBiomaterials.map((entry) => (
+            <Stack.Item
+              key={`${entry.category}-${entry.id}`}
+              className="candystripe"
+            >
               <Stack vertical spacing={0.5}>
-                <Box bold>{category.name}</Box>
-                {!category.items.length ? (
-                  <Box italic color="label">
-                    No samples catalogued.
-                  </Box>
-                ) : (
-                  <Stack vertical spacing={0.5}>
-                    {category.items.map((item) => (
-                      <Stack.Item key={`${category.id}-${item.id}`}>
-                        <Stack align="baseline" justify="space-between">
-                          <Stack.Item grow>
-                            <Box>{item.name}</Box>
-                          </Stack.Item>
-                          <Stack.Item>
-                            <Box bold>{item.count}</Box>
-                          </Stack.Item>
-                        </Stack>
-                        {item.description && (
-                          <Box color="label">{item.description}</Box>
-                        )}
-                        {item.quality && (
-                          <Box color="good">
-                            Quality: {String(item.quality)}
-                          </Box>
-                        )}
-                      </Stack.Item>
-                    ))}
-                  </Stack>
-                )}
+                <Stack align="baseline" justify="space-between">
+                  <Stack.Item grow>
+                    <Box>
+                      {entry.name}{' '}
+                      <Box as="span" color="label">
+                        ({entry.category_name ?? entry.category})
+                      </Box>
+                    </Box>
+                  </Stack.Item>
+                  <Stack.Item>
+                    <Box bold>{entry.count}</Box>
+                  </Stack.Item>
+                </Stack>
+                {entry.description ? (
+                  <Box color="label">{entry.description}</Box>
+                ) : null}
+                {entry.quality ? (
+                  <Box color="good">Quality: {String(entry.quality)}</Box>
+                ) : null}
               </Stack>
             </Stack.Item>
           ))}

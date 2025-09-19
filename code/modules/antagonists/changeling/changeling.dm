@@ -116,12 +116,12 @@
 			),
 		),
 	)
-	/// Default biomaterial categories tracked within the changeling genetic matrix.
-	var/static/list/default_biomaterial_categories = list(
-		list("id" = "predatory", "name" = "Predatory Biomass"),
-		list("id" = "adaptive", "name" = "Adaptive Tissue"),
-		list("id" = "resilience", "name" = "Resilience Samples"),
-	)
+        /// Display names for the common biomaterial categories.
+        var/static/list/default_biomaterial_category_labels = list(
+                CHANGELING_BIOMATERIAL_CATEGORY_PREDATORY = "Predatory Biomass",
+                CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE = "Adaptive Tissue",
+                CHANGELING_BIOMATERIAL_CATEGORY_RESILIENCE = "Resilience Samples",
+        )
 	/// Categorised biomaterial inventory seeded for the changeling.
 	var/list/biomaterial_inventory
 	/// Signature cells archived from unique targets.
@@ -345,18 +345,9 @@
 	synchronize_build_state()
 
 /datum/antagonist/changeling/proc/initialize_changeling_inventories()
-	biomaterial_inventory = list()
-	if(LAZYLEN(default_biomaterial_categories))
-		for(var/list/category as anything in default_biomaterial_categories)
-			var/category_id = category["id"]
-			var/category_name = category["name"]
-			biomaterial_inventory[category_id] = list(
-				"id" = category_id,
-				"name" = category_name,
-				"items" = list(),
-			)
-	signature_cells = list()
-	reset_active_build_slots()
+       biomaterial_inventory = list()
+       signature_cells = list()
+       reset_active_build_slots()
 
 /datum/antagonist/changeling/proc/reset_active_build_slots()
 	active_build_slots = list(
@@ -426,22 +417,21 @@
 	active_build_slots[CHANGELING_SECONDARY_BUILD_SLOTS] = valid_secondary
 
 /datum/antagonist/changeling/proc/get_biomaterial_category(category_id)
-	if(!biomaterial_inventory)
-		biomaterial_inventory = list()
-	var/list/category_entry = biomaterial_inventory[category_id]
-	if(!islist(category_entry))
-		var/display_name
-		for(var/list/default_entry as anything in default_biomaterial_categories)
-			if(lowertext("[default_entry["id"]]") == lowertext("[category_id]"))
-				display_name = default_entry["name"]
-				break
-		category_entry = list(
-			"id" = category_id,
-			"name" = display_name || capitalize(replacetext("[category_id]", "_", " ")),
-			"items" = list(),
-		)
-		biomaterial_inventory[category_id] = category_entry
-	return category_entry
+       if(!biomaterial_inventory)
+               biomaterial_inventory = list()
+       var/list/category_entry = biomaterial_inventory[category_id]
+       if(!islist(category_entry))
+               var/display_name
+               if(istext(category_id))
+                       var/category_key = lowertext("[category_id]")
+                       display_name = default_biomaterial_category_labels?[category_key]
+               category_entry = list(
+                       "id" = category_id,
+                       "name" = display_name || capitalize(replacetext("[category_id]", "_", " ")),
+                       "items" = list(),
+               )
+               biomaterial_inventory[category_id] = category_entry
+       return category_entry
 
 /datum/antagonist/changeling/proc/adjust_biomaterial_entry(category_id, material_id, amount = 1, list/metadata)
 	if(isnull(category_id) || isnull(material_id) || !isnum(amount))
@@ -756,37 +746,48 @@
 	return state
 
 /datum/antagonist/changeling/proc/build_biomaterial_payload()
-	var/list/output = list()
-	if(!islist(biomaterial_inventory))
-		return output
-	for(var/category_id in biomaterial_inventory)
-		var/list/category_entry = biomaterial_inventory[category_id]
-		if(!islist(category_entry))
-			continue
-		var/list/items_payload = list()
-		var/list/items = category_entry["items"]
-		if(islist(items))
-			for(var/material_id in items)
-				var/list/item_entry = items[material_id]
-				if(!islist(item_entry))
-					continue
-				var/list/item_payload = list(
-					"id" = item_entry["id"] || material_id,
-					"name" = item_entry["name"] || capitalize(replacetext("[material_id]", "_", " ")),
-					"count" = max(0, item_entry["count"] || 0),
-				)
-				if(item_entry["description"])
-					item_payload["description"] = item_entry["description"]
-				if(item_entry["quality"])
-					item_payload["quality"] = item_entry["quality"]
-				items_payload += list(item_payload)
-		var/list/category_payload = list(
-			"id" = category_entry["id"] || category_id,
-			"name" = category_entry["name"] || capitalize(replacetext("[category_id]", "_", " ")),
-			"items" = items_payload,
-		)
-		output += list(category_payload)
-	return output
+        var/list/output = list()
+        if(!islist(biomaterial_inventory))
+                return output
+        for(var/category_id in biomaterial_inventory)
+                var/list/category_entry = biomaterial_inventory[category_id]
+                if(!islist(category_entry))
+                        continue
+                var/category_identifier = category_entry["id"]
+                if(isnull(category_identifier))
+                        category_identifier = category_id
+                var/category_key = "[category_identifier]"
+                var/category_name = category_entry["name"]
+                if(!istext(category_name) || !length(category_name))
+                        category_name = capitalize(replacetext(category_key, "_", " "))
+                var/list/items = category_entry["items"]
+                if(!islist(items))
+                        continue
+                for(var/material_id in items)
+                        var/list/item_entry = items[material_id]
+                        if(!islist(item_entry))
+                                continue
+                        var/item_identifier = item_entry["id"]
+                        if(isnull(item_identifier))
+                                item_identifier = material_id
+                        var/item_id = "[item_identifier]"
+                        var/item_name = item_entry["name"]
+                        if(!istext(item_name) || !length(item_name))
+                                item_name = capitalize(replacetext(item_id, "_", " "))
+                        var/count = max(0, item_entry["count"] || 0)
+                        var/list/item_payload = list(
+                                "id" = item_id,
+                                "name" = item_name,
+                                "count" = count,
+                                "category" = category_key,
+                                "category_name" = category_name,
+                        )
+                        if(item_entry["description"])
+                                item_payload["description"] = item_entry["description"]
+                        if(item_entry["quality"])
+                                item_payload["quality"] = item_entry["quality"]
+                        output += list(item_payload)
+        return output
 
 /datum/antagonist/changeling/proc/build_signature_payload()
 	var/list/output = list()
