@@ -60,7 +60,7 @@ the same goes for Remove(). if you override Remove(), call parent or else your p
  *The deduction of the cost of this power.
  *Returns TRUE on a successful activation.
  */
-/datum/action/changeling/proc/try_to_sting(mob/living/user, mob/living/target)
+/datum/action/changeling/proc/try_to_sting(mob/living/user, atom/target)
 	if(!can_sting(user, target))
 		return FALSE
 	if(disabled_by_fire && user.fire_stacks && user.on_fire)
@@ -74,16 +74,16 @@ the same goes for Remove(). if you override Remove(), call parent or else your p
 		return TRUE
 	return FALSE
 
-/datum/action/changeling/proc/sting_action(mob/living/user, mob/living/target)
+/datum/action/changeling/proc/sting_action(mob/living/user, atom/target)
 	SHOULD_CALL_PARENT(TRUE)
 	SSblackbox.record_feedback("nested tally", "changeling_powers", 1, list("[name]"))
 	return FALSE
 
-/datum/action/changeling/proc/sting_feedback(mob/living/user, mob/living/target)
+/datum/action/changeling/proc/sting_feedback(mob/living/user, atom/target)
 	return FALSE
 
 // Fairly important to remember to return 1 on success >.< // Return TRUE not 1 >.<
-/datum/action/changeling/proc/can_sting(mob/living/user, mob/living/target)
+/datum/action/changeling/proc/can_sting(mob/living/user, atom/target)
 	if(!can_be_used_by(user))
 		return FALSE
 	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)

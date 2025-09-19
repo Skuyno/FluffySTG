@@ -1,3 +1,7 @@
+
+/mob/living/get_cytology_cell_ids()
+	return ..()
+
 /mob/living/Initialize(mapload)
 	. = ..()
 	if(initial_size != RESIZE_DEFAULT_SIZE)
