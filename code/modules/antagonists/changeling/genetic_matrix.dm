@@ -757,10 +757,13 @@ return output
 				changeling.purchase_power(power_path, slot_identifier)
 
 		if("craft")
+			var/mob/user = ui?.user || usr
 			var/list/raw_materials = isnull(params["materials"]) ? null : safe_json_decode(params["materials"])
 			var/list/raw_abilities = isnull(params["abilities"]) ? null : safe_json_decode(params["abilities"])
 			last_crafting_result = process_crafting_request(raw_materials, raw_abilities, user)
 			if(!islist(last_crafting_result))
+				if(user)
+					to_chat(user, span_warning("We cannot interpret that configuration of biomaterials."))
 				last_crafting_result = list(
 					"success" = FALSE,
 					"message" = "We cannot interpret that configuration of biomaterials.",
