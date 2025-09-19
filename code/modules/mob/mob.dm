@@ -56,10 +56,6 @@
 
 	return ..()
 
-
-/mob/proc/get_cytology_cell_ids()
-	return list()
-
 /mob/New()
 	// This needs to happen IMMEDIATELY. I'm sorry :(
 	GenerateTag()
