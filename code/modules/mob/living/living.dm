@@ -61,7 +61,7 @@
 	var/display_name = initial(name)
 	if(!istext(display_name) || !length(display_name))
 		display_name = "organism"
-	var/id_seed = changeling_sanitize_material_id(copytext(type2text(type), 6))
+	var/id_seed = changeling_sanitize_material_id(copytext("[type]", 6))
 	if(!length(id_seed))
 		id_seed = "biomaterial"
 	return list(
