@@ -39,7 +39,7 @@ const formatValue = (value: unknown, fallback = 'Unknown') => {
   return String(value);
 };
 
-type ProfileEntry = {
+export type ProfileEntry = {
   id: string;
   name: string;
   protected: BooleanLike;
@@ -54,7 +54,7 @@ type ProfileEntry = {
   id_icon: string | null;
 };
 
-type AbilityEntry = {
+export type ModuleEntry = {
   id: string;
   name: string;
   desc: string;
@@ -66,16 +66,28 @@ type AbilityEntry = {
   button_icon_state: string | null;
   source?: string;
   slot?: number;
+  slotType?: string;
 };
 
-type BuildEntry = {
+export type BuildEntry = {
   id: string;
   name: string;
   profile: ProfileEntry | null;
-  abilities: (AbilityEntry | null)[];
+  modules: (ModuleEntry | null)[];
 };
 
-type SkillEntry = {
+export type CytologyCellEntry = {
+  id: string;
+  name: string;
+  desc: string | null;
+};
+
+export type RecipeEntry = {
+  id: string;
+  name: string;
+};
+
+export type SkillEntry = {
   id: string;
   name: string;
   level: number;
@@ -85,13 +97,18 @@ type SkillEntry = {
 };
 
 type GeneticMatrixData = {
-  maxAbilitySlots: number;
+  maxAbilitySlots?: number;
+  maxModuleSlots?: number;
   maxBuilds: number;
   builds: BuildEntry[];
   resultCatalog: ProfileEntry[];
-  abilityCatalog: AbilityEntry[];
+  abilityCatalog?: ModuleEntry[];
+  moduleCatalog?: ModuleEntry[];
   cells: ProfileEntry[];
-  abilities: AbilityEntry[];
+  cytologyCells?: CytologyCellEntry[];
+  abilities?: ModuleEntry[];
+  modules?: ModuleEntry[];
+  recipes?: RecipeEntry[];
   skills: SkillEntry[];
   canAddBuild: BooleanLike;
 };
@@ -99,6 +116,8 @@ type GeneticMatrixData = {
 type DragPayload =
   | { type: 'profile'; id: string }
   | { type: 'profile-slot'; id: string; buildId: string }
+  | { type: 'module'; id: string }
+  | { type: 'module-slot'; id: string; buildId: string; slot: number }
   | { type: 'ability'; id: string }
   | { type: 'ability-slot'; id: string; buildId: string; slot: number };
 
@@ -107,19 +126,37 @@ export const GeneticMatrix = () => {
   const {
     builds = [],
     resultCatalog = [],
+    moduleCatalog = [],
     abilityCatalog = [],
     cells = [],
+    cytologyCells = [],
+    modules = [],
     abilities = [],
+    recipes = [],
     skills = [],
     canAddBuild,
+    maxModuleSlots,
     maxAbilitySlots = 0,
     maxBuilds = 0,
   } = data;
 
-  const [activeTab, setActiveTab] = useLocalState<'matrix' | 'cells' | 'abilities' | 'skills'>(
-    'genetic-matrix/tab',
-    'matrix',
+  const availableCatalog = moduleCatalog.length ? moduleCatalog : abilityCatalog;
+  const availableModules = modules.length ? modules : abilities;
+  const maxSlots = maxModuleSlots ?? maxAbilitySlots ?? 0;
+
+  const [activeTabRaw, setActiveTabRaw] = useLocalState<
+    'matrix' | 'cells' | 'modules' | 'skills' | 'abilities'
+  >('genetic-matrix/tab', 'matrix');
+  const activeTab = activeTabRaw === 'abilities' ? 'modules' : activeTabRaw;
+  const setActiveTab = useCallback(
+    (tab: 'matrix' | 'cells' | 'modules' | 'skills') => setActiveTabRaw(tab),
+    [setActiveTabRaw],
   );
+  useEffect(() => {
+    if (activeTabRaw === 'abilities') {
+      setActiveTabRaw('modules');
+    }
+  }, [activeTabRaw, setActiveTabRaw]);
   const [selectedBuildId, setSelectedBuildId] = useLocalState<string | undefined>(
     'genetic-matrix/selected-build',
     undefined,
@@ -160,13 +197,13 @@ export const GeneticMatrix = () => {
                 selected={activeTab === 'cells'}
                 onClick={() => setActiveTab('cells')}
               >
-                Cells Storage
+                DNA Storage
               </Tabs.Tab>
               <Tabs.Tab
-                selected={activeTab === 'abilities'}
-                onClick={() => setActiveTab('abilities')}
+                selected={activeTab === 'modules'}
+                onClick={() => setActiveTab('modules')}
               >
-                Abilities Storage
+                Module Storage
               </Tabs.Tab>
               <Tabs.Tab
                 selected={activeTab === 'skills'}
@@ -185,15 +222,21 @@ export const GeneticMatrix = () => {
                 selectedBuildId={selectedBuildId}
                 onSelectBuild={setSelectedBuildId}
                 resultCatalog={resultCatalog}
-                abilityCatalog={abilityCatalog}
-                maxAbilitySlots={maxAbilitySlots}
+                moduleCatalog={availableCatalog}
+                maxModuleSlots={maxSlots}
                 canAddBuild={asBoolean(canAddBuild)}
                 maxBuilds={maxBuilds}
               />
             )}
-            {activeTab === 'cells' && <CellsTab profiles={cells} />}
-            {activeTab === 'abilities' && (
-              <AbilitiesStorageTab abilities={abilities} />
+            {activeTab === 'cells' && (
+              <CellsTab
+                profiles={cells}
+                cytologyCells={cytologyCells}
+                recipes={recipes}
+              />
+            )}
+            {activeTab === 'modules' && (
+              <ModuleStorageTab modules={availableModules} />
             )}
             {activeTab === 'skills' && <SkillsTab skills={skills} />}
           </Stack.Item>
@@ -210,8 +253,8 @@ type MatrixTabProps = {
   selectedBuildId: string | undefined;
   onSelectBuild: (id: string) => void;
   resultCatalog: ProfileEntry[];
-  abilityCatalog: AbilityEntry[];
-  maxAbilitySlots: number;
+  moduleCatalog: ModuleEntry[];
+  maxModuleSlots: number;
   canAddBuild: boolean;
   maxBuilds: number;
 };
@@ -223,8 +266,8 @@ const MatrixTab = ({
   selectedBuildId,
   onSelectBuild,
   resultCatalog,
-  abilityCatalog,
-  maxAbilitySlots,
+  moduleCatalog,
+  maxModuleSlots,
   canAddBuild,
   maxBuilds,
 }: MatrixTabProps) => {
@@ -274,13 +317,13 @@ const MatrixTab = ({
     [act],
   );
 
-  const handleAssignAbility = useCallback(
-    (buildId: string, slot: number, abilityId: string | null) => {
-      if (!abilityId) {
-        act('clear_build_ability', { build: buildId, slot });
+  const handleAssignModule = useCallback(
+    (buildId: string, slot: number, moduleId: string | null) => {
+      if (!moduleId) {
+        act('clear_build_module', { build: buildId, slot });
         return;
       }
-      act('set_build_ability', { build: buildId, slot, ability: abilityId });
+      act('set_build_module', { build: buildId, slot, module: moduleId });
     },
     [act],
   );
@@ -310,13 +353,13 @@ const MatrixTab = ({
     act('create_build');
   }, [act]);
 
-  const assignedAbilityIds = useMemo(() => {
+  const assignedModuleIds = useMemo(() => {
     if (!selectedBuild) {
       return new Set<string>();
     }
     return new Set(
-      selectedBuild.abilities
-        .filter((entry): entry is AbilityEntry => Boolean(entry))
+      selectedBuild.modules
+        .filter((entry): entry is ModuleEntry => Boolean(entry))
         .map((entry) => entry.id),
     );
   }, [selectedBuild]);
@@ -338,21 +381,21 @@ const MatrixTab = ({
     [act, handleAssignProfile],
   );
 
-  const handleAbilityDrop = useCallback(
+  const handleModuleDrop = useCallback(
     (payload: DragPayload, targetBuild: BuildEntry, slot: number) => {
-      if (payload.type === 'ability') {
-        handleAssignAbility(targetBuild.id, slot, payload.id);
+      if (payload.type === 'module' || payload.type === 'ability') {
+        handleAssignModule(targetBuild.id, slot, payload.id);
         return;
       }
-      if (payload.type === 'ability-slot') {
+      if (payload.type === 'module-slot' || payload.type === 'ability-slot') {
         if (payload.buildId === targetBuild.id && payload.slot === slot) {
           return;
         }
-        handleAssignAbility(targetBuild.id, slot, payload.id);
-        act('clear_build_ability', { build: payload.buildId, slot: payload.slot });
+        handleAssignModule(targetBuild.id, slot, payload.id);
+        act('clear_build_module', { build: payload.buildId, slot: payload.slot });
       }
     },
-    [act, handleAssignAbility],
+    [act, handleAssignModule],
   );
 
   const handleProfileDoubleClick = useCallback(
@@ -365,24 +408,24 @@ const MatrixTab = ({
     [handleAssignProfile, selectedBuild],
   );
 
-  const handleAbilityDoubleClick = useCallback(
-    (ability: AbilityEntry) => {
-      if (!selectedBuild || maxAbilitySlots <= 0) {
+  const handleModuleDoubleClick = useCallback(
+    (module: ModuleEntry) => {
+      if (!selectedBuild || maxModuleSlots <= 0) {
         return;
       }
       const openIndex =
-        selectedBuild.abilities.findIndex((entry) => !entry) + 1;
+        selectedBuild.modules.findIndex((entry) => !entry) + 1;
       const slot =
         openIndex > 0
           ? openIndex
-          : selectedBuild.abilities.length > 0
+          : selectedBuild.modules.length > 0
             ? 1
             : 0;
       if (slot > 0) {
-        handleAssignAbility(selectedBuild.id, slot, ability.id);
+        handleAssignModule(selectedBuild.id, slot, module.id);
       }
     },
-    [handleAssignAbility, maxAbilitySlots, selectedBuild],
+    [handleAssignModule, maxModuleSlots, selectedBuild],
   );
 
   return (
@@ -405,16 +448,16 @@ const MatrixTab = ({
           <Stack.Item>
             <BuildEditor
               build={selectedBuild}
-              maxAbilitySlots={maxAbilitySlots}
+              maxModuleSlots={maxModuleSlots}
               dragPayload={dragPayload}
               beginDrag={beginDrag}
               endDrag={endDrag}
               parsePayload={parsePayload}
               onClearProfile={(buildId) => handleAssignProfile(buildId, null)}
-              onClearAbility={(buildId, slot) => handleAssignAbility(buildId, slot, null)}
+              onClearModule={(buildId, slot) => handleAssignModule(buildId, slot, null)}
               onClearBuild={handleClearBuild}
               onProfileDropped={handleProfileDrop}
-              onAbilityDropped={handleAbilityDrop}
+              onModuleDropped={handleModuleDrop}
             />
           </Stack.Item>
           <Stack.Item grow>
@@ -434,17 +477,17 @@ const MatrixTab = ({
                 />
               </Stack.Item>
               <Stack.Item grow>
-                <AbilityList
-                  title="Ability Catalog"
-                  abilities={abilityCatalog}
+                <ModuleList
+                  title="Module Catalog"
+                  modules={moduleCatalog}
                   allowDrag
-                  onDragStart={(ability, event) =>
-                    beginDrag(event, { type: 'ability', id: ability.id })
+                  onDragStart={(module, event) =>
+                    beginDrag(event, { type: 'module', id: module.id })
                   }
                   onDragEnd={endDrag}
-                  onDoubleClick={handleAbilityDoubleClick}
-                  assignedAbilityIds={assignedAbilityIds}
-                  emptyMessage="We do not possess any abilities to assign."
+                  onDoubleClick={handleModuleDoubleClick}
+                  assignedModuleIds={assignedModuleIds}
+                  emptyMessage="We do not possess any modules to assign."
                 />
               </Stack.Item>
             </Stack>
@@ -509,7 +552,7 @@ const BuildList = ({
         {builds.map((build) => {
           const isSelected = selectedBuildId === build.id;
           const hasAssignments =
-            Boolean(build.profile) || build.abilities.some((ability) => ability);
+            Boolean(build.profile) || build.modules.some((module) => module);
           return (
             <Box
               key={build.id}
@@ -578,30 +621,30 @@ const BuildList = ({
 
 type BuildEditorProps = {
   build: BuildEntry | undefined;
-  maxAbilitySlots: number;
+  maxModuleSlots: number;
   dragPayload: DragPayload | null;
   beginDrag: (event: DragEvent, payload: DragPayload) => void;
   endDrag: () => void;
   parsePayload: (event: DragEvent) => DragPayload | null;
   onClearProfile: (buildId: string) => void;
-  onClearAbility: (buildId: string, slot: number) => void;
+  onClearModule: (buildId: string, slot: number) => void;
   onClearBuild: (buildId: string) => void;
   onProfileDropped: (payload: DragPayload, build: BuildEntry) => void;
-  onAbilityDropped: (payload: DragPayload, build: BuildEntry, slot: number) => void;
+  onModuleDropped: (payload: DragPayload, build: BuildEntry, slot: number) => void;
 };
 
 const BuildEditor = ({
   build,
-  maxAbilitySlots,
+  maxModuleSlots,
   dragPayload,
   beginDrag,
   endDrag,
   parsePayload,
   onClearProfile,
-  onClearAbility,
+  onClearModule,
   onClearBuild,
   onProfileDropped,
-  onAbilityDropped,
+  onModuleDropped,
 }: BuildEditorProps) => {
   if (!build) {
     return (
@@ -721,33 +764,35 @@ const BuildEditor = ({
         <Divider />
         <Stack.Item>
           <Stack vertical gap={1}>
-            {Array.from({ length: maxAbilitySlots }, (_, index) => {
+            {Array.from({ length: maxModuleSlots }, (_, index) => {
               const slot = index + 1;
-              const ability = build.abilities[index] ?? null;
+              const moduleEntry = build.modules[index] ?? null;
               const highlight =
                 dragPayload &&
-                (dragPayload.type === 'ability' ||
-                  (dragPayload.type === 'ability-slot' &&
+                (dragPayload.type === 'module' ||
+                  dragPayload.type === 'ability' ||
+                  ((dragPayload.type === 'module-slot' ||
+                    dragPayload.type === 'ability-slot') &&
                     (dragPayload.buildId !== build.id ||
                       dragPayload.slot !== slot)));
               return (
                 <Stack align="center" gap={1} key={slot}>
                   <Stack.Item width="64px">
                     <Box textAlign="center" bold>
-                      Slot {slot}
+                      {slot === 1 ? 'Key Active' : `Module ${slot}`}
                     </Box>
                   </Stack.Item>
                   <Stack.Item grow>
                     <Box
                       p={1}
-                      draggable={Boolean(ability)}
+                      draggable={Boolean(moduleEntry)}
                       onDragStart={(event) => {
-                        if (!ability) {
+                        if (!moduleEntry) {
                           return;
                         }
                         beginDrag(event, {
-                          type: 'ability-slot',
-                          id: ability.id,
+                          type: 'module-slot',
+                          id: moduleEntry.id,
                           buildId: build.id,
                           slot,
                         });
@@ -759,7 +804,9 @@ const BuildEditor = ({
                           return;
                         }
                         if (
+                          payload.type === 'module' ||
                           payload.type === 'ability' ||
+                          payload.type === 'module-slot' ||
                           payload.type === 'ability-slot'
                         ) {
                           event.preventDefault();
@@ -772,11 +819,13 @@ const BuildEditor = ({
                           return;
                         }
                         if (
+                          payload.type === 'module' ||
                           payload.type === 'ability' ||
+                          payload.type === 'module-slot' ||
                           payload.type === 'ability-slot'
                         ) {
                           event.preventDefault();
-                          onAbilityDropped(payload, build, slot);
+                          onModuleDropped(payload, build, slot);
                           endDrag();
                         }
                       }}
@@ -791,27 +840,27 @@ const BuildEditor = ({
                           : 'rgba(255,255,255,0.03)',
                       }}
                     >
-                      {ability ? (
-                        <AbilitySummary ability={ability} showSource={false} />
+                      {moduleEntry ? (
+                        <ModuleSummary module={moduleEntry} showSource={false} />
                       ) : (
-                        <Box color="label">Drop an ability here.</Box>
+                        <Box color="label">Drop a module here.</Box>
                       )}
                     </Box>
                   </Stack.Item>
                   <Stack.Item>
                     <Button
                       icon="times"
-                      disabled={!ability}
+                      disabled={!moduleEntry}
                       tooltip="Clear this slot"
-                      onClick={() => onClearAbility(build.id, slot)}
+                      onClick={() => onClearModule(build.id, slot)}
                     />
                   </Stack.Item>
                 </Stack>
               );
             })}
-            {maxAbilitySlots === 0 && (
+            {maxModuleSlots === 0 && (
               <NoticeBox>
-                This build has no ability slots available.
+                This build has no module slots available.
               </NoticeBox>
             )}
           </Stack>
@@ -883,48 +932,48 @@ const ProfileCatalog = ({
   </Section>
 );
 
-type AbilityListProps = {
+type ModuleListProps = {
   title: string;
-  abilities: AbilityEntry[];
+  modules: ModuleEntry[];
   allowDrag?: boolean;
-  onDragStart?: (ability: AbilityEntry, event: DragEvent) => void;
+  onDragStart?: (module: ModuleEntry, event: DragEvent) => void;
   onDragEnd?: () => void;
-  onDoubleClick?: (ability: AbilityEntry) => void;
-  assignedAbilityIds?: Set<string>;
+  onDoubleClick?: (module: ModuleEntry) => void;
+  assignedModuleIds?: Set<string>;
   emptyMessage?: string;
 };
 
-const AbilityList = ({
+const ModuleList = ({
   title,
-  abilities,
+  modules,
   allowDrag = false,
   onDragStart,
   onDragEnd,
   onDoubleClick,
-  assignedAbilityIds,
+  assignedModuleIds,
   emptyMessage,
-}: AbilityListProps) => (
+}: ModuleListProps) => (
   <Section title={title} fill scrollable>
-    {abilities.length === 0 ? (
-      <NoticeBox>{emptyMessage ?? 'No abilities available.'}</NoticeBox>
+    {modules.length === 0 ? (
+      <NoticeBox>{emptyMessage ?? 'No modules available.'}</NoticeBox>
     ) : (
       <Stack vertical gap={1}>
-        {abilities.map((ability) => {
-          const isAssigned = assignedAbilityIds?.has(ability.id);
+        {modules.map((module) => {
+          const isAssigned = assignedModuleIds?.has(module.id);
           return (
             <Box
-              key={ability.id}
+              key={module.id}
               className="candystripe"
               p={1}
               draggable={allowDrag}
               onDragStart={
                 allowDrag
-                  ? (event) => onDragStart?.(ability, event)
+                  ? (event) => onDragStart?.(module, event)
                   : undefined
               }
               onDragEnd={allowDrag ? onDragEnd : undefined}
               onDoubleClick={
-                onDoubleClick ? () => onDoubleClick(ability) : undefined
+                onDoubleClick ? () => onDoubleClick(module) : undefined
               }
               style={{
                 border: `1px solid ${
@@ -936,7 +985,7 @@ const AbilityList = ({
                   : 'rgba(255,255,255,0.03)',
               }}
             >
-              <AbilitySummary ability={ability} />
+              <ModuleSummary module={module} />
             </Box>
           );
         })}
@@ -1001,20 +1050,20 @@ const ProfileSummary = ({ profile }: ProfileSummaryProps) => {
   );
 };
 
-type AbilitySummaryProps = {
-  ability: AbilityEntry;
+type ModuleSummaryProps = {
+  module: ModuleEntry;
   showSource?: boolean;
 };
 
-const AbilitySummary = ({ ability, showSource = true }: AbilitySummaryProps) => {
-  const sourceLabel = showSource ? formatSource(ability.source) : '';
-  const sourceColor = ability.source?.toLowerCase() === 'innate' ? 'good' : 'average';
+const ModuleSummary = ({ module, showSource = true }: ModuleSummaryProps) => {
+  const sourceLabel = showSource ? formatSource(module.source) : '';
+  const sourceColor = module.source?.toLowerCase() === 'innate' ? 'good' : 'average';
   return (
     <Stack vertical gap={0.5}>
       <Stack.Item>
         <Stack justify="space-between" align="center" gap={0.5}>
           <Stack.Item>
-            <Box bold>{ability.name}</Box>
+            <Box bold>{module.name}</Box>
           </Stack.Item>
           {sourceLabel && (
             <Stack.Item>
@@ -1024,38 +1073,78 @@ const AbilitySummary = ({ ability, showSource = true }: AbilitySummaryProps) => 
         </Stack>
       </Stack.Item>
       <Stack.Item color="label">
-        Chems: {ability.chemical_cost} | DNA: {ability.dna_cost} | Required DNA:{' '}
-        {ability.req_dna} | Required Absorbs: {ability.req_absorbs}
+        Chems: {module.chemical_cost} | DNA: {module.dna_cost} | Required DNA:{' '}
+        {module.req_dna} | Required Absorbs: {module.req_absorbs}
       </Stack.Item>
-      {ability.desc && <Stack.Item>{ability.desc}</Stack.Item>}
-      {ability.helptext && <Stack.Item color="good">{ability.helptext}</Stack.Item>}
+      {module.slotType === 'key' && (
+        <Stack.Item color="good">Key Active Module</Stack.Item>
+      )}
+      {module.desc && <Stack.Item>{module.desc}</Stack.Item>}
+      {module.helptext && <Stack.Item color="good">{module.helptext}</Stack.Item>}
     </Stack>
   );
 };
 
 type CellsTabProps = {
   profiles: ProfileEntry[];
+  cytologyCells: CytologyCellEntry[];
+  recipes: RecipeEntry[];
 };
 
-const CellsTab = ({ profiles }: CellsTabProps) => (
-  <ProfileCatalog
-    title="Cells Storage"
-    profiles={profiles}
-    allowDrag={false}
-    emptyMessage="We have no stored DNA samples."
-  />
+const CellsTab = ({ profiles, cytologyCells, recipes }: CellsTabProps) => (
+  <Stack vertical fill gap={1}>
+    <Stack.Item>
+      <ProfileCatalog
+        title="DNA Profiles"
+        profiles={profiles}
+        allowDrag={false}
+        emptyMessage="We have no stored DNA samples."
+      />
+    </Stack.Item>
+    <Stack.Item>
+      <Section title="Cytology Cells" fill scrollable>
+        {cytologyCells.length === 0 ? (
+          <NoticeBox>No cytology cells catalogued.</NoticeBox>
+        ) : (
+          <Stack vertical gap={1}>
+            {cytologyCells.map((cell) => (
+              <Box key={cell.id} className="candystripe" p={1}>
+                <Box bold>{cell.name}</Box>
+                {cell.desc && <Box color="label">{cell.desc}</Box>}
+              </Box>
+            ))}
+          </Stack>
+        )}
+      </Section>
+    </Stack.Item>
+    <Stack.Item>
+      <Section title="Known Recipes" fill scrollable>
+        {recipes.length === 0 ? (
+          <NoticeBox>No crafting recipes learned.</NoticeBox>
+        ) : (
+          <Stack vertical gap={1}>
+            {recipes.map((recipe) => (
+              <Box key={recipe.id} className="candystripe" p={1}>
+                {recipe.name}
+              </Box>
+            ))}
+          </Stack>
+        )}
+      </Section>
+    </Stack.Item>
+  </Stack>
 );
 
-type AbilitiesStorageTabProps = {
-  abilities: AbilityEntry[];
+type ModuleStorageTabProps = {
+  modules: ModuleEntry[];
 };
 
-const AbilitiesStorageTab = ({ abilities }: AbilitiesStorageTabProps) => (
-  <AbilityList
-    title="Abilities Storage"
-    abilities={abilities}
+const ModuleStorageTab = ({ modules }: ModuleStorageTabProps) => (
+  <ModuleList
+    title="Module Storage"
+    modules={modules}
     allowDrag={false}
-    emptyMessage="We have not acquired any abilities."
+    emptyMessage="We have not catalogued any modules."
   />
 );
 
