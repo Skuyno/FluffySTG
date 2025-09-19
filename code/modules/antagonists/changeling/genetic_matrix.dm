@@ -44,7 +44,8 @@
 	for(var/entry in matches)
 		if(!islist(entry))
 			continue
-		composer_preview += list(entry.Copy())
+		var/list/entry_list = entry
+		composer_preview += list(entry_list.Copy())
 
 /datum/genetic_matrix/proc/get_composer_preview()
 	var/list/output = list()
@@ -53,7 +54,8 @@
 	for(var/entry in composer_preview)
 		if(!islist(entry))
 			continue
-		output += list(entry.Copy())
+		var/list/entry_list = entry
+		output += list(entry_list.Copy())
 	return output
 
 /datum/genetic_matrix/ui_state(mob/user)
@@ -555,7 +557,7 @@
 	for(var/datum/changeling_bio_incubator/build/build as anything in bio_incubator.builds)
 		if(!build.assigned_profile)
 			build.assigned_profile = profile
-			bio_incubator.notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
+		bio_incubator.notify_builds_changed()
 			break
 
 /// Handle updates when a DNA profile is removed.
@@ -568,4 +570,4 @@
 			build.assigned_profile = null
 			changed = TRUE
 	if(changed)
-		bio_incubator.notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
+		bio_incubator.notify_builds_changed()
