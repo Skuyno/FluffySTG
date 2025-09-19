@@ -62,18 +62,18 @@
 	/// Whether we can currently respec in the cellular emporium.
 	var/can_respec = 0
 
-        /// The currently active changeling sting.
-        var/datum/action/changeling/sting/chosen_sting
-        /// A reference to our cellular emporium datum.
-        var/datum/cellular_emporium/cellular_emporium
-        /// A reference to our cellular emporium action (which opens the UI for the datum).
-        var/datum/action/cellular_emporium/emporium_action
-        /// Coordinator for the genetic matrix UI.
-        var/datum/genetic_matrix/genetic_matrix
-        /// Action that opens the genetic matrix UI.
-        var/datum/action/changeling/genetic_matrix/genetic_matrix_action
-        /// Builds configured for the genetic matrix.
-        var/list/genetic_matrix_builds
+	/// The currently active changeling sting.
+	var/datum/action/changeling/sting/chosen_sting
+	/// A reference to our cellular emporium datum.
+	var/datum/cellular_emporium/cellular_emporium
+	/// A reference to our cellular emporium action (which opens the UI for the datum).
+	var/datum/action/cellular_emporium/emporium_action
+	/// Coordinator for the genetic matrix UI.
+	var/datum/genetic_matrix/genetic_matrix
+	/// Action that opens the genetic matrix UI.
+	var/datum/action/changeling/genetic_matrix/genetic_matrix_action
+	/// Builds configured for the genetic matrix.
+	var/list/genetic_matrix_builds
 
 	/// UI displaying how many chems we have
 	var/atom/movable/screen/ling/chems/lingchemdisplay
@@ -122,21 +122,21 @@
 		break
 
 /datum/antagonist/changeling/Destroy()
-        QDEL_NULL(emporium_action)
-        QDEL_NULL(cellular_emporium)
-        QDEL_NULL(genetic_matrix_action)
-        QDEL_NULL(genetic_matrix)
-        QDEL_LIST(genetic_matrix_builds)
-        genetic_matrix_builds = null
-        current_profile = null
-        return ..()
+	QDEL_NULL(emporium_action)
+	QDEL_NULL(cellular_emporium)
+	QDEL_NULL(genetic_matrix_action)
+	QDEL_NULL(genetic_matrix)
+	QDEL_LIST(genetic_matrix_builds)
+	genetic_matrix_builds = null
+	current_profile = null
+	return ..()
 
 /datum/antagonist/changeling/on_gain()
-        generate_name()
-        create_emporium()
-        create_genetic_matrix()
-        create_innate_actions()
-        create_initial_profile()
+	generate_name()
+	create_emporium()
+	create_genetic_matrix()
+	create_innate_actions()
+	create_initial_profile()
 	if(give_objectives)
 		forge_objectives()
 	owner.current.get_language_holder().omnitongue = TRUE
@@ -237,18 +237,18 @@
  * Instantiate the cellular emporium for the changeling.
  */
 /datum/antagonist/changeling/proc/create_emporium()
-        cellular_emporium = new(src)
-        emporium_action = new(cellular_emporium)
-        emporium_action.Grant(owner.current)
+	cellular_emporium = new(src)
+	emporium_action = new(cellular_emporium)
+	emporium_action.Grant(owner.current)
 
 /datum/antagonist/changeling/proc/create_genetic_matrix()
-        QDEL_NULL(genetic_matrix_action)
-        QDEL_NULL(genetic_matrix)
-        genetic_matrix = new(src)
-        genetic_matrix_action = new(genetic_matrix)
-        ensure_genetic_matrix_setup()
-        if(owner && owner.current)
-                genetic_matrix_action.Grant(owner.current)
+	QDEL_NULL(genetic_matrix_action)
+	QDEL_NULL(genetic_matrix)
+	genetic_matrix = new(src)
+	genetic_matrix_action = new(genetic_matrix)
+	ensure_genetic_matrix_setup()
+	if(owner && owner.current)
+		genetic_matrix_action.Grant(owner.current)
 
 /*
  * Instantiate all the default actions of a ling (transform, dna sting, absorb, etc)
@@ -357,31 +357,31 @@
  * if [include_innate] = TRUE, will also remove all powers from the Changeling's innate_powers list.
  */
 /datum/antagonist/changeling/proc/remove_changeling_powers(include_innate = FALSE)
-        if(!isliving(owner.current))
-                return
+	if(!isliving(owner.current))
+		return
 
-        if(chosen_sting)
-                chosen_sting.unset_sting(owner.current)
+	if(chosen_sting)
+		chosen_sting.unset_sting(owner.current)
 
-        QDEL_LIST_ASSOC_VAL(purchased_powers)
-        if(include_innate)
-                QDEL_LIST(innate_powers)
+	QDEL_LIST_ASSOC_VAL(purchased_powers)
+	if(include_innate)
+		QDEL_LIST(innate_powers)
 
-        genetic_points = total_genetic_points
-        chem_charges = min(chem_charges, total_chem_storage)
-        chem_recharge_rate = initial(chem_recharge_rate)
-        chem_recharge_slowdown = initial(chem_recharge_slowdown)
-        prune_genetic_matrix_assignments()
+	genetic_points = total_genetic_points
+	chem_charges = min(chem_charges, total_chem_storage)
+	chem_recharge_rate = initial(chem_recharge_rate)
+	chem_recharge_slowdown = initial(chem_recharge_slowdown)
+	prune_genetic_matrix_assignments()
 
 /*
  * For resetting all of the changeling's action buttons. (IE, re-granting them all.)
  */
 /datum/antagonist/changeling/proc/regain_powers()
-        emporium_action.Grant(owner.current)
-        if(genetic_matrix_action)
-                genetic_matrix_action.Grant(owner.current)
-        for(var/datum/action/changeling/power as anything in innate_powers)
-                power.on_purchase(owner.current)
+	emporium_action.Grant(owner.current)
+	if(genetic_matrix_action)
+		genetic_matrix_action.Grant(owner.current)
+	for(var/datum/action/changeling/power as anything in innate_powers)
+		power.on_purchase(owner.current)
 
 	for(var/power_path in purchased_powers)
 		var/datum/action/changeling/power = purchased_powers[power_path]
@@ -641,17 +641,17 @@
  * new_profile - the profile being added.
  */
 /datum/antagonist/changeling/proc/add_profile(datum/changeling_profile/new_profile)
-        if(stored_profiles.len > dna_max)
-                if(!push_out_profile())
-                        return
+	if(stored_profiles.len > dna_max)
+		if(!push_out_profile())
+			return
 
-        if(!first_profile)
-                first_profile = new_profile
-                current_profile = first_profile
+	if(!first_profile)
+		first_profile = new_profile
+		current_profile = first_profile
 
-        stored_profiles += new_profile
-        on_genetic_matrix_profile_added(new_profile)
-        absorbed_count++
+	stored_profiles += new_profile
+	on_genetic_matrix_profile_added(new_profile)
+	absorbed_count++
 
 /*
  * Create a new profile from the given [profile_target]
@@ -672,13 +672,13 @@
  * force - if TRUE, removes the profile even if it's protected.
  */
 /datum/antagonist/changeling/proc/remove_profile(mob/living/carbon/human/profile_target, force = FALSE)
-        for(var/datum/changeling_profile/found_profile as anything in stored_profiles)
-                if(profile_target.real_name == found_profile.name)
-                        if(found_profile.protected && !force)
-                                continue
-                        stored_profiles -= found_profile
-                        on_genetic_matrix_profile_removed(found_profile)
-                        qdel(found_profile)
+	for(var/datum/changeling_profile/found_profile as anything in stored_profiles)
+		if(profile_target.real_name == found_profile.name)
+			if(found_profile.protected && !force)
+				continue
+			stored_profiles -= found_profile
+			on_genetic_matrix_profile_removed(found_profile)
+			qdel(found_profile)
 
 /*
  * Removes the highest changeling profile from the list
@@ -687,18 +687,18 @@
  * Returns TRUE if a profile was removed, FALSE otherwise.
  */
 /datum/antagonist/changeling/proc/push_out_profile()
-        var/datum/changeling_profile/profile_to_remove
-        for(var/datum/changeling_profile/found_profile as anything in stored_profiles)
-                if(!found_profile.protected)
-                        profile_to_remove = found_profile
-                        break
+	var/datum/changeling_profile/profile_to_remove
+	for(var/datum/changeling_profile/found_profile as anything in stored_profiles)
+		if(!found_profile.protected)
+			profile_to_remove = found_profile
+			break
 
-        if(profile_to_remove)
-                stored_profiles -= profile_to_remove
-                on_genetic_matrix_profile_removed(profile_to_remove)
-                qdel(profile_to_remove)
-                return TRUE
-        return FALSE
+	if(profile_to_remove)
+		stored_profiles -= profile_to_remove
+		on_genetic_matrix_profile_removed(profile_to_remove)
+		qdel(profile_to_remove)
+		return TRUE
+	return FALSE
 
 /*
  * Create a profile based on the changeling's initial appearance.
