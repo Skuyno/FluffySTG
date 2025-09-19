@@ -172,6 +172,9 @@
 	/// A list of all memories we've stolen through absorbs.
 	var/list/stolen_memories = list()
 
+	/// Cached metadata for changeling powers keyed by type path.
+	var/static/list/power_metadata_cache = list()
+
 	///	Keeps track of the currently selected profile.
 	var/datum/changeling_profile/current_profile
 	/// Whether we can disguise clothing using stored icon snapshots
@@ -664,6 +667,26 @@
 	blueprint[CHANGELING_SECONDARY_BUILD_SLOTS] = secondary_paths
 	return blueprint
 
+/datum/antagonist/changeling/proc/get_static_power_metadata(power_path)
+	if(!ispath(power_path, /datum/action/changeling))
+		return null
+	var/list/metadata = power_metadata_cache[power_path]
+	if(metadata)
+		return metadata
+	var/datum/action/changeling/temp_action = new power_path()
+	if(!temp_action)
+		return null
+	metadata = list(
+		"name" = temp_action.name,
+		"desc" = temp_action.desc,
+		"helptext" = temp_action.helptext,
+		"dna_cost" = temp_action.dna_cost,
+		"chemical_cost" = temp_action.chemical_cost,
+	)
+	power_metadata_cache[power_path] = metadata
+	QDEL_NULL(temp_action)
+	return metadata
+
 /datum/antagonist/changeling/proc/build_slot_payload(power_path, datum/action/changeling/power, slot_id, slot_index)
 	var/list/payload = list(
 		"slot" = slot_id,
@@ -677,11 +700,13 @@
 		payload["dna_cost"] = power.dna_cost
 		payload["chemical_cost"] = power.chemical_cost
 	else if(ispath(power_path, /datum/action/changeling))
-		payload["name"] = initial(power_path.name)
-		payload["desc"] = initial(power_path.desc)
-		payload["helptext"] = initial(power_path.helptext)
-		payload["dna_cost"] = initial(power_path.dna_cost)
-		payload["chemical_cost"] = initial(power_path.chemical_cost)
+		var/list/metadata = get_static_power_metadata(power_path)
+		if(metadata)
+			payload["name"] = metadata["name"]
+			payload["desc"] = metadata["desc"]
+			payload["helptext"] = metadata["helptext"]
+			payload["dna_cost"] = metadata["dna_cost"]
+			payload["chemical_cost"] = metadata["chemical_cost"]
 	return payload
 
 /datum/antagonist/changeling/proc/export_active_build_state()
@@ -825,7 +850,11 @@
 	qdel(power)
 	purchased_powers -= power_path
 	if(refund_points)
-		var/refund = max(0, initial(power_path.dna_cost))
+		var/refund = 0
+		var/list/metadata = get_static_power_metadata(power_path)
+		if(metadata)
+			refund = metadata["dna_cost"] || 0
+		refund = max(0, refund)
 		if(refund)
 			genetic_points = clamp(genetic_points + refund, 0, total_genetic_points)
 	synchronize_build_state()
@@ -835,7 +864,9 @@
 	if(purchased_powers[power_path])
 		return purchased_powers[power_path].name
 	if(ispath(power_path, /datum/action/changeling))
-		return initial(power_path.name)
+		var/list/metadata = get_static_power_metadata(power_path)
+		if(metadata && metadata["name"])
+			return metadata["name"]
 	return "sequence"
 
 /datum/antagonist/changeling/proc/set_active_key_power(power_path)
@@ -894,7 +925,7 @@
 			if(purchase_power(key_path, CHANGELING_KEY_BUILD_SLOT, TRUE))
 				applied++
 			else
-				failures += initial(key_path.name)
+				failures += get_power_display_name(key_path)
 		else
 			register_power_slot(key_path, CHANGELING_KEY_BUILD_SLOT, TRUE)
 	else
@@ -907,7 +938,7 @@
 			if(purchase_power(path, CHANGELING_SECONDARY_BUILD_SLOTS, TRUE))
 				applied++
 			else
-				failures += initial(path.name)
+				failures += get_power_display_name(path)
 				continue
 		validated_secondaries += path
 	reset_active_build_slots()
