@@ -441,12 +441,12 @@
 	if(!islist(category_entry))
 		var/display_name
 		for(var/list/default_entry as anything in default_biomaterial_categories)
-			if(lowertext(text(default_entry["id"])) == lowertext(text(category_id)))
+			if(lowertext("[default_entry["id"]]") == lowertext("[category_id]"))
 				display_name = default_entry["name"]
 				break
 		category_entry = list(
 			"id" = category_id,
-			"name" = display_name || capitalize(replacetext(text(category_id), "_", " ")),
+			"name" = display_name || capitalize(replacetext("[category_id]", "_", " ")),
 			"items" = list(),
 		)
 		biomaterial_inventory[category_id] = category_entry
@@ -745,7 +745,7 @@
 					continue
 				var/list/item_payload = list(
 					"id" = item_entry["id"] || material_id,
-					"name" = item_entry["name"] || capitalize(replacetext(text(material_id), "_", " ")),
+					"name" = item_entry["name"] || capitalize(replacetext("[material_id]", "_", " ")),
 					"count" = max(0, item_entry["count"] || 0),
 				)
 				if(item_entry["description"])
@@ -755,7 +755,7 @@
 				items_payload += list(item_payload)
 		var/list/category_payload = list(
 			"id" = category_entry["id"] || category_id,
-			"name" = category_entry["name"] || capitalize(replacetext(text(category_id), "_", " ")),
+			"name" = category_entry["name"] || capitalize(replacetext("[category_id]", "_", " ")),
 			"items" = items_payload,
 		)
 		output += list(category_payload)
@@ -771,7 +771,7 @@
 			continue
 		var/list/entry_payload = list(
 			"id" = cell_entry["id"] || cell_id,
-			"name" = cell_entry["name"] || capitalize(replacetext(text(cell_id), "_", " ")),
+			"name" = cell_entry["name"] || capitalize(replacetext("[cell_id]", "_", " ")),
 			"count" = max(0, cell_entry["count"] || 0),
 		)
 		if(cell_entry["description"])
