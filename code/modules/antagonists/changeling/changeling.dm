@@ -470,10 +470,10 @@
 	return item_entry["count"]
 
 /datum/antagonist/changeling/proc/adjust_signature_cell(cell_id, amount = 1, list/metadata)
-	if(isnull(cell_id) || !isnum(amount))
-		return 0
-	if(!islist(signature_cells))
-		signature_cells = list()
+       if(isnull(cell_id) || !isnum(amount))
+               return 0
+       if(!islist(signature_cells))
+               signature_cells = list()
 	var/list/cell_entry = signature_cells[cell_id]
 	if(!islist(cell_entry))
 		cell_entry = list(
@@ -486,19 +486,41 @@
 				continue
 			cell_entry[key] = metadata[key]
 	cell_entry["count"] = (cell_entry["count"] || 0) + amount
-	if(cell_entry["count"] <= 0)
-		signature_cells -= cell_id
-		return 0
-	signature_cells[cell_id] = cell_entry
-	return cell_entry["count"]
+       if(cell_entry["count"] <= 0)
+               signature_cells -= cell_id
+               return 0
+       signature_cells[cell_id] = cell_entry
+       return cell_entry["count"]
 
-/datum/antagonist/changeling/proc/can_harvest_biomaterials(mob/living/target, verbose = TRUE)
-	if(!target || QDELETED(target))
-		return FALSE
-	if(target.stat == DEAD)
-		if(verbose && owner?.current)
-			to_chat(owner.current, span_warning("We require a living specimen."))
-		return FALSE
+/datum/antagonist/changeling/proc/get_signature_cell_total()
+       if(!islist(signature_cells))
+               return 0
+       var/total = 0
+       for(var/cell_id in signature_cells)
+               var/list/cell_entry = signature_cells[cell_id]
+               if(!islist(cell_entry))
+                       continue
+               total += max(0, cell_entry["count"] || 0)
+       return total
+
+/datum/antagonist/changeling/proc/can_harvest_biomaterials(mob/living/target, verbose = TRUE, require_restraint = TRUE)
+       if(!target || QDELETED(target))
+               return FALSE
+       if(require_restraint)
+               var/mob/living/carbon/user = owner?.current
+               if(istype(user))
+                       if(user.pulling != target)
+                               if(verbose)
+                                       user.balloon_alert(user, "needs grab!")
+                               return FALSE
+                       if(user.grab_state < GRAB_AGGRESSIVE)
+                               if(verbose)
+                                       user.balloon_alert(user, "tighten grip!")
+                               return FALSE
+       if(target.stat == DEAD)
+               if(verbose && owner?.current)
+                       to_chat(owner.current, span_warning("We require a living specimen."))
+               return FALSE
 	var/list/profile = target.get_changeling_biomaterial_profile()
 	if(!LAZYLEN(profile))
 		if(verbose && owner?.current)
