@@ -603,28 +603,34 @@
 	)
 
 /datum/antagonist/changeling/proc/determine_cell_line_category(datum/micro_organism/cell_line/cell_line)
-	if(istype(cell_line, /datum/micro_organism/cell_line/blob_spore) ||
-		istype(cell_line, /datum/micro_organism/cell_line/blobbernaut) ||
-		istype(cell_line, /datum/micro_organism/cell_line/bear) ||
-		istype(cell_line, /datum/micro_organism/cell_line/carp) ||
-		istype(cell_line, /datum/micro_organism/cell_line/megacarp) ||
-		istype(cell_line, /datum/micro_organism/cell_line/snake) ||
-		istype(cell_line, /datum/micro_organism/cell_line/glockroach) ||
-		istype(cell_line, /datum/micro_organism/cell_line/hauberoach) ||
-		istype(cell_line, /datum/micro_organism/cell_line/vat_beast) ||
-		istype(cell_line, /datum/micro_organism/cell_line/netherworld) ||
-		istype(cell_line, /datum/micro_organism/cell_line/clown/glutton) ||
-		istype(cell_line, /datum/micro_organism/cell_line/mega_arachnid))
+	var/static/list/predatory_cell_lines = typecacheof(list(
+		/datum/micro_organism/cell_line/blob_spore,
+		/datum/micro_organism/cell_line/blobbernaut,
+		/datum/micro_organism/cell_line/bear,
+		/datum/micro_organism/cell_line/carp,
+		/datum/micro_organism/cell_line/megacarp,
+		/datum/micro_organism/cell_line/snake,
+		/datum/micro_organism/cell_line/glockroach,
+		/datum/micro_organism/cell_line/hauberoach,
+		/datum/micro_organism/cell_line/vat_beast,
+		/datum/micro_organism/cell_line/netherworld,
+		/datum/micro_organism/cell_line/clown/glutton,
+		/datum/micro_organism/cell_line/mega_arachnid,
+	))
+	if(is_type_in_typecache(cell_line, predatory_cell_lines))
 		return CHANGELING_BIOMATERIAL_CATEGORY_PREDATORY
-	if(istype(cell_line, /datum/micro_organism/cell_line/cockroach) ||
-		istype(cell_line, /datum/micro_organism/cell_line/mouse) ||
-		istype(cell_line, /datum/micro_organism/cell_line/pine) ||
-		istype(cell_line, /datum/micro_organism/cell_line/snail) ||
-		istype(cell_line, /datum/micro_organism/cell_line/gelatinous_cube) ||
-		istype(cell_line, /datum/micro_organism/cell_line/walking_mushroom) ||
-		istype(cell_line, /datum/micro_organism/cell_line/axolotl) ||
-		istype(cell_line, /datum/micro_organism/cell_line/frog) ||
-		istype(cell_line, /datum/micro_organism/cell_line/sholean_grapes))
+	var/static/list/resilience_cell_lines = typecacheof(list(
+		/datum/micro_organism/cell_line/cockroach,
+		/datum/micro_organism/cell_line/mouse,
+		/datum/micro_organism/cell_line/pine,
+		/datum/micro_organism/cell_line/snail,
+		/datum/micro_organism/cell_line/gelatinous_cube,
+		/datum/micro_organism/cell_line/walking_mushroom,
+		/datum/micro_organism/cell_line/axolotl,
+		/datum/micro_organism/cell_line/frog,
+		/datum/micro_organism/cell_line/sholean_grapes,
+	))
+	if(is_type_in_typecache(cell_line, resilience_cell_lines))
 		return CHANGELING_BIOMATERIAL_CATEGORY_RESILIENCE
 	return CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE
 
