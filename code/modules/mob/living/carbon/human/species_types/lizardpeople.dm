@@ -26,24 +26,24 @@
 	heatmod = 0.67
 	payday_modifier = 1.0
 	changesource_flags = MIRROR_BADMIN | WABBAJACK | MIRROR_PRIDE | MIRROR_MAGIC | RACE_SWAP | ERT_SPAWN | SLIME_EXTRACT
-        species_cookie = /obj/item/food/meat/slab
-        meat = /obj/item/food/meat/slab/human/mutant/lizard
-        skinned_type = /obj/item/stack/sheet/animalhide/lizard
-        exotic_bloodtype = BLOOD_TYPE_LIZARD
-        inert_mutation = /datum/mutation/firebreath
-        death_sound = 'sound/mobs/humanoids/lizard/deathsound.ogg'
-        species_language_holder = /datum/language_holder/lizard
-        digitigrade_customization = DIGITIGRADE_OPTIONAL
-        changeling_biomaterial_profile = list(
-                list(
-                        CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_PREDATORY,
-                        CHANGELING_HARVEST_ID = "lizard_chondrocytes",
-                        CHANGELING_HARVEST_NAME = "Reptilian Chondrocytes",
-                        CHANGELING_HARVEST_DESCRIPTION = "Aggressive cytology sample suffused with resilient reptilian tissue.",
-                        CHANGELING_HARVEST_AMOUNT = 1,
-                        CHANGELING_HARVEST_SIGNATURE = TRUE,
-                ),
-        )
+	species_cookie = /obj/item/food/meat/slab
+	meat = /obj/item/food/meat/slab/human/mutant/lizard
+	skinned_type = /obj/item/stack/sheet/animalhide/lizard
+	exotic_bloodtype = BLOOD_TYPE_LIZARD
+	inert_mutation = /datum/mutation/firebreath
+	death_sound = 'sound/mobs/humanoids/lizard/deathsound.ogg'
+	species_language_holder = /datum/language_holder/lizard
+	digitigrade_customization = DIGITIGRADE_OPTIONAL
+	changeling_biomaterial_profile = list(
+		list(
+			CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_PREDATORY,
+			CHANGELING_HARVEST_ID = "lizard_chondrocytes",
+			CHANGELING_HARVEST_NAME = "Reptilian Chondrocytes",
+			CHANGELING_HARVEST_DESCRIPTION = "Aggressive cytology sample suffused with resilient reptilian tissue.",
+			CHANGELING_HARVEST_AMOUNT = 1,
+			CHANGELING_HARVEST_SIGNATURE = TRUE,
+		),
+	)
 
 	// Lizards are coldblooded and can stand a greater temperature range than humans
 	bodytemp_heat_damage_limit = BODYTEMP_HEAT_LAVALAND_SAFE
