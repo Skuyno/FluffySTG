@@ -46,6 +46,16 @@
 		BODY_ZONE_L_LEG = /obj/item/bodypart/leg/left/mutant/teshari,
 		BODY_ZONE_R_LEG = /obj/item/bodypart/leg/right/mutant/teshari,
 	)
+	changeling_biomaterial_profile = list(
+		list(
+			CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_RESILIENCE,
+			CHANGELING_HARVEST_ID = "teshari_thermoclinal_cells",
+			CHANGELING_HARVEST_NAME = "Teshari Thermoclinal Cells",
+			CHANGELING_HARVEST_DESCRIPTION = "Frigid-honed cytology sample that keeps a blazing metabolism through any chill.",
+			CHANGELING_HARVEST_AMOUNT = 1,
+			CHANGELING_HARVEST_SIGNATURE = TRUE,
+		),
+	)
 
 /datum/species/teshari/get_default_mutant_bodyparts()
 	return list(
