@@ -954,13 +954,14 @@
 /datum/antagonist/changeling/proc/delete_genetic_preset(index)
 	if(!isnum(index))
 		return FALSE
-	if(index < 1 || index > LAZYLEN(genetic_presets))
-		return FALSE
-	var/list/preset = genetic_presets[index]
-	genetic_presets.Cut(index, index + 1)
-	if(owner?.current && preset)
-		to_chat(owner.current, span_notice("We purge the [preset ? preset[\"name\"] : \"lost\"] template."))
-	return TRUE
+        if(index < 1 || index > LAZYLEN(genetic_presets))
+                return FALSE
+        var/list/preset = genetic_presets[index]
+        var/preset_label = preset ? preset["name"] : "lost"
+        genetic_presets.Cut(index, index + 1)
+        if(owner?.current && preset)
+                to_chat(owner.current, span_notice("We purge the [preset_label] template."))
+        return TRUE
 
 /datum/antagonist/changeling/proc/rename_genetic_preset(index, new_name)
 	if(!isnum(index))
