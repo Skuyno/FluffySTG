@@ -100,6 +100,57 @@ type GeneticPreset = {
   blueprint?: BuildBlueprint;
 };
 
+type CraftingMaterialRequirement = {
+  category: string;
+  category_name: string;
+  id: string;
+  name: string;
+  count: number;
+  description?: string;
+};
+
+type CraftingAbilityRequirement = {
+  path: typePath;
+  name: string;
+  desc?: string;
+};
+
+type CraftingGrant = {
+  path: typePath;
+  name: string;
+  slot: string;
+  slot_name?: string;
+  desc?: string;
+  force?: BooleanLike;
+};
+
+type CraftingRecipe = {
+  id: string;
+  name: string;
+  description: string;
+  result_text?: string;
+  biomaterials: CraftingMaterialRequirement[];
+  abilities: CraftingAbilityRequirement[];
+  grants?: CraftingGrant[];
+  passives?: Record<string, number>;
+};
+
+type CraftingGrantResult = CraftingGrant & {
+  success: BooleanLike;
+  message?: string | null;
+};
+
+type CraftingResult = {
+  success: BooleanLike;
+  message: string;
+  name?: string;
+  recipe?: string;
+  timestamp?: number;
+  errors?: string[];
+  grants?: CraftingGrantResult[];
+  passives?: Record<string, number>;
+};
+
 type GeneticMatrixData = {
   abilities: Ability[];
   can_readapt: BooleanLike;
@@ -120,6 +171,8 @@ type GeneticMatrixData = {
   active_build: ActiveBuildState;
   biomaterials: BiomaterialCategory[];
   signature_cells: SignatureCell[];
+  crafting_recipes?: CraftingRecipe[];
+  crafting_result?: CraftingResult | null;
 };
 
 export const GeneticMatrix = () => {
@@ -172,6 +225,9 @@ export const GeneticMatrix = () => {
               </Stack.Item>
               <Stack.Item grow>
                 <PresetSection />
+              </Stack.Item>
+              <Stack.Item grow>
+                <CraftingSection />
               </Stack.Item>
               <Stack.Item>
                 <BiomaterialSection />
@@ -603,6 +659,695 @@ const BuildSlotCard = (props: {
         </LabeledList>
       ) : null}
     </Stack>
+  );
+};
+
+const CraftingSection = () => {
+  const { act, data } = useBackend<GeneticMatrixData>();
+  const recipes = data.crafting_recipes ?? [];
+  const biomaterials = data.biomaterials ?? [];
+  const ownedAbilities = data.owned_abilities ?? [];
+  const abilityCatalog = data.abilities ?? [];
+  const activeEffects = data.active_effects ?? [];
+  const craftingResult = data.crafting_result ?? null;
+
+  const abilityMetadata = useMemo(() => {
+    const map = new Map<typePath, { name: string; desc?: string }>();
+    abilityCatalog.forEach((ability) => {
+      map.set(ability.path, { name: ability.name, desc: ability.desc });
+    });
+    activeEffects.forEach((effect) => {
+      if (effect.path) {
+        map.set(effect.path, { name: effect.name, desc: effect.desc });
+      }
+    });
+    return map;
+  }, [abilityCatalog, activeEffects]);
+
+  const abilityOptions = useMemo(() => {
+    const options: Array<{ path: typePath; name: string; desc?: string }> = [];
+    const seen = new Set<typePath>();
+    const add = (path: typePath | null | undefined) => {
+      if (!path || seen.has(path)) {
+        return;
+      }
+      seen.add(path);
+      const meta = abilityMetadata.get(path);
+      options.push({
+        path,
+        name: meta?.name ?? String(path),
+        desc: meta?.desc,
+      });
+    };
+    ownedAbilities.forEach(add);
+    activeEffects
+      .filter((effect) => Boolean(effect.innate))
+      .forEach((effect) => add(effect.path));
+    options.sort((a, b) => a.name.localeCompare(b.name));
+    return options;
+  }, [abilityMetadata, ownedAbilities, activeEffects]);
+
+  const biomaterialLookup = useMemo(() => {
+    const lookup = new Map<
+      string,
+      { category: BiomaterialCategory; itemMap: Map<string, BiomaterialItem> }
+    >();
+    biomaterials.forEach((category) => {
+      const itemMap = new Map<string, BiomaterialItem>();
+      (category.items ?? []).forEach((item) => {
+        itemMap.set(item.id, item);
+      });
+      lookup.set(category.id, { category, itemMap });
+    });
+    return lookup;
+  }, [biomaterials]);
+
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!recipes.length) {
+      setSelectedRecipeId(null);
+      return;
+    }
+    setSelectedRecipeId((prev) => {
+      if (prev && recipes.some((recipe) => recipe.id === prev)) {
+        return prev;
+      }
+      return recipes[0].id;
+    });
+  }, [recipes]);
+
+  const selectedRecipe = useMemo(() => {
+    if (!recipes.length) {
+      return null;
+    }
+    if (!selectedRecipeId) {
+      return recipes[0];
+    }
+    return recipes.find((recipe) => recipe.id === selectedRecipeId) ?? recipes[0];
+  }, [recipes, selectedRecipeId]);
+
+  const [materialSelection, setMaterialSelection] = useState<
+    Record<string, Record<string, number>>
+  >({});
+  const [abilitySelection, setAbilitySelection] = useState<typePath[]>([]);
+
+  useEffect(() => {
+    setAbilitySelection((prev) =>
+      prev.filter((path) => abilityOptions.some((option) => option.path === path)),
+    );
+  }, [abilityOptions]);
+
+  useEffect(() => {
+    setMaterialSelection((prev) => {
+      let changed = false;
+      const next: Record<string, Record<string, number>> = {};
+      for (const [categoryId, items] of Object.entries(prev)) {
+        const lookupEntry = biomaterialLookup.get(categoryId);
+        if (!lookupEntry) {
+          changed = true;
+          continue;
+        }
+        for (const [itemId, count] of Object.entries(items)) {
+          const available = lookupEntry.itemMap.get(itemId)?.count ?? 0;
+          if (available <= 0) {
+            if (count > 0) {
+              changed = true;
+            }
+            continue;
+          }
+          const clamped = Math.min(count, available);
+          if (clamped <= 0) {
+            if (count > 0) {
+              changed = true;
+            }
+            continue;
+          }
+          if (!next[categoryId]) {
+            next[categoryId] = {};
+          }
+          next[categoryId][itemId] = clamped;
+          if (clamped !== count) {
+            changed = true;
+          }
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [biomaterialLookup]);
+
+  const updateMaterialSelection = (
+    categoryId: string,
+    itemId: string,
+    compute: (current: number, available: number) => number,
+  ) => {
+    const lookupEntry = biomaterialLookup.get(categoryId);
+    const available = lookupEntry?.itemMap.get(itemId)?.count ?? 0;
+    setMaterialSelection((prev) => {
+      const current = prev[categoryId]?.[itemId] ?? 0;
+      const target = Math.max(0, Math.min(compute(current, available), available));
+      if (target === current) {
+        return prev;
+      }
+      const next = { ...prev };
+      const categoryEntries = { ...(next[categoryId] ?? {}) };
+      if (target <= 0) {
+        delete categoryEntries[itemId];
+      } else {
+        categoryEntries[itemId] = target;
+      }
+      if (Object.keys(categoryEntries).length) {
+        next[categoryId] = categoryEntries;
+      } else {
+        delete next[categoryId];
+      }
+      return next;
+    });
+  };
+
+  const incrementMaterial = (categoryId: string, itemId: string, delta: number) => {
+    updateMaterialSelection(categoryId, itemId, (current) => current + delta);
+  };
+
+  const setMaterialAmount = (categoryId: string, itemId: string, amount: number) => {
+    updateMaterialSelection(categoryId, itemId, () => amount);
+  };
+
+  const clearMaterial = (categoryId: string, itemId: string) => {
+    updateMaterialSelection(categoryId, itemId, () => 0);
+  };
+
+  const toggleAbility = (path: typePath) => {
+    if (!abilityOptions.some((option) => option.path === path)) {
+      return;
+    }
+    setAbilitySelection((prev) => {
+      if (prev.includes(path)) {
+        return prev.filter((entry) => entry !== path);
+      }
+      return [...prev, path];
+    });
+  };
+
+  const selectedMaterials = useMemo(() => {
+    const entries: Array<{
+      categoryId: string;
+      itemId: string;
+      count: number;
+      categoryName: string;
+      itemName: string;
+    }> = [];
+    for (const [categoryId, items] of Object.entries(materialSelection)) {
+      const lookupEntry = biomaterialLookup.get(categoryId);
+      const categoryName = lookupEntry?.category.name ?? categoryId;
+      for (const [itemId, count] of Object.entries(items)) {
+        if (count <= 0) {
+          continue;
+        }
+        const itemName = lookupEntry?.itemMap.get(itemId)?.name ?? itemId;
+        entries.push({
+          categoryId,
+          itemId,
+          count,
+          categoryName,
+          itemName,
+        });
+      }
+    }
+    return entries;
+  }, [materialSelection, biomaterialLookup]);
+
+  const hasMaterials = selectedMaterials.length > 0;
+  const abilitySelectionSet = useMemo(() => new Set(abilitySelection), [abilitySelection]);
+
+  const clearSelection = () => {
+    setMaterialSelection({});
+    setAbilitySelection([]);
+  };
+
+  const loadRequirements = () => {
+    if (!selectedRecipe) {
+      clearSelection();
+      return;
+    }
+    const nextMaterials: Record<string, Record<string, number>> = {};
+    selectedRecipe.biomaterials.forEach((requirement) => {
+      const lookupEntry = biomaterialLookup.get(requirement.category);
+      const available = lookupEntry?.itemMap.get(requirement.id)?.count ?? 0;
+      const amount = Math.min(available, requirement.count);
+      if (amount > 0) {
+        if (!nextMaterials[requirement.category]) {
+          nextMaterials[requirement.category] = {};
+        }
+        nextMaterials[requirement.category][requirement.id] = amount;
+      }
+    });
+    setMaterialSelection(nextMaterials);
+    const requiredAbilities =
+      selectedRecipe.abilities
+        .map((ability) => ability.path)
+        .filter((path) => abilityOptions.some((option) => option.path === path)) ?? [];
+    setAbilitySelection(requiredAbilities);
+  };
+
+  const attemptCraft = () => {
+    if (!hasMaterials) {
+      return;
+    }
+    const materialPayload = selectedMaterials.map((entry) => ({
+      category: entry.categoryId,
+      id: entry.itemId,
+      count: entry.count,
+    }));
+    const abilityPayload = abilitySelection.map((path) => String(path));
+    act('craft', {
+      materials: JSON.stringify(materialPayload),
+      abilities: JSON.stringify(abilityPayload),
+    });
+  };
+
+  const resultTimestamp = craftingResult?.timestamp ?? 0;
+  useEffect(() => {
+    if (craftingResult && Boolean(craftingResult.success)) {
+      setMaterialSelection({});
+      setAbilitySelection([]);
+    }
+  }, [craftingResult?.success, resultTimestamp]);
+
+  const getAvailableMaterialCount = (categoryId: string, itemId: string) => {
+    return biomaterialLookup.get(categoryId)?.itemMap.get(itemId)?.count ?? 0;
+  };
+
+  const formatPassiveLabel = (key: string) => {
+    switch (key) {
+      case 'chem_storage':
+        return 'Chemical Storage';
+      case 'chem_charges':
+        return 'Chemical Charges';
+      case 'chem_recharge_rate':
+        return 'Recharge Rate';
+      case 'chem_recharge_slowdown':
+        return 'Recharge Slowdown';
+      default:
+        return key.replace(/_/g, ' ');
+    }
+  };
+
+  const craftingButtons = (
+    <Stack spacing={1} align="center">
+      <Stack.Item>
+        <Button
+          icon="magic"
+          content="Load Requirements"
+          disabled={!selectedRecipe}
+          onClick={loadRequirements}
+        />
+      </Stack.Item>
+      <Stack.Item>
+        <Button
+          icon="trash"
+          color="bad"
+          content="Clear"
+          disabled={!hasMaterials && !abilitySelection.length}
+          onClick={clearSelection}
+        />
+      </Stack.Item>
+      <Stack.Item>
+        <Button
+          icon="flask"
+          color="good"
+          content="Weave"
+          disabled={!hasMaterials}
+          tooltip={
+            hasMaterials
+              ? 'Weave the configured genome pattern.'
+              : 'Select biomaterials to begin weaving.'
+          }
+          onClick={attemptCraft}
+        />
+      </Stack.Item>
+    </Stack>
+  );
+
+  return (
+    <Section fill scrollable title="Genome Crafting" buttons={craftingButtons}>
+      {!recipes.length ? (
+        <NoticeBox>No genome weaving patterns have been recorded.</NoticeBox>
+      ) : (
+        <Stack spacing={1} fill>
+          <Stack.Item grow basis="45%">
+            <Stack vertical spacing={1}>
+              {recipes.map((recipe) => {
+                const inventoryReady = recipe.biomaterials.every((requirement) => {
+                  return (
+                    getAvailableMaterialCount(requirement.category, requirement.id) >=
+                    requirement.count
+                  );
+                });
+                const abilityReady = recipe.abilities.every((requirement) =>
+                  abilityOptions.some((option) => option.path === requirement.path),
+                );
+                const selected = selectedRecipe
+                  ? recipe.id === selectedRecipe.id
+                  : recipe.id === recipes[0].id;
+                return (
+                  <Stack.Item key={recipe.id} className="candystripe">
+                    <Stack vertical spacing={0.5}>
+                      <Button
+                        fluid
+                        selected={selected}
+                        onClick={() => setSelectedRecipeId(recipe.id)}
+                      >
+                        {recipe.name}
+                      </Button>
+                      <Box>{recipe.description}</Box>
+                      <Stack spacing={1} wrap>
+                        <Stack.Item>
+                          <Box color={inventoryReady ? 'good' : 'bad'}>
+                            Materials {inventoryReady ? 'ready' : 'insufficient'}
+                          </Box>
+                        </Stack.Item>
+                        <Stack.Item>
+                          <Box
+                            color={
+                              recipe.abilities.length
+                                ? abilityReady
+                                  ? 'good'
+                                  : 'bad'
+                                : 'label'
+                            }
+                          >
+                            {recipe.abilities.length
+                              ? abilityReady
+                                ? 'Catalysts prepared'
+                                : 'Catalysts missing'
+                              : 'No catalysts required'}
+                          </Box>
+                        </Stack.Item>
+                      </Stack>
+                    </Stack>
+                  </Stack.Item>
+                );
+              })}
+            </Stack>
+          </Stack.Item>
+          <Stack.Item grow basis="55%">
+            {!selectedRecipe ? (
+              <NoticeBox>Select a pattern to review its requirements.</NoticeBox>
+            ) : (
+              <Stack vertical spacing={1}>
+                <Stack.Item>
+                  <Stack vertical spacing={0.5}>
+                    <Box bold>{selectedRecipe.name}</Box>
+                    <Box>{selectedRecipe.description}</Box>
+                    {selectedRecipe.result_text ? (
+                      <Box color="good">{selectedRecipe.result_text}</Box>
+                    ) : null}
+                  </Stack>
+                </Stack.Item>
+                <Stack.Item>
+                  <Box bold>Material Requirements</Box>
+                  {!selectedRecipe.biomaterials.length ? (
+                    <Box italic color="label">
+                      No biomaterials required.
+                    </Box>
+                  ) : (
+                    <Stack vertical spacing={0.5}>
+                      {selectedRecipe.biomaterials.map((requirement) => {
+                        const available = getAvailableMaterialCount(
+                          requirement.category,
+                          requirement.id,
+                        );
+                        const selectedAmount =
+                          materialSelection[requirement.category]?.[requirement.id] ?? 0;
+                        const requirementMet = selectedAmount === requirement.count;
+                        const color = requirementMet
+                          ? 'good'
+                          : available >= requirement.count
+                          ? 'average'
+                          : 'bad';
+                        return (
+                          <Stack.Item
+                            key={`${requirement.category}-${requirement.id}`}
+                            className="candystripe"
+                          >
+                            <Stack vertical spacing={0.5}>
+                              <Stack align="baseline" justify="space-between">
+                                <Stack.Item grow>
+                                  <Box>
+                                    {requirement.name}{' '}
+                                    <Box as="span" color="label">
+                                      ({requirement.category_name})
+                                    </Box>
+                                  </Box>
+                                </Stack.Item>
+                                <Stack.Item>
+                                  <Box color={color}>
+                                    {selectedAmount}/{requirement.count} selected — {available}{' '}
+                                    available
+                                  </Box>
+                                </Stack.Item>
+                              </Stack>
+                              {requirement.description ? (
+                                <Box color="label">{requirement.description}</Box>
+                              ) : null}
+                              <Stack spacing={1} align="center">
+                                <Stack.Item>
+                                  <Button
+                                    icon="minus"
+                                    disabled={selectedAmount <= 0}
+                                    onClick={() =>
+                                      incrementMaterial(
+                                        requirement.category,
+                                        requirement.id,
+                                        -1,
+                                      )
+                                    }
+                                  />
+                                </Stack.Item>
+                                <Stack.Item>
+                                  <Button
+                                    icon="plus"
+                                    disabled={available <= selectedAmount}
+                                    onClick={() =>
+                                      incrementMaterial(
+                                        requirement.category,
+                                        requirement.id,
+                                        1,
+                                      )
+                                    }
+                                  />
+                                </Stack.Item>
+                                <Stack.Item>
+                                  <Button
+                                    icon="bullseye"
+                                    content="Match"
+                                    disabled={!available}
+                                    onClick={() =>
+                                      setMaterialAmount(
+                                        requirement.category,
+                                        requirement.id,
+                                        requirement.count,
+                                      )
+                                    }
+                                  />
+                                </Stack.Item>
+                              </Stack>
+                            </Stack>
+                          </Stack.Item>
+                        );
+                      })}
+                    </Stack>
+                  )}
+                </Stack.Item>
+                <Stack.Item>
+                  <Box bold>Selected Biomaterials</Box>
+                  {!selectedMaterials.length ? (
+                    <Box italic color="label">
+                      No biomaterials selected.
+                    </Box>
+                  ) : (
+                    <Stack vertical spacing={0.5}>
+                      {selectedMaterials.map((entry) => (
+                        <Stack.Item
+                          key={`${entry.categoryId}-${entry.itemId}`}
+                          className="candystripe"
+                        >
+                          <Stack align="center" spacing={1} justify="space-between">
+                            <Stack.Item grow>
+                              <Box>
+                                {entry.itemName}{' '}
+                                <Box as="span" color="label">
+                                  ({entry.categoryName})
+                                </Box>
+                              </Box>
+                            </Stack.Item>
+                            <Stack.Item>
+                              <Box bold>{entry.count}</Box>
+                            </Stack.Item>
+                            <Stack.Item>
+                              <Button
+                                icon="times"
+                                color="bad"
+                                onClick={() => clearMaterial(entry.categoryId, entry.itemId)}
+                              />
+                            </Stack.Item>
+                          </Stack>
+                        </Stack.Item>
+                      ))}
+                    </Stack>
+                  )}
+                </Stack.Item>
+                <Stack.Item>
+                  <Stack vertical spacing={0.5}>
+                    <Box bold>Ability Catalysts</Box>
+                    {!selectedRecipe.abilities.length ? (
+                      <Box italic color="label">
+                        No ability catalysts required.
+                      </Box>
+                    ) : (
+                      <Stack vertical spacing={0.5}>
+                        {selectedRecipe.abilities.map((requirement) => {
+                          const option = abilityOptions.find(
+                            (entry) => entry.path === requirement.path,
+                          );
+                          const owned = Boolean(option);
+                          const selected = abilitySelectionSet.has(requirement.path);
+                          const color = selected ? 'good' : owned ? 'average' : 'bad';
+                          return (
+                            <Stack.Item
+                              key={String(requirement.path)}
+                              className="candystripe"
+                            >
+                              <Stack vertical spacing={0.5}>
+                                <Box color={color}>
+                                  {requirement.name}
+                                  {!owned
+                                    ? ' — Missing'
+                                    : selected
+                                    ? ' — Selected'
+                                    : ' — Available'}
+                                </Box>
+                                {requirement.desc ? (
+                                  <Box color="label">{requirement.desc}</Box>
+                                ) : null}
+                              </Stack>
+                            </Stack.Item>
+                          );
+                        })}
+                      </Stack>
+                    )}
+                    {!abilityOptions.length ? (
+                      <Box italic color="label">
+                        No evolutions available for catalysis.
+                      </Box>
+                    ) : (
+                      <Stack wrap spacing={0.5}>
+                        {abilityOptions.map((option) => (
+                          <Stack.Item key={String(option.path)}>
+                            <Button.Checkbox
+                              checked={abilitySelectionSet.has(option.path)}
+                              onClick={() => toggleAbility(option.path)}
+                              tooltip={option.desc}
+                            >
+                              {option.name}
+                            </Button.Checkbox>
+                          </Stack.Item>
+                        ))}
+                      </Stack>
+                    )}
+                  </Stack>
+                </Stack.Item>
+                {selectedRecipe.grants?.length ? (
+                  <Stack.Item>
+                    <Box bold>Potential Grants</Box>
+                    <Stack vertical spacing={0.5}>
+                      {selectedRecipe.grants.map((grant) => (
+                        <Stack.Item key={String(grant.path)} className="candystripe">
+                          <Stack vertical spacing={0.5}>
+                            <Box>
+                              {grant.name}{' '}
+                              <Box as="span" color="label">
+                                ({grant.slot_name ?? grant.slot})
+                              </Box>
+                            </Box>
+                            {grant.desc ? <Box color="label">{grant.desc}</Box> : null}
+                          </Stack>
+                        </Stack.Item>
+                      ))}
+                    </Stack>
+                  </Stack.Item>
+                ) : null}
+                {selectedRecipe.passives && Object.keys(selectedRecipe.passives).length ? (
+                  <Stack.Item>
+                    <Box bold>Passive Adjustments</Box>
+                    <LabeledList>
+                      {Object.entries(selectedRecipe.passives).map(([key, value]) => (
+                        <LabeledList.Item key={key} label={formatPassiveLabel(key)}>
+                          {value > 0 ? `+${value}` : value}
+                        </LabeledList.Item>
+                      ))}
+                    </LabeledList>
+                  </Stack.Item>
+                ) : null}
+                <Stack.Item>
+                  <Box bold>Crafting Outcome</Box>
+                  {!craftingResult ? (
+                    <NoticeBox color="label">
+                      Configure biomaterials and weave to review outcomes.
+                    </NoticeBox>
+                  ) : (
+                    <Stack vertical spacing={0.5}>
+                      <NoticeBox color={Boolean(craftingResult.success) ? 'good' : 'bad'}>
+                        {craftingResult.message}
+                      </NoticeBox>
+                      {craftingResult.grants?.length ? (
+                        <Stack vertical spacing={0.5}>
+                          {craftingResult.grants.map((grant, index) => (
+                            <Stack.Item
+                              key={`${grant.path}-${grant.slot}-${index}`}
+                              className="candystripe"
+                            >
+                              <Stack vertical spacing={0.5}>
+                                <Box color={Boolean(grant.success) ? 'good' : 'bad'}>
+                                  {grant.name}
+                                  {grant.slot_name ? ` — ${grant.slot_name}` : ''}
+                                </Box>
+                                {grant.message ? (
+                                  <Box color="label">{grant.message}</Box>
+                                ) : null}
+                              </Stack>
+                            </Stack.Item>
+                          ))}
+                        </Stack>
+                      ) : null}
+                      {craftingResult.passives &&
+                      Object.keys(craftingResult.passives).length ? (
+                        <LabeledList>
+                          {Object.entries(craftingResult.passives).map(([key, value]) => (
+                            <LabeledList.Item key={key} label={formatPassiveLabel(key)}>
+                              {value}
+                            </LabeledList.Item>
+                          ))}
+                        </LabeledList>
+                      ) : null}
+                      {craftingResult.errors?.length ? (
+                        <Stack vertical spacing={0.5}>
+                          {craftingResult.errors.map((error, index) => (
+                            <NoticeBox key={`${error}-${index}`} color="bad">
+                              {error}
+                            </NoticeBox>
+                          ))}
+                        </Stack>
+                      ) : null}
+                    </Stack>
+                  )}
+                </Stack.Item>
+              </Stack>
+            )}
+          </Stack.Item>
+        </Stack>
+      )}
+    </Section>
   );
 };
 
