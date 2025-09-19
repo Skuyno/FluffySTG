@@ -88,17 +88,6 @@
 		return
 	return ..()
 
-/mob/living/carbon/human/get_cytology_cell_ids()
-	var/list/ids = ..()
-	if(!islist(ids))
-		ids = list()
-	var/list/species_ids = dna?.species?.get_cytology_cell_ids()
-	if(islist(species_ids))
-		for(var/id in species_ids)
-			if(!(id in ids))
-				ids += id
-	return ids
-
 
 /mob/living/carbon/human/Topic(href, href_list)
 
