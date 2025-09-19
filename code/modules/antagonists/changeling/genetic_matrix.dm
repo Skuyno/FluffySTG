@@ -143,8 +143,6 @@
 
 	var/list/low_cost = list()
 	var/list/chem_hungry = list()
-	var/list/absorb_targets = list()
-	var/list/dna_targets = list()
 
 	var/next_absorb_target
 	var/list/next_absorb_names = list()
