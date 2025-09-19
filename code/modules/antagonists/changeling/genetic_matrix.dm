@@ -244,11 +244,10 @@
 
 /// Ensure that the matrix data structures exist and have at least one build configured.
 /datum/antagonist/changeling/proc/ensure_genetic_matrix_setup()
-  if(!genetic_matrix_builds)
-    genetic_matrix_builds = list()
+  if(genetic_matrix_builds && genetic_matrix_builds.len)
+    return
 
-  if(!genetic_matrix_builds.len)
-    add_genetic_matrix_build("Matrix Build 1")
+  add_genetic_matrix_build("Matrix Build 1")
 
 /// Remove invalid references from matrix builds.
 /datum/antagonist/changeling/proc/prune_genetic_matrix_assignments()
@@ -355,7 +354,8 @@
 
 /// Add a new matrix build for this changeling.
 /datum/antagonist/changeling/proc/add_genetic_matrix_build(name)
-  ensure_genetic_matrix_setup()
+  if(!genetic_matrix_builds)
+    genetic_matrix_builds = list()
   var/datum/genetic_matrix_build/build = new(src)
   build.name = name
   build.ensure_slot_capacity()
