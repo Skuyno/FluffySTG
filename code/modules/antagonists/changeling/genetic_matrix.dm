@@ -454,8 +454,9 @@
   var/list/skillchip_names = list()
   for(var/list/chip_metadata in profile.skillchips)
     var/chip_type = chip_metadata["type"]
-    if(ispath(chip_type))
-      skillchip_names += initial(chip_type.name)
+    if(ispath(chip_type, /obj/item/skillchip))
+      var/obj/item/skillchip/skillchip_type = chip_type
+      skillchip_names += initial(skillchip_type.name)
     else if(chip_type)
       skillchip_names += "[chip_type]"
 
