@@ -235,12 +235,18 @@
     qdel(src)
 
 /datum/action/changeling/genetic_matrix/Trigger(mob/clicker, trigger_flags)
-  . = ..()
-  if(!.)
-    return
+  if(!(trigger_flags & TRIGGER_FORCE_AVAILABLE) && !IsAvailable(feedback = TRUE))
+    return FALSE
+
+  if(SEND_SIGNAL(src, COMSIG_ACTION_TRIGGER, src) & COMPONENT_ACTION_BLOCK_TRIGGER)
+    return FALSE
 
   var/datum/genetic_matrix/matrix = target
+  if(!matrix)
+    return FALSE
+
   matrix.ui_interact(owner)
+  return TRUE
 
 /// Ensure that the matrix data structures exist and have at least one build configured.
 /datum/antagonist/changeling/proc/ensure_genetic_matrix_setup()
