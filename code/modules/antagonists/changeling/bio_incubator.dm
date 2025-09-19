@@ -234,14 +234,15 @@
 	)
 	var/path = text2path(cell_id)
 	if(ispath(path, /datum/micro_organism/cell_line))
-		var/resulting_atom_path = initial(path.resulting_atom)
-		var/name = null
-		if(ispath(resulting_atom_path))
-			name = initial(resulting_atom_path.name)
-		if(!name)
-			name = get_nice_name_from_path(path)
-		entry["name"] = name
-		entry["desc"] = initial(path.desc)
+		var/datum/micro_organism/cell_line/cell_line = new path()
+		var/name_source = path
+		if(cell_line)
+			name_source = cell_line.resulting_atom || path
+			entry["desc"] = cell_line.desc
+			qdel(cell_line)
+		else
+			entry["desc"] = null
+		entry["name"] = get_nice_name_from_path(name_source)
 	else
 		entry["name"] = get_nice_name_from_path(cell_id)
 		entry["desc"] = null
