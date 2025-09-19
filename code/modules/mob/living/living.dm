@@ -768,117 +768,117 @@ NOVA EDIT REMOVAL END */
 			update_resting()
 
 
-			/// Proc to append and redefine behavior to the change of the [/mob/living/var/resting] variable.
-			/mob/living/proc/update_resting()
-			update_rest_hud_icon()
-			SEND_SIGNAL(src, COMSIG_LIVING_UPDATED_RESTING, resting) //NOVA EDIT ADDITION - GUNPOINT
+/// Proc to append and redefine behavior to the change of the [/mob/living/var/resting] variable.
+/mob/living/proc/update_resting()
+        update_rest_hud_icon()
+        SEND_SIGNAL(src, COMSIG_LIVING_UPDATED_RESTING, resting) //NOVA EDIT ADDITION - GUNPOINT
 
 
-			/mob/living/proc/get_up(instant = FALSE)
-			set waitfor = FALSE
+/mob/living/proc/get_up(instant = FALSE)
+        set waitfor = FALSE
 
-			var/get_up_time = 1 SECONDS
+        var/get_up_time = 1 SECONDS
 
-			var/obj/item/organ/cyberimp/chest/spine/potential_spine = get_organ_slot(ORGAN_SLOT_SPINE)
-			if(istype(potential_spine))
-			get_up_time *= potential_spine.athletics_boost_multiplier
+        var/obj/item/organ/cyberimp/chest/spine/potential_spine = get_organ_slot(ORGAN_SLOT_SPINE)
+        if(istype(potential_spine))
+                get_up_time *= potential_spine.athletics_boost_multiplier
 
-			// if(!instant && !do_after(src, get_up_time, src, timed_action_flags = (IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE|IGNORE_HELD_ITEM), extra_checks = CALLBACK(src, TYPE_PROC_REF(/mob/living, rest_checks_callback)), interaction_key = DOAFTER_SOURCE_GETTING_UP, hidden = TRUE)) // NOVA EDIT REMOVAL
-			// NOVA EDIT ADDITION START
-			var/stam = getStaminaLoss()
-			switch(FLOOR(stam,1))
-			if(0 to STAMINA_THRESHOLD_MEDIUM_GET_UP)
-			get_up_time *= GET_UP_FAST
-			if(STAMINA_THRESHOLD_MEDIUM_GET_UP + 1 to STAMINA_THRESHOLD_SLOW_GET_UP)
-			get_up_time *= GET_UP_MEDIUM
-			if(STAMINA_THRESHOLD_SLOW_GET_UP + 1 to INFINITY)
-			get_up_time *= GET_UP_SLOW
-			if(!instant)
-			if(get_up_time > GET_UP_MEDIUM SECONDS) //Slow getups are easily noticable
-			visible_message(span_notice("[src] weakly attempts to stand up."), span_notice("You weakly attempt to stand up."))
-			if(!do_after(src, get_up_time, src, timed_action_flags = (IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE|IGNORE_HELD_ITEM), extra_checks = CALLBACK(src, TYPE_PROC_REF(/mob/living, rest_checks_callback)), interaction_key = DOAFTER_SOURCE_GETTING_UP, hidden = TRUE))
-			if(!body_position == STANDING_UP)
-			visible_message(span_warning("[src] fails to stand up."), span_warning("You fail to stand up."))
-			return
-			else
-			if(!do_after(src, get_up_time, src, timed_action_flags = (IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE|IGNORE_HELD_ITEM), extra_checks = CALLBACK(src, TYPE_PROC_REF(/mob/living, rest_checks_callback)), interaction_key = DOAFTER_SOURCE_GETTING_UP, hidden = TRUE))
-			return
-			if(pulledby && pulledby.grab_state)
-			to_chat(src, span_warning("You fail to stand up, you're restrained!"))
-			// NOVA EDIT ADDITION END
-			return
-			if(resting || body_position == STANDING_UP || HAS_TRAIT(src, TRAIT_FLOORED))
-			return
-			to_chat(src, span_notice("You stand up.")) // NOVA EDIT ADDITION
-			set_body_position(STANDING_UP)
-			set_lying_angle(0)
-
-
-			/mob/living/proc/rest_checks_callback()
-			if(resting || body_position == STANDING_UP || HAS_TRAIT(src, TRAIT_FLOORED))
-			return FALSE
-			return TRUE
+        // if(!instant && !do_after(src, get_up_time, src, timed_action_flags = (IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE|IGNORE_HELD_ITEM), extra_checks = CALLBACK(src, TYPE_PROC_REF(/mob/living, rest_checks_callback)), interaction_key = DOAFTER_SOURCE_GETTING_UP, hidden = TRUE)) // NOVA EDIT REMOVAL
+        // NOVA EDIT ADDITION START
+        var/stam = getStaminaLoss()
+        switch(FLOOR(stam,1))
+                if(0 to STAMINA_THRESHOLD_MEDIUM_GET_UP)
+                        get_up_time *= GET_UP_FAST
+                if(STAMINA_THRESHOLD_MEDIUM_GET_UP + 1 to STAMINA_THRESHOLD_SLOW_GET_UP)
+                        get_up_time *= GET_UP_MEDIUM
+                if(STAMINA_THRESHOLD_SLOW_GET_UP + 1 to INFINITY)
+                        get_up_time *= GET_UP_SLOW
+        if(!instant)
+                if(get_up_time > GET_UP_MEDIUM SECONDS) //Slow getups are easily noticable
+                        visible_message(span_notice("[src] weakly attempts to stand up."), span_notice("You weakly attempt to stand up."))
+                if(!do_after(src, get_up_time, src, timed_action_flags = (IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE|IGNORE_HELD_ITEM), extra_checks = CALLBACK(src, TYPE_PROC_REF(/mob/living, rest_checks_callback)), interaction_key = DOAFTER_SOURCE_GETTING_UP, hidden = TRUE))
+                        if(!body_position == STANDING_UP)
+                                visible_message(span_warning("[src] fails to stand up."), span_warning("You fail to stand up."))
+                                return
+                else
+                        if(!do_after(src, get_up_time, src, timed_action_flags = (IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE|IGNORE_HELD_ITEM), extra_checks = CALLBACK(src, TYPE_PROC_REF(/mob/living, rest_checks_callback)), interaction_key = DOAFTER_SOURCE_GETTING_UP, hidden = TRUE))
+                                return
+                if(pulledby && pulledby.grab_state)
+                        to_chat(src, span_warning("You fail to stand up, you're restrained!"))
+                        // NOVA EDIT ADDITION END
+                        return
+        if(resting || body_position == STANDING_UP || HAS_TRAIT(src, TRAIT_FLOORED))
+                return
+        to_chat(src, span_notice("You stand up.")) // NOVA EDIT ADDITION
+        set_body_position(STANDING_UP)
+        set_lying_angle(0)
 
 
-			/// Change the [body_position] to [LYING_DOWN] and update associated behavior.
-			/mob/living/proc/set_lying_down(new_lying_angle)
-			set_body_position(LYING_DOWN)
+/mob/living/proc/rest_checks_callback()
+        if(resting || body_position == STANDING_UP || HAS_TRAIT(src, TRAIT_FLOORED))
+                return FALSE
+        return TRUE
 
-			/// Proc to append behavior related to lying down.
-			/mob/living/proc/on_lying_down(new_lying_angle)
-			if(layer == initial(layer)) //to avoid things like hiding larvas.
-			layer = LYING_MOB_LAYER //so mob lying always appear behind standing mobs
-			add_traits(list(TRAIT_UI_BLOCKED, TRAIT_PULL_BLOCKED, TRAIT_UNDENSE), LYING_DOWN_TRAIT)
-			if(HAS_TRAIT(src, TRAIT_FLOORED) && !(dir & (NORTH|SOUTH)))
-			setDir(pick(NORTH, SOUTH)) // We are and look helpless.
-			if(rotate_on_lying)
-			add_offsets(LYING_DOWN_TRAIT, y_add = PIXEL_Y_OFFSET_LYING)
 
-			/// Proc to append behavior related to lying down.
-			/mob/living/proc/on_standing_up()
-			if(layer == LYING_MOB_LAYER)
-			layer = initial(layer)
-			remove_traits(list(TRAIT_UI_BLOCKED, TRAIT_PULL_BLOCKED, TRAIT_UNDENSE), LYING_DOWN_TRAIT)
-			remove_offsets(LYING_DOWN_TRAIT)
+/// Change the [body_position] to [LYING_DOWN] and update associated behavior.
+/mob/living/proc/set_lying_down(new_lying_angle)
+        set_body_position(LYING_DOWN)
 
-			/mob/living/proc/update_density()
-			if(HAS_TRAIT(src, TRAIT_UNDENSE))
-			set_density(FALSE)
-			else
-			set_density(TRUE)
+/// Proc to append behavior related to lying down.
+/mob/living/proc/on_lying_down(new_lying_angle)
+        if(layer == initial(layer)) //to avoid things like hiding larvas.
+                layer = LYING_MOB_LAYER //so mob lying always appear behind standing mobs
+        add_traits(list(TRAIT_UI_BLOCKED, TRAIT_PULL_BLOCKED, TRAIT_UNDENSE), LYING_DOWN_TRAIT)
+        if(HAS_TRAIT(src, TRAIT_FLOORED) && !(dir & (NORTH|SOUTH)))
+                setDir(pick(NORTH, SOUTH)) // We are and look helpless.
+        if(rotate_on_lying)
+                add_offsets(LYING_DOWN_TRAIT, y_add = PIXEL_Y_OFFSET_LYING)
 
-			/mob/living/update_rest_hud_icon()
-			. = ..()
-			if(!.)
-			return FALSE
-			if(!hud_used.sleep_icon || HAS_TRAIT(src, TRAIT_SLEEPIMMUNE))
-			return TRUE
-			if(resting || HAS_TRAIT(src, TRAIT_FLOORED))
-			hud_used.static_inventory |= hud_used.sleep_icon
-			else
-			hud_used.static_inventory -= hud_used.sleep_icon
-			hud_used.show_hud(hud_used.hud_version)
-			return TRUE
+/// Proc to append behavior related to lying down.
+/mob/living/proc/on_standing_up()
+        if(layer == LYING_MOB_LAYER)
+                layer = initial(layer)
+        remove_traits(list(TRAIT_UI_BLOCKED, TRAIT_PULL_BLOCKED, TRAIT_UNDENSE), LYING_DOWN_TRAIT)
+        remove_offsets(LYING_DOWN_TRAIT)
 
-			//Recursive function to find everything a mob is holding. Really shitty proc tbh.
-			/mob/living/get_contents()
-			var/list/ret = list()
-			ret |= contents //add our contents
-			for(var/atom/iter_atom as anything in ret) //iterate storage objects
-			ret |= iter_atom.atom_storage?.return_inv()
-			for(var/obj/item/folder/folder in ret) //very snowflakey-ly iterate folders
-			ret |= folder.contents
-			return ret
+/mob/living/proc/update_density()
+        if(HAS_TRAIT(src, TRAIT_UNDENSE))
+                set_density(FALSE)
+        else
+                set_density(TRUE)
 
-			/**
-			 * Returns whether or not the mob can be injected. Should not perform any side effects.
-			 *
-			 * Arguments:
-			 * * user - The user trying to inject the mob.
-			 * * target_zone - The zone being targeted.
-			 * * injection_flags - A bitflag for extra properties to check.
-			 *   Check __DEFINES/injection.dm for more details, specifically the ones prefixed INJECT_CHECK_*.
-			 */
+/mob/living/update_rest_hud_icon()
+        . = ..()
+        if(!.)
+                return FALSE
+        if(!hud_used.sleep_icon || HAS_TRAIT(src, TRAIT_SLEEPIMMUNE))
+                return TRUE
+        if(resting || HAS_TRAIT(src, TRAIT_FLOORED))
+                hud_used.static_inventory |= hud_used.sleep_icon
+        else
+                hud_used.static_inventory -= hud_used.sleep_icon
+        hud_used.show_hud(hud_used.hud_version)
+        return TRUE
+
+//Recursive function to find everything a mob is holding. Really shitty proc tbh.
+/mob/living/get_contents()
+        var/list/ret = list()
+        ret |= contents //add our contents
+        for(var/atom/iter_atom as anything in ret) //iterate storage objects
+                ret |= iter_atom.atom_storage?.return_inv()
+        for(var/obj/item/folder/folder in ret) //very snowflakey-ly iterate folders
+                ret |= folder.contents
+        return ret
+
+/**
+ * Returns whether or not the mob can be injected. Should not perform any side effects.
+ *
+ * Arguments:
+ * * user - The user trying to inject the mob.
+ * * target_zone - The zone being targeted.
+ * * injection_flags - A bitflag for extra properties to check.
+ *   Check __DEFINES/injection.dm for more details, specifically the ones prefixed INJECT_CHECK_*.
+ */
 /mob/living/proc/can_inject(mob/user, target_zone, injection_flags)
 	return TRUE
 
