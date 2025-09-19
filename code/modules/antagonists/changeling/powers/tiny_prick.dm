@@ -195,59 +195,60 @@
 
 
 /datum/action/changeling/sting/extract_dna
-       name = "Extract DNA Sting"
-       desc = "We stealthily sting a target to extract DNA and siphon biomaterial samples. Costs 25 chemicals."
-       helptext = "Steals the DNA of a living target for transformation while quietly harvesting biomaterials and signature cells."
-       button_icon_state = "sting_extract"
-       chemical_cost = 25
-       dna_cost = 0
-       var/last_harvest_summary
-       var/last_signature_gain = 0
+	name = "Extract DNA Sting"
+	desc = "We stealthily sting a target to extract DNA and siphon biomaterial samples. Costs 25 chemicals."
+	helptext = "Steals the DNA of a living target for transformation while quietly harvesting biomaterials and signature cells."
+	button_icon_state = "sting_extract"
+	chemical_cost = 25
+	dna_cost = 0
+	var/last_harvest_summary
+	var/last_signature_gain = 0
 
 /datum/action/changeling/sting/extract_dna/can_sting(mob/user, mob/target)
-       last_harvest_summary = null
-       last_signature_gain = 0
-       if(!..())
-               return FALSE
-       var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
-       if(!changeling)
-               return FALSE
-       if(!changeling.can_harvest_biomaterials(target, TRUE, FALSE))
-               return FALSE
-       return changeling.can_absorb_dna(target)
+	last_harvest_summary = null
+	last_signature_gain = 0
+	if(!..())
+		return FALSE
+	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
+	if(!changeling)
+		return FALSE
+	if(!changeling.can_harvest_biomaterials(target, TRUE, FALSE))
+		return FALSE
+	return changeling.can_absorb_dna(target)
 
 /datum/action/changeling/sting/extract_dna/sting_action(mob/user, mob/living/carbon/human/target)
-       ..()
-       var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
-       if(!changeling)
-               return FALSE
-       var/old_signature_total = changeling.get_signature_cell_total()
-       var/list/harvested = changeling.harvest_biomaterials_from_mob(target)
-       var/new_signature_total = changeling.get_signature_cell_total()
-       last_signature_gain = max(0, new_signature_total - old_signature_total)
-       if(LAZYLEN(harvested))
-               last_harvest_summary = changeling.build_harvest_summary(harvested)
-       else
-               last_harvest_summary = null
-       log_combat(user, target, "stung", "extraction sting", last_harvest_summary)
-       if(!changeling.has_profile_with_dna(target.dna))
-               changeling.add_new_profile(target)
-       return TRUE
+	..()
+	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
+	if(!changeling)
+		return FALSE
+	var/old_signature_total = changeling.get_signature_cell_total()
+	var/list/harvested = changeling.harvest_biomaterials_from_mob(target)
+	var/new_signature_total = changeling.get_signature_cell_total()
+	last_signature_gain = max(0, new_signature_total - old_signature_total)
+	if(LAZYLEN(harvested))
+		last_harvest_summary = changeling.build_harvest_summary(harvested)
+	else
+		last_harvest_summary = null
+	log_combat(user, target, "stung", "extraction sting", last_harvest_summary)
+	if(!changeling.has_profile_with_dna(target.dna))
+		changeling.add_new_profile(target)
+	return TRUE
 
 /datum/action/changeling/sting/extract_dna/sting_feedback(mob/user, mob/target)
-       var/result = ..()
-       if(user)
-               if(last_harvest_summary && last_signature_gain > 0)
-                       var/signature_text = last_signature_gain == 1 ? "a signature cell" : "[last_signature_gain] signature cells"
-                       to_chat(user, span_notice("We siphon [last_harvest_summary] and distill [signature_text]."))
-               else if(last_harvest_summary)
-                       to_chat(user, span_notice("We siphon [last_harvest_summary]."))
-               else if(last_signature_gain > 0)
-                       var/signature_note = last_signature_gain == 1 ? "a signature cell" : "[last_signature_gain] signature cells"
-                       to_chat(user, span_notice("We distill [signature_note]."))
-       last_harvest_summary = null
-       last_signature_gain = 0
-       return result
+	var/result = ..()
+	if(user)
+		if(last_harvest_summary && last_signature_gain > 0)
+			var/signature_text = last_signature_gain == 1 ? "a signature cell" : "[last_signature_gain] signature cells"
+			to_chat(user, span_notice("We siphon [last_harvest_summary] and distill [signature_text]."))
+		else if(last_harvest_summary)
+			to_chat(user, span_notice("We siphon [last_harvest_summary]."))
+		else if(last_signature_gain > 0)
+			var/signature_note = last_signature_gain == 1 ? "a signature cell" : "[last_signature_gain] signature cells"
+			to_chat(user, span_notice("We distill [signature_note]."))
+	last_harvest_summary = null
+	last_signature_gain = 0
+	return result
+
 
 /datum/action/changeling/sting/mute
 	name = "Mute Sting"
