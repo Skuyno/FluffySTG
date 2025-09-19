@@ -293,7 +293,7 @@
 		output += list(entry)
 		index++
 
-return output
+	return output
 
 /datum/genetic_matrix/proc/get_crafting_recipes()
 	if(islist(GLOB.changeling_crafting_recipes))
