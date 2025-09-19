@@ -1,4 +1,4 @@
-#define GENETIC_MATRIX_MAX_ABILITY_SLOTS 8
+#define GENETIC_MATRIX_MAX_ABILITY_SLOTS 3
 #define GENETIC_MATRIX_MAX_BUILDS 6
 
 /// Coordinating datum for the changeling genetic matrix interface.
@@ -42,23 +42,13 @@
   changeling.ensure_genetic_matrix_setup()
   changeling.prune_genetic_matrix_assignments()
 
-  var/datum/changeling_bio_incubator/incubator = changeling.get_bio_incubator()
-  if(incubator)
-    data["builds"] = incubator.get_builds_data()
-    data["cells"] = incubator.get_cells_data()
-    data["recipes"] = incubator.get_recipes_data()
-    data["abilities"] = incubator.get_modules_data()
-    data["canAddBuild"] = incubator.can_add_build()
-  else
-    data["builds"] = list()
-    data["cells"] = list()
-    data["recipes"] = list()
-    data["abilities"] = list()
-    data["canAddBuild"] = FALSE
-
+  data["builds"] = changeling.get_genetic_matrix_builds_data()
   data["resultCatalog"] = changeling.get_genetic_matrix_profile_catalog()
   data["abilityCatalog"] = changeling.get_genetic_matrix_ability_catalog()
+  data["cells"] = changeling.get_genetic_matrix_profile_storage()
+  data["abilities"] = changeling.get_genetic_matrix_ability_storage()
   data["skills"] = changeling.get_genetic_matrix_skills_data()
+  data["canAddBuild"] = changeling.genetic_matrix_builds.len < GENETIC_MATRIX_MAX_BUILDS
   return data
 
 /datum/genetic_matrix/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
@@ -70,17 +60,13 @@
     return FALSE
 
   var/mob/user = ui.user
-  var/datum/changeling_bio_incubator/incubator = changeling.get_bio_incubator()
 
   switch(action)
     if("create_build")
-      if(!incubator || !incubator.can_add_build())
+      if(changeling.genetic_matrix_builds.len >= GENETIC_MATRIX_MAX_BUILDS)
         return FALSE
 
-      var/build_count = 0
-      if(incubator?.build_presets)
-        build_count = incubator.build_presets.len
-      var/default_name = "Matrix Build [build_count + 1]"
+      var/default_name = "Matrix Build [changeling.genetic_matrix_builds.len + 1]"
       var/new_name = tgui_input_text(user, "Name the new build.", "Create Genetic Matrix Build", default_name, 32)
       if(isnull(new_name))
         return FALSE
@@ -93,7 +79,7 @@
       return TRUE
 
     if("delete_build")
-      var/datum/changeling_bio_build/build = changeling.find_genetic_matrix_build(params["build"])
+      var/datum/genetic_matrix_build/build = changeling.find_genetic_matrix_build(params["build"])
       if(!build)
         return FALSE
 
@@ -104,7 +90,7 @@
       return TRUE
 
     if("rename_build")
-      var/datum/changeling_bio_build/build = changeling.find_genetic_matrix_build(params["build"])
+      var/datum/genetic_matrix_build/build = changeling.find_genetic_matrix_build(params["build"])
       if(!build)
         return FALSE
 
@@ -120,7 +106,7 @@
       return TRUE
 
     if("clear_build")
-      var/datum/changeling_bio_build/build = changeling.find_genetic_matrix_build(params["build"])
+      var/datum/genetic_matrix_build/build = changeling.find_genetic_matrix_build(params["build"])
       if(!build)
         return FALSE
 
@@ -128,7 +114,7 @@
       return TRUE
 
     if("set_build_profile")
-      var/datum/changeling_bio_build/build = changeling.find_genetic_matrix_build(params["build"])
+      var/datum/genetic_matrix_build/build = changeling.find_genetic_matrix_build(params["build"])
       if(!build)
         return FALSE
 
@@ -137,7 +123,7 @@
       return TRUE
 
     if("clear_build_profile")
-      var/datum/changeling_bio_build/build = changeling.find_genetic_matrix_build(params["build"])
+      var/datum/genetic_matrix_build/build = changeling.find_genetic_matrix_build(params["build"])
       if(!build)
         return FALSE
 
@@ -145,7 +131,7 @@
       return TRUE
 
     if("set_build_ability")
-      var/datum/changeling_bio_build/build = changeling.find_genetic_matrix_build(params["build"])
+      var/datum/genetic_matrix_build/build = changeling.find_genetic_matrix_build(params["build"])
       if(!build)
         return FALSE
 
@@ -158,13 +144,18 @@
         changeling.assign_genetic_matrix_ability(build, null, slot)
         return TRUE
 
-      if(changeling.assign_genetic_matrix_ability(build, ability_identifier, slot))
-        return TRUE
+      var/datum/action/changeling/ability_path = text2path(ability_identifier)
+      if(!ispath(ability_path, /datum/action/changeling))
+        return FALSE
 
-      return FALSE
+      if(!changeling.has_genetic_matrix_ability(ability_path))
+        return FALSE
+
+      changeling.assign_genetic_matrix_ability(build, ability_path, slot)
+      return TRUE
 
     if("clear_build_ability")
-      var/datum/changeling_bio_build/build = changeling.find_genetic_matrix_build(params["build"])
+      var/datum/genetic_matrix_build/build = changeling.find_genetic_matrix_build(params["build"])
       if(!build)
         return FALSE
 
@@ -176,6 +167,59 @@
       return TRUE
 
   return FALSE
+
+/// Individual configuration of a matrix build.
+/datum/genetic_matrix_build
+  /// Owning changeling datum.
+  var/datum/antagonist/changeling/changeling
+  /// Player-facing name.
+  var/name = "Matrix Build"
+  /// DNA profile assigned to this build, if any.
+  var/datum/changeling_profile/assigned_profile
+  /// List of ability paths assigned to slots.
+  var/list/ability_paths = list()
+
+/datum/genetic_matrix_build/New(datum/antagonist/changeling/changeling_owner)
+  . = ..()
+  changeling = changeling_owner
+
+/datum/genetic_matrix_build/Destroy()
+  assigned_profile = null
+  ability_paths = null
+  changeling = null
+  return ..()
+
+/datum/genetic_matrix_build/proc/ensure_slot_capacity()
+  while(ability_paths.len < GENETIC_MATRIX_MAX_ABILITY_SLOTS)
+    ability_paths += null
+
+/datum/genetic_matrix_build/proc/to_data()
+  var/list/data = list(
+    "id" = REF(src),
+    "name" = name,
+  )
+
+  if(changeling && assigned_profile && (assigned_profile in changeling.stored_profiles))
+    data["profile"] = changeling.get_genetic_matrix_profile_data(assigned_profile)
+  else
+    data["profile"] = null
+
+  ensure_slot_capacity()
+
+  var/list/ability_data = list()
+  for(var/i in 1 to GENETIC_MATRIX_MAX_ABILITY_SLOTS)
+    var/path = ability_paths[i]
+    if(!path || !changeling || !changeling.has_genetic_matrix_ability(path))
+      ability_paths[i] = null
+      ability_data += list(null)
+      continue
+
+    var/list/ability_entry = changeling.get_genetic_matrix_ability_data(path)
+    ability_entry["slot"] = i
+    ability_data += list(ability_entry)
+
+  data["abilities"] = ability_data
+  return data
 
 /datum/action/changeling/genetic_matrix
   name = "Genetic Matrix"
@@ -206,21 +250,38 @@
 
 /// Ensure that the matrix data structures exist and have at least one build configured.
 /datum/antagonist/changeling/proc/ensure_genetic_matrix_setup()
-  var/datum/changeling_bio_incubator/incubator = get_bio_incubator()
-  incubator?.ensure_default_build()
+  if(genetic_matrix_builds && genetic_matrix_builds.len)
+    return
+
+  add_genetic_matrix_build("Matrix Build 1")
 
 /// Remove invalid references from matrix builds.
 /datum/antagonist/changeling/proc/prune_genetic_matrix_assignments()
-  var/datum/changeling_bio_incubator/incubator = get_bio_incubator()
-  incubator?.prune_build_assignments()
+  if(!genetic_matrix_builds)
+    return
+
+  for(var/datum/genetic_matrix_build/build as anything in genetic_matrix_builds)
+    if(build.assigned_profile && !(build.assigned_profile in stored_profiles))
+      build.assigned_profile = null
+
+    build.ensure_slot_capacity()
+    for(var/i in 1 to build.ability_paths.len)
+      var/path = build.ability_paths[i]
+      if(!path)
+        continue
+      if(!has_genetic_matrix_ability(path))
+        build.ability_paths[i] = null
 
 /// Generate data for the matrix builds to send to the UI.
 /datum/antagonist/changeling/proc/get_genetic_matrix_builds_data()
-  var/datum/changeling_bio_incubator/incubator = get_bio_incubator()
-  if(!incubator)
-    return list()
+  var/list/output = list()
+  if(!genetic_matrix_builds)
+    return output
 
-  return incubator.get_builds_data()
+  for(var/datum/genetic_matrix_build/build as anything in genetic_matrix_builds)
+    output += list(build.to_data())
+
+  return output
 
 /// Produce a sortable profile dataset for quick access on the matrix tab.
 /datum/antagonist/changeling/proc/get_genetic_matrix_profile_catalog()
@@ -269,11 +330,7 @@
 
 /// Provide detailed ability data for the storage tab.
 /datum/antagonist/changeling/proc/get_genetic_matrix_ability_storage()
-  var/datum/changeling_bio_incubator/incubator = get_bio_incubator()
-  if(!incubator)
-    return list()
-
-  return incubator.get_modules_data()
+  return get_genetic_matrix_ability_catalog()
 
 /// Return a dataset summarizing the owner's skills.
 /datum/antagonist/changeling/proc/get_genetic_matrix_skills_data()
@@ -303,51 +360,60 @@
 
 /// Add a new matrix build for this changeling.
 /datum/antagonist/changeling/proc/add_genetic_matrix_build(name)
-  var/datum/changeling_bio_incubator/incubator = get_bio_incubator()
-  if(!incubator)
-    return null
-
-  return incubator.add_build(name)
+  if(!genetic_matrix_builds)
+    genetic_matrix_builds = list()
+  var/datum/genetic_matrix_build/build = new(src)
+  build.name = name
+  build.ensure_slot_capacity()
+  genetic_matrix_builds += build
+  return build
 
 /// Remove and clean up an existing matrix build.
-/datum/antagonist/changeling/proc/remove_genetic_matrix_build(datum/changeling_bio_build/build)
-  var/datum/changeling_bio_incubator/incubator = get_bio_incubator()
-  incubator?.remove_build(build)
+/datum/antagonist/changeling/proc/remove_genetic_matrix_build(datum/genetic_matrix_build/build)
+  if(!build)
+    return
+
+  if(build in genetic_matrix_builds)
+    genetic_matrix_builds -= build
+  qdel(build)
 
 /// Clear all assignments from a specific build without deleting it.
-/datum/antagonist/changeling/proc/clear_genetic_matrix_build(datum/changeling_bio_build/build)
-  var/datum/changeling_bio_incubator/incubator = get_bio_incubator()
-  incubator?.clear_build(build)
+/datum/antagonist/changeling/proc/clear_genetic_matrix_build(datum/genetic_matrix_build/build)
+  if(!build)
+    return
+
+  build.assigned_profile = null
+  build.ensure_slot_capacity()
+  for(var/i in 1 to build.ability_paths.len)
+    build.ability_paths[i] = null
 
 /// Assign a DNA profile to a build.
-/datum/antagonist/changeling/proc/assign_genetic_matrix_profile(datum/changeling_bio_build/build, datum/changeling_profile/profile)
-  var/datum/changeling_bio_incubator/incubator = get_bio_incubator()
-  incubator?.assign_profile(build, profile)
+/datum/antagonist/changeling/proc/assign_genetic_matrix_profile(datum/genetic_matrix_build/build, datum/changeling_profile/profile)
+  if(!build)
+    return
+
+  if(profile && !(profile in stored_profiles))
+    return
+
+  build.assigned_profile = profile
 
 /// Assign an ability to a slot within a build. Passing null clears the slot.
-/datum/antagonist/changeling/proc/assign_genetic_matrix_ability(datum/changeling_bio_build/build, ability_identifier, slot)
-  var/datum/changeling_bio_incubator/incubator = get_bio_incubator()
-  if(!incubator)
-    return FALSE
+/datum/antagonist/changeling/proc/assign_genetic_matrix_ability(datum/genetic_matrix_build/build, datum/action/changeling/ability_path, slot)
+  if(!build)
+    return
 
-  if(isnull(build))
-    return FALSE
+  build.ensure_slot_capacity()
+  if(slot < 1 || slot > GENETIC_MATRIX_MAX_ABILITY_SLOTS)
+    return
 
-  if(isnull(ability_identifier))
-    return incubator.assign_module(build, null, slot)
+  if(isnull(ability_path))
+    build.ability_paths[slot] = null
+    return
 
-  var/module_identifier
-  if(istext(ability_identifier))
-    module_identifier = ability_identifier
-  else if(ispath(ability_identifier, /datum/action/changeling))
-    module_identifier = "[ability_identifier]"
-  else if(istype(ability_identifier, /datum/changeling_bio_module))
-    var/datum/changeling_bio_module/module = ability_identifier
-    module_identifier = module.id
-  else
-    module_identifier = "[ability_identifier]"
+  if(!has_genetic_matrix_ability(ability_path))
+    return
 
-  return incubator.assign_module(build, module_identifier, slot)
+  build.ability_paths[slot] = ability_path
 
 /// Determine whether the changeling currently possesses a given ability type.
 /datum/antagonist/changeling/proc/has_genetic_matrix_ability(datum/action/changeling/ability_path)
@@ -365,11 +431,14 @@
 
 /// Locate a matrix build using its reference string.
 /datum/antagonist/changeling/proc/find_genetic_matrix_build(identifier)
-  var/datum/changeling_bio_incubator/incubator = get_bio_incubator()
-  if(!incubator)
+  if(isnull(identifier))
     return null
 
-  return incubator.find_build(identifier)
+  for(var/datum/genetic_matrix_build/build as anything in genetic_matrix_builds)
+    if(REF(build) == identifier)
+      return build
+
+  return null
 
 /// Locate a stored profile using its reference string.
 /datum/antagonist/changeling/proc/find_genetic_matrix_profile(identifier)
@@ -429,16 +498,20 @@
 
 /// Handle updates when a new DNA profile is added.
 /datum/antagonist/changeling/proc/on_genetic_matrix_profile_added(datum/changeling_profile/profile)
-  var/datum/changeling_bio_incubator/incubator = get_bio_incubator()
-  if(!incubator)
-    return
-
-  incubator.on_profile_added(profile)
+  ensure_genetic_matrix_setup()
+  for(var/datum/genetic_matrix_build/build as anything in genetic_matrix_builds)
+    if(!build.assigned_profile)
+      build.assigned_profile = profile
+      break
 
 /// Handle updates when a DNA profile is removed.
 /datum/antagonist/changeling/proc/on_genetic_matrix_profile_removed(datum/changeling_profile/profile)
-  var/datum/changeling_bio_incubator/incubator = get_bio_incubator()
-  incubator?.on_profile_removed(profile)
+  if(!genetic_matrix_builds)
+    return
+
+  for(var/datum/genetic_matrix_build/build as anything in genetic_matrix_builds)
+    if(build.assigned_profile == profile)
+      build.assigned_profile = null
 
 #undef GENETIC_MATRIX_MAX_ABILITY_SLOTS
 #undef GENETIC_MATRIX_MAX_BUILDS

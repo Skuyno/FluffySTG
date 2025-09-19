@@ -66,14 +66,14 @@
 	var/datum/action/changeling/sting/chosen_sting
 	/// A reference to our cellular emporium datum.
 	var/datum/cellular_emporium/cellular_emporium
-        /// A reference to our cellular emporium action (which opens the UI for the datum).
-        var/datum/action/cellular_emporium/emporium_action
-        /// Storage for crafted modules, collected cells, and build presets.
-        var/datum/changeling_bio_incubator/bio_incubator
-        /// Coordinator for the genetic matrix UI.
-        var/datum/genetic_matrix/genetic_matrix
-        /// Action that opens the genetic matrix UI.
-        var/datum/action/changeling/genetic_matrix/genetic_matrix_action
+	/// A reference to our cellular emporium action (which opens the UI for the datum).
+	var/datum/action/cellular_emporium/emporium_action
+	/// Coordinator for the genetic matrix UI.
+	var/datum/genetic_matrix/genetic_matrix
+	/// Action that opens the genetic matrix UI.
+	var/datum/action/changeling/genetic_matrix/genetic_matrix_action
+	/// Builds configured for the genetic matrix.
+	var/list/genetic_matrix_builds
 
 	/// UI displaying how many chems we have
 	var/atom/movable/screen/ling/chems/lingchemdisplay
@@ -124,18 +124,18 @@
 /datum/antagonist/changeling/Destroy()
 	QDEL_NULL(emporium_action)
 	QDEL_NULL(cellular_emporium)
-QDEL_NULL(genetic_matrix_action)
-QDEL_NULL(genetic_matrix)
-QDEL_NULL(bio_incubator)
-current_profile = null
-return ..()
+	QDEL_NULL(genetic_matrix_action)
+	QDEL_NULL(genetic_matrix)
+	QDEL_LIST(genetic_matrix_builds)
+	genetic_matrix_builds = null
+	current_profile = null
+	return ..()
 
 /datum/antagonist/changeling/on_gain()
-generate_name()
-create_emporium()
-create_bio_incubator()
-create_genetic_matrix()
-create_innate_actions()
+	generate_name()
+	create_emporium()
+	create_genetic_matrix()
+	create_innate_actions()
 	create_initial_profile()
 	if(give_objectives)
 		forge_objectives()
@@ -237,29 +237,18 @@ create_innate_actions()
  * Instantiate the cellular emporium for the changeling.
  */
 /datum/antagonist/changeling/proc/create_emporium()
-        cellular_emporium = new(src)
-        emporium_action = new(cellular_emporium)
-        emporium_action.Grant(owner.current)
-
-/datum/antagonist/changeling/proc/create_bio_incubator()
-        QDEL_NULL(bio_incubator)
-        bio_incubator = new(src)
-        bio_incubator.ensure_default_build()
-        return bio_incubator
-
-/datum/antagonist/changeling/proc/get_bio_incubator()
-        if(!bio_incubator)
-                create_bio_incubator()
-        return bio_incubator
+	cellular_emporium = new(src)
+	emporium_action = new(cellular_emporium)
+	emporium_action.Grant(owner.current)
 
 /datum/antagonist/changeling/proc/create_genetic_matrix()
-        QDEL_NULL(genetic_matrix_action)
-        QDEL_NULL(genetic_matrix)
-        genetic_matrix = new(src)
-        genetic_matrix_action = new(genetic_matrix)
-        ensure_genetic_matrix_setup()
-        if(owner && owner.current)
-                genetic_matrix_action.Grant(owner.current)
+	QDEL_NULL(genetic_matrix_action)
+	QDEL_NULL(genetic_matrix)
+	genetic_matrix = new(src)
+	genetic_matrix_action = new(genetic_matrix)
+	ensure_genetic_matrix_setup()
+	if(owner && owner.current)
+		genetic_matrix_action.Grant(owner.current)
 
 /*
  * Instantiate all the default actions of a ling (transform, dna sting, absorb, etc)
