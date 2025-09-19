@@ -68,12 +68,12 @@
 	var/datum/cellular_emporium/cellular_emporium
 	/// A reference to our cellular emporium action (which opens the UI for the datum).
 	var/datum/action/cellular_emporium/emporium_action
-/// Coordinator for the genetic matrix UI.
-var/datum/genetic_matrix/genetic_matrix
-/// Action that opens the genetic matrix UI.
-var/datum/action/changeling/genetic_matrix/genetic_matrix_action
-/// Storage managing cytology cells, recipes, modules, and builds.
-var/datum/changeling_bio_incubator/bio_incubator
+	/// Coordinator for the genetic matrix UI.
+	var/datum/genetic_matrix/genetic_matrix
+	/// Action that opens the genetic matrix UI.
+	var/datum/action/changeling/genetic_matrix/genetic_matrix_action
+	/// Storage managing cytology cells, recipes, modules, and builds.
+	var/datum/changeling_bio_incubator/bio_incubator
 
 	/// UI displaying how many chems we have
 	var/atom/movable/screen/ling/chems/lingchemdisplay
@@ -124,17 +124,17 @@ var/datum/changeling_bio_incubator/bio_incubator
 /datum/antagonist/changeling/Destroy()
 	QDEL_NULL(emporium_action)
 	QDEL_NULL(cellular_emporium)
-QDEL_NULL(genetic_matrix_action)
-QDEL_NULL(genetic_matrix)
-QDEL_NULL(bio_incubator)
-current_profile = null
-return ..()
+	QDEL_NULL(genetic_matrix_action)
+	QDEL_NULL(genetic_matrix)
+	QDEL_NULL(bio_incubator)
+	current_profile = null
+	return ..()
 
 /datum/antagonist/changeling/on_gain()
-generate_name()
-create_emporium()
-create_bio_incubator()
-create_genetic_matrix()
+	generate_name()
+	create_emporium()
+	create_bio_incubator()
+	create_genetic_matrix()
 	create_innate_actions()
 	create_initial_profile()
 	if(give_objectives)

@@ -148,7 +148,7 @@
 				return FALSE
 			changeling.assign_genetic_matrix_profile(build, null)
 			return TRUE
-		if(action == "set_build_module" || action == "set_build_ability")
+		if("set_build_module", "set_build_ability")
 			var/datum/changeling_bio_incubator/build/build = changeling.find_genetic_matrix_build(params["build"])
 			if(!build)
 				return FALSE
@@ -163,7 +163,7 @@
 				changeling.assign_genetic_matrix_module(build, null, slot)
 				return TRUE
 			return changeling.assign_genetic_matrix_module(build, module_identifier, slot)
-		if(action == "clear_build_module" || action == "clear_build_ability")
+		if("clear_build_module", "clear_build_ability")
 			var/datum/changeling_bio_incubator/build/build = changeling.find_genetic_matrix_build(params["build"])
 			if(!build)
 				return FALSE
