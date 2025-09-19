@@ -39,7 +39,7 @@
                 user.balloon_alert(user, "sterile!")
                 return FALSE
 
-var/summary = changeling.build_harvest_summary(harvested)
-user.visible_message(span_notice("[user] collects biological residue from [target]!"), span_notice("We gather [summary]."))
-        SSblackbox.record_feedback("nested tally", "changeling_powers", 1, list("Harvest Environment", "1"))
+	var/summary = changeling.build_harvest_summary(harvested)
+	user.visible_message(span_notice("[user] collects biological residue from [target]!"), span_notice("We gather [summary]."))
+	SSblackbox.record_feedback("nested tally", "changeling_powers", 1, list("Harvest Environment", "1"))
         return TRUE
