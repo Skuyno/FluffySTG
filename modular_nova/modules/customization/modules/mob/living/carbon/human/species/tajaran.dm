@@ -25,6 +25,16 @@
 		BODY_ZONE_L_LEG = /obj/item/bodypart/leg/left/mutant,
 		BODY_ZONE_R_LEG = /obj/item/bodypart/leg/right/mutant,
 	)
+	changeling_biomaterial_profile = list(
+		list(
+			CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_PREDATORY,
+			CHANGELING_HARVEST_ID = "tajaran_pounce_myocytes",
+			CHANGELING_HARVEST_NAME = "Tajaran Pounce Myocytes",
+			CHANGELING_HARVEST_DESCRIPTION = "Elastic muscle fibers brimming with Tajaran hunter reflexes.",
+			CHANGELING_HARVEST_AMOUNT = 1,
+			CHANGELING_HARVEST_SIGNATURE = TRUE,
+		),
+	)
 
 /datum/species/tajaran/get_default_mutant_bodyparts()
 	return list(

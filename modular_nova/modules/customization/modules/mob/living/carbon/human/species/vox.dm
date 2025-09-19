@@ -43,6 +43,16 @@
 		LOADOUT_ITEM_MISC = VOX_BACK_ICON,
 		LOADOUT_ITEM_EARS = VOX_EARS_ICON
 	)
+	changeling_biomaterial_profile = list(
+		list(
+			CHANGELING_HARVEST_CATEGORY = CHANGELING_BIOMATERIAL_CATEGORY_ADAPTIVE,
+			CHANGELING_HARVEST_ID = "vox_chorus_culture",
+			CHANGELING_HARVEST_NAME = "Vox Chorus Cytoculture",
+			CHANGELING_HARVEST_DESCRIPTION = "Self-modulating cells tuned to the Vox chorus, ideal for adaptive graftwork.",
+			CHANGELING_HARVEST_AMOUNT = 1,
+			CHANGELING_HARVEST_SIGNATURE = TRUE,
+		),
+	)
 
 /datum/species/vox/get_default_mutant_bodyparts()
 	return list(
