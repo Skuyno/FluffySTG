@@ -523,6 +523,18 @@
 		return list()
 	var/list/results = list()
 	var/base_name = initial(target.name) || "specimen"
+	var/mob/living/carbon/dna_bearing_target
+	if(ishuman(target))
+		var/mob/living/carbon/human/human_target = target
+		dna_bearing_target = human_target
+	else if(iscarbon(target))
+		var/mob/living/carbon/carbon_target = target
+		dna_bearing_target = carbon_target
+	var/datum/dna/target_dna
+	if(dna_bearing_target)
+		target_dna = dna_bearing_target.has_dna()
+		if(!target_dna)
+			dna_bearing_target = null
 	for(var/list/entry as anything in profile)
 		if(!islist(entry))
 			continue
@@ -551,10 +563,11 @@
 			CHANGELING_HARVEST_DESCRIPTION = sample_description,
 			CHANGELING_HARVEST_AMOUNT = amount,
 		))
-		if(entry[CHANGELING_HARVEST_SIGNATURE] && target.dna)
-			var/signature_id = target.dna.unique_enzymes || changeling_sanitize_material_id(target.real_name || material_id)
+		if(entry[CHANGELING_HARVEST_SIGNATURE] && target_dna)
+			var/signature_source_name = dna_bearing_target?.real_name || target.real_name || sample_name
+			var/signature_id = target_dna.unique_enzymes || changeling_sanitize_material_id(signature_source_name || material_id)
 			var/list/signature_metadata = list(
-				"name" = target.real_name || sample_name,
+				"name" = signature_source_name || sample_name,
 				"description" = "A distinctive cytology signature harvested from [target].",
 			)
 			adjust_signature_cell(signature_id, 1, signature_metadata)
