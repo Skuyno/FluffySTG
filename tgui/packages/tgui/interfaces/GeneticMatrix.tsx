@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
+  Icon,
   Input,
   LabeledList,
   NoticeBox,
@@ -15,12 +16,27 @@ import { Window } from '../layouts';
 
 type typePath = string;
 
+type Ability = {
+  name: string;
+  desc: string;
+  helptext: string;
+  path: typePath;
+  genetic_point_required: number;
+  absorbs_required: number;
+  dna_required: number;
+  chemical_cost: number;
+  req_human: BooleanLike;
+  req_stat: string | null;
+  disabled_by_fire: BooleanLike;
+};
+
 type ActiveEffect = {
   name: string;
   desc: string;
   helptext: string;
   path: typePath;
   chemical_cost: number;
+  dna_cost: number;
   req_absorbs: number;
   req_dna: number;
   innate: BooleanLike;
@@ -39,6 +55,7 @@ type BuildSlot = {
   name?: string;
   desc?: string;
   helptext?: string;
+  dna_cost?: number;
   chemical_cost?: number;
 };
 
@@ -51,34 +68,6 @@ type ActiveBuildState = {
 type BuildBlueprint = {
   key?: typePath | null;
   secondary?: typePath[];
-};
-
-type RecipeRequirement = {
-  type: 'biomaterial' | 'signature' | 'signature_any';
-  category?: string;
-  name: string;
-  required: number;
-  available: number;
-};
-
-type Recipe = {
-  id: string;
-  name: string;
-  description: string;
-  result_type: string;
-  repeatable: BooleanLike;
-  ability_path?: typePath | null;
-  ability_name?: string;
-  ability_desc?: string;
-  ability_helptext?: string;
-  owned?: BooleanLike;
-  requirements: RecipeRequirement[];
-  req_absorbs?: number;
-  req_dna?: number;
-  chemical_cost?: number;
-  req_human?: BooleanLike;
-  req_stat?: string | null;
-  disabled_by_fire?: BooleanLike;
 };
 
 type BiomaterialItem = {
@@ -112,7 +101,11 @@ type GeneticPreset = {
 };
 
 type GeneticMatrixData = {
+  abilities: Ability[];
   can_readapt: BooleanLike;
+  owned_abilities: typePath[];
+  genetic_points_count: number;
+  total_genetic_points: number;
   absorb_count: number;
   dna_count: number;
   chem_charges: number;
@@ -125,7 +118,6 @@ type GeneticMatrixData = {
   presets: GeneticPreset[];
   preset_limit: number;
   active_build: ActiveBuildState;
-  recipes: Recipe[];
   biomaterials: BiomaterialCategory[];
   signature_cells: SignatureCell[];
 };
@@ -133,31 +125,22 @@ type GeneticMatrixData = {
 export const GeneticMatrix = () => {
   const { data } = useBackend<GeneticMatrixData>();
   const [searchQuery, setSearchQuery] = useState('');
-  const recipes = data.recipes ?? [];
-  const activeBuild =
-    data.active_build ?? ({
-      key: null,
-      secondary: [],
-      secondary_capacity: 0,
-    } as ActiveBuildState);
+  const abilities = data.abilities ?? [];
 
-  const filteredRecipes = useMemo(() => {
+  const filteredAbilities = useMemo(() => {
     if (!searchQuery || searchQuery.length < 2) {
-      return recipes;
+      return abilities;
     }
 
     const lowered = searchQuery.toLowerCase();
-    return recipes.filter((recipe) => {
-      const name = recipe.ability_name || recipe.name;
-      const desc = recipe.ability_desc || recipe.description || '';
-      const help = recipe.ability_helptext || '';
+    return abilities.filter((ability) => {
       return (
-        name.toLowerCase().includes(lowered) ||
-        desc.toLowerCase().includes(lowered) ||
-        help.toLowerCase().includes(lowered)
+        ability.name.toLowerCase().includes(lowered) ||
+        ability.desc.toLowerCase().includes(lowered) ||
+        ability.helptext.toLowerCase().includes(lowered)
       );
     });
-  }, [recipes, searchQuery]);
+  }, [abilities, searchQuery]);
 
   return (
     <Window width={1100} height={640} theme="syndicate">
@@ -166,11 +149,11 @@ export const GeneticMatrix = () => {
           <Stack.Item grow basis="60%">
             <Stack fill vertical>
               <Stack.Item grow>
-                <RecipeCatalogSection
-                  recipes={filteredRecipes}
+                <AbilityCatalogSection
+                  filteredAbilities={filteredAbilities}
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
-                  activeBuild={activeBuild}
+                  activeBuild={data.active_build}
                 />
               </Stack.Item>
               <Stack.Item grow>
@@ -210,318 +193,169 @@ export const GeneticMatrix = () => {
   );
 };
 
-const RecipeCatalogSection = (props: {
-  recipes: Recipe[];
+const AbilityCatalogSection = (props: {
+  filteredAbilities: Ability[];
   searchQuery: string;
   setSearchQuery: (value: string) => void;
   activeBuild: ActiveBuildState;
 }) => {
   const { act, data } = useBackend<GeneticMatrixData>();
-  const { recipes, searchQuery, setSearchQuery, activeBuild } = props;
-  const absorbCount = Number(data.absorb_count) || 0;
-  const dnaCount = Number(data.dna_count) || 0;
-  const keySlot = activeBuild?.key;
-  const secondary = activeBuild?.secondary || [];
-  const secondaryCapacity = activeBuild?.secondary_capacity || 0;
-  const secondaryFull =
-    secondaryCapacity > 0 && secondary.length >= secondaryCapacity;
-
-  const formatLabel = (value?: string) => {
-    if (!value) {
-      return '';
-    }
-    return value
-      .split('_')
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(' ');
-  };
-
-  const describeRequirement = (requirement: RecipeRequirement) => {
-    switch (requirement.type) {
-      case 'biomaterial':
-        return requirement.category
-          ? `Biomaterial • ${formatLabel(requirement.category)}`
-          : 'Biomaterial';
-      case 'signature':
-        return 'Signature Cell';
-      case 'signature_any':
-        return 'Signature Cell (Any)';
-      default:
-        return 'Requirement';
-    }
-  };
-
-  const formatDeficit = (requirement: RecipeRequirement) => {
-    const required = Number(requirement.required) || 0;
-    const available = Number(requirement.available) || 0;
-    const missing = required - available;
-    if (missing <= 0) {
-      return null;
-    }
-    const name = requirement.name || describeRequirement(requirement);
-    return `${missing} ${name}`;
-  };
+  const { filteredAbilities, searchQuery, setSearchQuery, activeBuild } = props;
+  const {
+    owned_abilities,
+    genetic_points_count,
+    absorb_count,
+    dna_count,
+  } = data;
+  const abilities = data.abilities ?? [];
 
   return (
     <Section
       fill
       scrollable
-      title="Cytology Catalog"
+      title="Genetic Catalog"
       buttons={
         <Stack align="center" spacing={1}>
           <Stack.Item>
             <Input
               width="220px"
-              placeholder="Search sequences..."
+              placeholder="Search genomes..."
               value={searchQuery}
               onChange={setSearchQuery}
             />
           </Stack.Item>
+          <Stack.Item>
+            <Box mr={1}>
+              {genetic_points_count}
+              &nbsp;
+              <Icon name="dna" color="#DD66DD" />
+            </Box>
+          </Stack.Item>
         </Stack>
       }
     >
-      {!recipes.length ? (
-        <NoticeBox>No cytology sequences are currently available.</NoticeBox>
+      {!filteredAbilities.length ? (
+        <NoticeBox>
+          {abilities.length
+            ? 'No sequences matched those search terms.'
+            : 'No evolutions are currently available.'}
+        </NoticeBox>
       ) : (
         <Stack vertical spacing={1}>
-          {recipes.map((recipe) => {
-            const resultType = (recipe.result_type || 'ability').toLowerCase();
-            const requirements = recipe.requirements ?? [];
-            const requirementDeficits = requirements
-              .map(formatDeficit)
-              .filter(Boolean) as string[];
-            const requirementsMet = requirementDeficits.length === 0;
-            const repeatable = Boolean(recipe.repeatable);
-            const owned = Boolean(recipe.owned);
-            const abilityName = recipe.ability_name || recipe.name;
-            const description = recipe.ability_desc || recipe.description;
-            const helptext = recipe.ability_helptext || '';
-            const chemicalCost = Number(recipe.chemical_cost) || 0;
-            const absorbReq = Number(recipe.req_absorbs) || 0;
-            const dnaReq = Number(recipe.req_dna) || 0;
-            const hasAbsorbs = absorbCount >= absorbReq;
-            const hasDna = dnaCount >= dnaReq;
-            const keyAvailable =
-              !keySlot?.path || keySlot.path === recipe.ability_path;
-            const canCraftAbility =
-              requirementsMet && (repeatable || !owned) && hasAbsorbs && hasDna;
-            const canCraftSecondary =
-              canCraftAbility && !secondaryFull;
-            const canCraftPrimary = canCraftAbility && keyAvailable;
-
-            const buildAbilityTooltip = (target: 'primary' | 'secondary') => {
-              const parts: string[] = [];
-              if (owned && !repeatable) {
-                parts.push('Sequence already integrated.');
-              }
-              if (!requirementsMet) {
-                if (requirementDeficits.length) {
-                  parts.push(`Missing ${requirementDeficits.join(', ')}.`);
-                } else {
-                  parts.push('Missing required materials.');
-                }
-              }
-              if (absorbReq > 0 && !hasAbsorbs) {
-                parts.push(
-                  `Requires ${absorbReq} absorbed host${
-                    absorbReq === 1 ? '' : 's'
-                  }.`,
-                );
-              }
-              if (dnaReq > 0 && !hasDna) {
-                parts.push(
-                  `Requires ${dnaReq} stored DNA profile${
-                    dnaReq === 1 ? '' : 's'
-                  }.`,
-                );
-              }
-              if (target === 'secondary' && secondaryFull) {
-                parts.push('Secondary slots at capacity.');
-              }
-              if (target === 'primary' && !keyAvailable) {
-                parts.push('Primary slot already occupied.');
-              }
-              return parts.length ? parts.join(' ') : undefined;
-            };
-
-            const integrateLabel = owned
-              ? repeatable
-                ? 'Imprint Again'
-                : 'Integrated'
-              : 'Imprint';
-            const integrateTooltip = buildAbilityTooltip('secondary');
-            const primaryTooltip = buildAbilityTooltip('primary');
-
-            const synthTooltip = !requirementsMet
-              ? requirementDeficits.length
-                ? `Missing ${requirementDeficits.join(', ')}.`
-                : 'Missing required materials.'
-              : undefined;
-
-            const rowKeyBase = recipe.id || recipe.name;
-            const rows: ReactNode[] = [];
-            if (resultType === 'ability' && absorbReq > 0) {
-              rows.push(
-                <LabeledList.Item
-                  key={`${rowKeyBase}-absorb`}
-                  label="Absorb Threshold"
-                >
-                  <Box color={hasAbsorbs ? 'good' : 'bad'}>
-                    {absorbCount} / {absorbReq}
-                  </Box>
-                </LabeledList.Item>,
-              );
-            }
-            if (resultType === 'ability' && dnaReq > 0) {
-              rows.push(
-                <LabeledList.Item
-                  key={`${rowKeyBase}-dna`}
-                  label="DNA Threshold"
-                >
-                  <Box color={hasDna ? 'good' : 'bad'}>
-                    {dnaCount} / {dnaReq}
-                  </Box>
-                </LabeledList.Item>,
-              );
-            }
-            if (resultType === 'ability' && chemicalCost > 0) {
-              rows.push(
-                <LabeledList.Item
-                  key={`${rowKeyBase}-chem`}
-                  label="Chemical Drain"
-                >
-                  {chemicalCost}
-                </LabeledList.Item>,
-              );
-            }
-            if (resultType === 'ability' && Boolean(recipe.req_human)) {
-              rows.push(
-                <LabeledList.Item
-                  key={`${rowKeyBase}-human`}
-                  label="Restriction"
-                >
-                  Requires humanoid form.
-                </LabeledList.Item>,
-              );
-            }
-            if (resultType === 'ability' && recipe.req_stat) {
-              rows.push(
-                <LabeledList.Item
-                  key={`${rowKeyBase}-stat`}
-                  label="Status Gate"
-                >
-                  {`Requires targets in the ${String(
-                    recipe.req_stat,
-                  ).toLowerCase()} state.`}
-                </LabeledList.Item>,
-              );
-            }
-            if (resultType === 'ability' && Boolean(recipe.disabled_by_fire)) {
-              rows.push(
-                <LabeledList.Item
-                  key={`${rowKeyBase}-fire`}
-                  label="Limitation"
-                >
-                  Disabled while on fire.
-                </LabeledList.Item>,
-              );
-            }
-            requirements.forEach((requirement, index) => {
-              const required = Number(requirement.required) || 0;
-              const available = Number(requirement.available) || 0;
-              const met = available >= required;
-              const label = requirement.name || describeRequirement(requirement);
-              const descriptor = describeRequirement(requirement);
-              rows.push(
-                <LabeledList.Item
-                  key={`${rowKeyBase}-req-${index}`}
-                  label={label}
-                >
-                  <Stack align="baseline" justify="space-between">
-                    <Stack.Item>
-                      <Box color="label">{descriptor}</Box>
-                    </Stack.Item>
-                    <Stack.Item>
-                      <Box bold color={met ? 'good' : 'bad'}>
-                        {available} / {required}
-                      </Box>
-                    </Stack.Item>
-                  </Stack>
-                </LabeledList.Item>,
-              );
-            });
-
-            const statusLines: ReactNode[] = [];
-            if (owned) {
-              statusLines.push(
-                <Box key={`${rowKeyBase}-owned`} color="good">
-                  Sequence integrated
-                  {repeatable ? ' — additional syntheses available.' : '.'}
-                </Box>,
-              );
-            } else if (repeatable) {
-              statusLines.push(
-                <Box key={`${rowKeyBase}-repeatable`} color="label">
-                  Repeatable synthesis.
-                </Box>,
-              );
-            }
+          {filteredAbilities.map((ability) => {
+            const owned = owned_abilities.includes(ability.path);
+            const hasPoints =
+              ability.genetic_point_required <= genetic_points_count;
+            const hasAbsorbs = ability.absorbs_required <= absorb_count;
+            const hasDna = ability.dna_required <= dna_count;
+            const canEvolve = hasPoints && hasAbsorbs && hasDna && !owned;
+            const keyAvailable = !activeBuild?.key;
 
             return (
-              <Stack.Item key={recipe.id || abilityName} className="candystripe">
+              <Stack.Item
+                key={String(ability.path)}
+                className="candystripe"
+              >
                 <Stack vertical spacing={0.5}>
-                  <Stack align="center" spacing={1}>
+                  <Stack align="center">
                     <Stack.Item grow>
-                      <Box bold>{abilityName}</Box>
+                      <Box bold color={owned ? 'good' : undefined}>
+                        {ability.name}
+                      </Box>
                     </Stack.Item>
-                    {resultType === 'ability' ? (
-                      <Stack.Item>
-                        <Button
-                          icon={owned && !repeatable ? 'check' : 'flask'}
-                          color={owned && !repeatable ? 'good' : undefined}
-                          content={integrateLabel}
-                          disabled={!canCraftSecondary || (owned && !repeatable)}
-                          tooltip={integrateTooltip}
-                          onClick={() =>
-                            act('craft', {
-                              id: recipe.id,
-                              slot: 'secondary',
-                            })
-                          }
+                    <Stack.Item>
+                      <Box mr={1}>
+                        {ability.genetic_point_required}
+                        &nbsp;
+                        <Icon
+                          name="dna"
+                          color={hasPoints ? '#DD66DD' : 'gray'}
                         />
-                      </Stack.Item>
-                    ) : (
-                      <Stack.Item>
-                        <Button
-                          icon="flask"
-                          content={repeatable ? 'Synthesize' : 'Distill'}
-                          disabled={!requirementsMet}
-                          tooltip={synthTooltip}
-                          onClick={() => act('craft', { id: recipe.id })}
-                        />
-                      </Stack.Item>
-                    )}
-                    {resultType === 'ability' && !owned ? (
+                      </Box>
+                    </Stack.Item>
+                    <Stack.Item>
+                      <Button
+                        icon="arrow-up"
+                        content={owned ? 'Integrated' : 'Evolve'}
+                        disabled={!canEvolve}
+                        tooltip={
+                          owned
+                            ? 'This sequence is already part of our genome.'
+                            : !hasPoints
+                            ? 'We lack the genetic points for this evolution.'
+                            : !hasAbsorbs
+                            ? 'We must absorb additional hosts first.'
+                            : !hasDna
+                            ? 'We require more harvested DNA.'
+                            : undefined
+                        }
+                        onClick={() =>
+                          act('evolve', {
+                            path: ability.path,
+                            slot: 'secondary',
+                          })
+                        }
+                      />
+                    </Stack.Item>
+                    {!owned && (
                       <Stack.Item>
                         <Button
                           icon="star"
                           content="Primary"
-                          disabled={!canCraftPrimary}
-                          tooltip={primaryTooltip}
+                          disabled={!canEvolve || !keyAvailable}
+                          tooltip={
+                            !canEvolve
+                              ? 'Meet the evolution requirements first.'
+                              : keyAvailable
+                              ? 'Bind this ability as our key adaptation.'
+                              : 'Primary slot already occupied.'
+                          }
                           onClick={() =>
-                            act('craft', {
-                              id: recipe.id,
-                              slot: 'primary',
+                            act('evolve', {
+                              path: ability.path,
+                              slot: 'key',
                             })
                           }
                         />
                       </Stack.Item>
-                    ) : null}
+                    )}
                   </Stack>
-                  {statusLines}
-                  <Box>{description}</Box>
-                  {!!helptext && <Box color="good">{helptext}</Box>}
-                  {rows.length ? <LabeledList>{rows}</LabeledList> : null}
+                  <Box>{ability.desc}</Box>
+                  {!!ability.helptext && (
+                    <Box color="good">{ability.helptext}</Box>
+                  )}
+                  <LabeledList>
+                    <LabeledList.Item label="Absorb Requirement">
+                      <Box color={hasAbsorbs ? 'good' : 'bad'}>
+                        {ability.absorbs_required}
+                      </Box>
+                    </LabeledList.Item>
+                    <LabeledList.Item label="DNA Requirement">
+                      <Box color={hasDna ? 'good' : 'bad'}>
+                        {ability.dna_required}
+                      </Box>
+                    </LabeledList.Item>
+                    {ability.chemical_cost > 0 && (
+                      <LabeledList.Item label="Chemical Cost">
+                        <Box>{ability.chemical_cost}</Box>
+                      </LabeledList.Item>
+                    )}
+                    {!!ability.req_human && (
+                      <LabeledList.Item label="Restriction">
+                        Requires humanoid form.
+                      </LabeledList.Item>
+                    )}
+                    {!!ability.req_stat && (
+                      <LabeledList.Item label="Status Gate">
+                        {`Requires targets in the ${String(ability.req_stat).toLowerCase()} state.`}
+                      </LabeledList.Item>
+                    )}
+                    {!!ability.disabled_by_fire && (
+                      <LabeledList.Item label="Limitation">
+                        Disabled while on fire.
+                      </LabeledList.Item>
+                    )}
+                  </LabeledList>
                 </Stack>
               </Stack.Item>
             );
@@ -555,27 +389,28 @@ const ActiveEffectsSection = () => {
                       {effect.innate ? ' (Innate)' : ''}
                     </Box>
                   </Stack.Item>
+                  <Stack.Item>
+                    <Box mr={1}>
+                      Cost: {effect.dna_cost}
+                      &nbsp;
+                      <Icon name="dna" color="#DD66DD" />
+                    </Box>
+                  </Stack.Item>
                 </Stack>
                 <Box>{effect.desc}</Box>
                 {!!effect.helptext && (
                   <Box color="good">{effect.helptext}</Box>
                 )}
                 <LabeledList>
-                  {effect.chemical_cost > 0 && (
-                    <LabeledList.Item label="Chemical Drain">
-                      {effect.chemical_cost}
-                    </LabeledList.Item>
-                  )}
-                  {effect.req_absorbs > 0 && (
-                    <LabeledList.Item label="Absorb Threshold">
-                      {effect.req_absorbs}
-                    </LabeledList.Item>
-                  )}
-                  {effect.req_dna > 0 && (
-                    <LabeledList.Item label="DNA Threshold">
-                      {effect.req_dna}
-                    </LabeledList.Item>
-                  )}
+                  <LabeledList.Item label="Chemical Cost">
+                    {effect.chemical_cost}
+                  </LabeledList.Item>
+                  <LabeledList.Item label="Absorb Gate">
+                    {effect.req_absorbs}
+                  </LabeledList.Item>
+                  <LabeledList.Item label="DNA Gate">
+                    {effect.req_dna}
+                  </LabeledList.Item>
                 </LabeledList>
               </Stack>
             </Stack.Item>
@@ -588,36 +423,23 @@ const ActiveEffectsSection = () => {
 
 const ResourceSection = () => {
   const { act, data } = useBackend<GeneticMatrixData>();
-  const recombinaseCharges = Number(data.can_readapt) || 0;
-  const absorbCount = Number(data.absorb_count) || 0;
-  const dnaCount = Number(data.dna_count) || 0;
-  const chemCharges = Number(data.chem_charges) || 0;
-  const chemStorage = Number(data.chem_storage) || 0;
-  const chemRechargeRate = Number(data.chem_recharge_rate) || 0;
-  const chemRechargeSlowdown = Number(data.chem_recharge_slowdown) || 0;
-  const signatureTotal = (data.signature_cells ?? []).reduce(
-    (total, cell) => total + Number(cell.count || 0),
-    0,
-  );
-  const biomaterialTotal = (data.biomaterials ?? []).reduce((total, category) => {
-    const items = category.items ?? [];
-    return (
-      total +
-      items.reduce((categoryTotal, item) => categoryTotal + Number(item.count || 0), 0)
-    );
-  }, 0);
+  const {
+    can_readapt,
+    genetic_points_count,
+    total_genetic_points,
+    absorb_count,
+    dna_count,
+    chem_charges,
+    chem_storage,
+    chem_recharge_rate,
+    chem_recharge_slowdown,
+  } = data;
 
+  const slowdown = Number(chem_recharge_slowdown);
   const rechargeText =
-    chemRechargeSlowdown === 0
-      ? `${chemRechargeRate}`
-      : `${chemRechargeRate} (${chemRechargeSlowdown > 0 ? '-' : '+'}${Math.abs(
-          chemRechargeSlowdown,
-        )})`;
-
-  const readaptDisabled = recombinaseCharges <= 0;
-  const readaptTooltip = readaptDisabled
-    ? 'Distill a recombinase charge to enable readaptation.'
-    : 'Consume a recombinase charge to shed integrated adaptations.';
+    slowdown === 0
+      ? `${chem_recharge_rate}`
+      : `${chem_recharge_rate} (${slowdown > 0 ? '-' : '+'}${Math.abs(slowdown)})`;
 
   return (
     <Section
@@ -626,8 +448,12 @@ const ResourceSection = () => {
         <Button
           icon="undo"
           color="good"
-          disabled={readaptDisabled}
-          tooltip={readaptTooltip}
+          disabled={!Boolean(can_readapt)}
+          tooltip={
+            can_readapt
+              ? 'Reabsorb and reallocate all genetic points.'
+              : 'Absorb more genomes to enable readaptation.'
+          }
           onClick={() => act('readapt')}
         >
           Readapt
@@ -635,25 +461,19 @@ const ResourceSection = () => {
       }
     >
       <LabeledList>
-        <LabeledList.Item label="Recombinase Charges">
-          <Box bold color={readaptDisabled ? 'bad' : 'good'}>
-            {recombinaseCharges}
+        <LabeledList.Item label="Genetic Points">
+          <Box bold>
+            {genetic_points_count} / {total_genetic_points}
           </Box>
         </LabeledList.Item>
         <LabeledList.Item label="Absorbed Hosts">
-          {absorbCount}
+          {absorb_count}
         </LabeledList.Item>
-        <LabeledList.Item label="DNA Profiles Archived">
-          {dnaCount}
-        </LabeledList.Item>
-        <LabeledList.Item label="Signature Cells Archived">
-          {signatureTotal}
-        </LabeledList.Item>
-        <LabeledList.Item label="Biomaterial Samples">
-          {biomaterialTotal}
+        <LabeledList.Item label="DNA Samples">
+          {dna_count}
         </LabeledList.Item>
         <LabeledList.Item label="Chemical Reserves">
-          {chemCharges} / {chemStorage}
+          {chem_charges} / {chem_storage}
         </LabeledList.Item>
         <LabeledList.Item label="Recharge Rate">
           {rechargeText}
@@ -768,11 +588,18 @@ const BuildSlotCard = (props: {
       )}
       {slot?.desc && <Box>{slot.desc}</Box>}
       {slot?.helptext && <Box color="good">{slot.helptext}</Box>}
-      {slot?.chemical_cost ? (
+      {slot && (slot.dna_cost || slot.chemical_cost) ? (
         <LabeledList>
-          <LabeledList.Item label="Chemical Drain">
-            {slot.chemical_cost}
-          </LabeledList.Item>
+          {slot.dna_cost ? (
+            <LabeledList.Item label="DNA Cost">
+              {slot.dna_cost}
+            </LabeledList.Item>
+          ) : null}
+          {slot.chemical_cost ? (
+            <LabeledList.Item label="Chemical Cost">
+              {slot.chemical_cost}
+            </LabeledList.Item>
+          ) : null}
         </LabeledList>
       ) : null}
     </Stack>

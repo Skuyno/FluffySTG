@@ -29,186 +29,228 @@
 		ui.open()
 
 /datum/genetic_matrix/ui_static_data(mob/user)
-        var/list/data = list()
-        return data
+	var/list/data = list()
+	data["abilities"] = get_ability_catalog()
+	return data
 
 /datum/genetic_matrix/ui_data(mob/user)
-        var/list/data = list()
+	var/list/data = list()
 
-        data["can_readapt"] = changeling.can_respec
-        data["absorb_count"] = changeling.true_absorbs
-        data["dna_count"] = changeling.absorbed_count
-        data["chem_charges"] = changeling.chem_charges
-        data["chem_storage"] = changeling.total_chem_storage
-        data["chem_recharge_rate"] = changeling.chem_recharge_rate
-        data["chem_recharge_slowdown"] = changeling.chem_recharge_slowdown
-        data["active_effects"] = build_active_effects()
-        var/list/recipe_catalog = changeling.build_recipe_catalog()
-        data["recipes"] = recipe_catalog
-        data["synergy_tips"] = build_synergy_tips(recipe_catalog)
-        data["incompatibilities"] = collect_incompatibilities(recipe_catalog)
-        data["presets"] = build_preset_payload()
-        data["preset_limit"] = changeling.max_genetic_presets
-        data["active_build"] = changeling.export_active_build_state()
-        data["biomaterials"] = changeling.build_biomaterial_payload()
-        data["signature_cells"] = changeling.build_signature_payload()
+	data["can_readapt"] = changeling.can_respec
+	data["owned_abilities"] = assoc_to_keys(changeling.purchased_powers)
+	data["genetic_points_count"] = changeling.genetic_points
+	data["total_genetic_points"] = changeling.total_genetic_points
+	data["absorb_count"] = changeling.true_absorbs
+	data["dna_count"] = changeling.absorbed_count
+	data["chem_charges"] = changeling.chem_charges
+	data["chem_storage"] = changeling.total_chem_storage
+	data["chem_recharge_rate"] = changeling.chem_recharge_rate
+	data["chem_recharge_slowdown"] = changeling.chem_recharge_slowdown
+	data["active_effects"] = build_active_effects()
+	var/list/catalog = get_ability_catalog()
+	data["synergy_tips"] = build_synergy_tips(catalog)
+	data["incompatibilities"] = collect_incompatibilities(catalog)
+	data["presets"] = build_preset_payload()
+	data["preset_limit"] = changeling.max_genetic_presets
+	data["active_build"] = changeling.export_active_build_state()
+	data["biomaterials"] = changeling.build_biomaterial_payload()
+	data["signature_cells"] = changeling.build_signature_payload()
 
 	return data
 
+/datum/genetic_matrix/proc/get_ability_catalog()
+	var/static/list/abilities
+	if(!abilities)
+		abilities = list()
+
+		for(var/datum/action/changeling/ability_path as anything in changeling.all_powers)
+
+			var/dna_cost = initial(ability_path.dna_cost)
+
+			if(dna_cost < 0)
+				continue
+
+			var/list/ability_data = list()
+			ability_data["name"] = initial(ability_path.name)
+			ability_data["desc"] = initial(ability_path.desc)
+			ability_data["path"] = ability_path
+			ability_data["helptext"] = initial(ability_path.helptext)
+			ability_data["genetic_point_required"] = dna_cost
+			ability_data["absorbs_required"] = initial(ability_path.req_absorbs)
+			ability_data["dna_required"] = initial(ability_path.req_dna)
+			ability_data["chemical_cost"] = initial(ability_path.chemical_cost)
+			ability_data["req_human"] = initial(ability_path.req_human)
+			ability_data["req_stat"] = initial(ability_path.req_stat)
+			ability_data["disabled_by_fire"] = initial(ability_path.disabled_by_fire)
+
+			abilities += list(ability_data)
+
+		// Sorts abilities alphabetically by default
+		sortTim(abilities, /proc/cmp_assoc_list_name)
+
+	return abilities
+
 /datum/genetic_matrix/proc/build_active_effects()
-        var/list/effects = list()
+	var/list/effects = list()
 
-        for(var/datum/action/changeling/power as anything in changeling.innate_powers)
-                if(!istype(power))
-                        continue
+	for(var/datum/action/changeling/power as anything in changeling.innate_powers)
+		if(!istype(power))
+			continue
 
-                var/list/entry = list()
-                entry["name"] = power.name
-                entry["desc"] = power.desc
-                entry["helptext"] = power.helptext
-                entry["path"] = power.type
-                entry["chemical_cost"] = power.chemical_cost
-                entry["req_absorbs"] = power.req_absorbs
-                entry["req_dna"] = power.req_dna
-                entry["innate"] = TRUE
-                effects += list(entry)
+		var/list/entry = list()
+		entry["name"] = power.name
+		entry["desc"] = power.desc
+		entry["helptext"] = power.helptext
+		entry["path"] = power.type
+		entry["chemical_cost"] = power.chemical_cost
+		entry["dna_cost"] = power.dna_cost
+		entry["req_absorbs"] = power.req_absorbs
+		entry["req_dna"] = power.req_dna
+		entry["innate"] = TRUE
+		effects += list(entry)
 
-        for(var/power_path in changeling.purchased_powers)
-                var/datum/action/changeling/power = changeling.purchased_powers[power_path]
-                if(!istype(power))
-                        continue
+	for(var/power_path in changeling.purchased_powers)
+		var/datum/action/changeling/power = changeling.purchased_powers[power_path]
+		if(!istype(power))
+			continue
 
-                var/list/effect = list()
-                effect["name"] = power.name
-                effect["desc"] = power.desc
-                effect["helptext"] = power.helptext
-                effect["path"] = power_path
-                effect["chemical_cost"] = power.chemical_cost
-                effect["req_absorbs"] = power.req_absorbs
-                effect["req_dna"] = power.req_dna
-                effect["innate"] = FALSE
-                effects += list(effect)
+		var/list/effect = list()
+		effect["name"] = power.name
+		effect["desc"] = power.desc
+		effect["helptext"] = power.helptext
+		effect["path"] = power_path
+		effect["chemical_cost"] = power.chemical_cost
+		effect["dna_cost"] = power.dna_cost
+		effect["req_absorbs"] = power.req_absorbs
+		effect["req_dna"] = power.req_dna
+		effect["innate"] = FALSE
+		effects += list(effect)
 
 	return effects
 
-/datum/genetic_matrix/proc/build_synergy_tips(list/recipe_catalog)
-        var/list/tips = list()
-        if(!islist(recipe_catalog))
-                return tips
+/datum/genetic_matrix/proc/build_synergy_tips(list/catalog)
+	var/list/tips = list()
 
-        var/signature_gap
-        var/list/signature_targets = list()
-        var/list/category_gaps = list()
-        var/list/respec_recipe
+	var/list/low_cost = list()
+	var/list/chem_hungry = list()
+	var/list/absorb_targets = list()
+	var/list/dna_targets = list()
 
-        for(var/list/recipe as anything in recipe_catalog)
-                if(!islist(recipe))
-                        continue
-                var/result_type = lowertext(recipe["result_type"] || "ability")
-                if(result_type == "respec")
-                        respec_recipe = recipe
-                if(result_type != "ability" || recipe["owned"])
-                        continue
-                var/ability_name = recipe["ability_name"] || recipe["name"]
-                var/list/requirements = recipe["requirements"]
-                if(!islist(requirements))
-                        continue
-                for(var/list/requirement as anything in requirements)
-                        if(!islist(requirement))
-                                continue
-                        var/missing = max(0, requirement["required"] - requirement["available"])
-                        if(missing <= 0)
-                                continue
-                        var/req_type = requirement["type"]
-                        if(req_type == "signature" || req_type == "signature_any")
-                                if(isnull(signature_gap) || missing < signature_gap)
-                                        signature_gap = missing
-                                        signature_targets = list(ability_name)
-                                else if(missing == signature_gap)
-                                        signature_targets += ability_name
-                        else if(req_type == "biomaterial")
-                                var/category_id = requirement["category"]
-                                var/list/info = category_gaps[category_id]
-                                if(!islist(info) || missing < info["missing"])
-                                        info = list("missing" = missing, "names" = list(ability_name))
-                                        category_gaps[category_id] = info
-                                else if(missing == info["missing"])
-                                        info["names"] += ability_name
+	var/next_absorb_target
+	var/list/next_absorb_names = list()
+	var/next_dna_target
+	var/list/next_dna_names = list()
 
-        if(signature_gap)
-                var/list/tip = list()
-                tip["title"] = "Signature Catalysis"
-                tip["description"] = "Harvest [signature_gap] more signature cell[signature_gap == 1 ? "" : "s"] to imprint:"
-                tip["abilities"] = signature_targets
-                tips += list(tip)
+	for(var/list/ability_data as anything in catalog)
+		var/name = ability_data["name"]
+		var/cost = ability_data["genetic_point_required"]
+		var/chem_cost = ability_data["chemical_cost"]
+		var/absorb_req = ability_data["absorbs_required"]
+		var/dna_req = ability_data["dna_required"]
 
-        for(var/category_id in category_gaps)
-                var/list/info = category_gaps[category_id]
-                if(!islist(info))
-                        continue
-                var/list/category_entry = changeling.get_biomaterial_category(category_id)
-                var/category_name = ""
-                if(islist(category_entry))
-                        category_name = category_entry["name"]
-                if(!istext(category_name) || !length(category_name))
-                        category_name = capitalize(replacetext("[category_id]", "_", " "))
-                var/list/tip = list()
-                var/missing = info["missing"]
-                tip["title"] = "[category_name] Reserve"
-                tip["description"] = "Secure [missing] more sample[missing == 1 ? "" : "s"] to craft:"
-                tip["abilities"] = info["names"]
-                tips += list(tip)
+		if(cost <= 1)
+			low_cost += name
 
-        if(islist(respec_recipe) && !changeling.can_respec)
-                var/list/missing_parts = list()
-                for(var/list/requirement as anything in respec_recipe["requirements"])
-                        if(!islist(requirement))
-                                continue
-                        var/missing = max(0, requirement["required"] - requirement["available"])
-                        if(missing <= 0)
-                                continue
-                        missing_parts += "[missing] [requirement["name"] || requirement["id"]]"
-                if(LAZYLEN(missing_parts))
-                        var/list/tip = list()
-                        tip["title"] = "Recombinase Prep"
-                        tip["description"] = "Gather [english_list(missing_parts)] to distill a recombinase charge."
-                        tips += list(tip)
+		if(chem_cost >= 25)
+			chem_hungry += "[name] ([chem_cost] chems)"
 
-        return tips
-/datum/genetic_matrix/proc/collect_incompatibilities(list/recipe_catalog)
-        var/list/warnings = list()
+		if(absorb_req > changeling.true_absorbs)
+			if(isnull(next_absorb_target) || absorb_req < next_absorb_target)
+				next_absorb_target = absorb_req
+				next_absorb_names = list(name)
+			else if(absorb_req == next_absorb_target)
+				next_absorb_names += name
 
-        if(changeling.can_respec <= 0)
-                warnings += "Craft a recombinase charge to enable readaptation."
+		if(dna_req > changeling.absorbed_count)
+			if(isnull(next_dna_target) || dna_req < next_dna_target)
+				next_dna_target = dna_req
+				next_dna_names = list(name)
+			else if(dna_req == next_dna_target)
+				next_dna_names += name
 
-        if(!islist(recipe_catalog))
-                return warnings
+	if(length(low_cost))
+		var/list/tip = list()
+		tip["title"] = "Foundational Sequences"
+		tip["description"] = "Low cost evolutions ideal for establishing a toolkit."
+		tip["abilities"] = low_cost.Copy(1, min(length(low_cost) + 1, 7))
+		tips += list(tip)
 
-        for(var/list/recipe as anything in recipe_catalog)
-                if(!islist(recipe))
-                        continue
-                var/result_type = lowertext(recipe["result_type"] || "ability")
-                if(result_type != "ability" || recipe["owned"])
-                        continue
-                var/list/requirements = recipe["requirements"]
-                if(!islist(requirements))
-                        continue
-                var/list/missing_parts = list()
-                for(var/list/requirement as anything in requirements)
-                        if(!islist(requirement))
-                                continue
-                        var/missing = max(0, requirement["required"] - requirement["available"])
-                        if(missing <= 0)
-                                continue
-                        var/part_name = requirement["name"] || requirement["id"]
-                        if(requirement["type"] == "signature_any")
-                                part_name = part_name || "signature cell"
-                        missing_parts += "[missing] [part_name]"
-                if(LAZYLEN(missing_parts))
-                        var/ability_name = recipe["ability_name"] || recipe["name"]
-                        warnings += "Need [english_list(missing_parts)] for [ability_name]."
+	if(next_absorb_target)
+		var/list/absorb_tip = list()
+		var/needed = max(0, next_absorb_target - changeling.true_absorbs)
+		absorb_tip["title"] = "Absorption Milestone"
+		absorb_tip["description"] = "Absorb [needed] more host[needed == 1 ? "" : "s"] to unlock:"
+		absorb_tip["abilities"] = next_absorb_names
+		tips += list(absorb_tip)
 
-        return warnings
+	if(next_dna_target)
+		var/list/dna_tip = list()
+		var/dna_needed = max(0, next_dna_target - changeling.absorbed_count)
+		dna_tip["title"] = "DNA Threshold"
+		dna_tip["description"] = "Harvest [dna_needed] additional DNA sample[dna_needed == 1 ? "" : "s"] to access:"
+		dna_tip["abilities"] = next_dna_names
+		tips += list(dna_tip)
+
+	if(length(chem_hungry))
+		var/list/chem_tip = list()
+		chem_tip["title"] = "Chemical Investments"
+		chem_tip["description"] = "Maintain chemical reserves ([changeling.chem_charges]/[changeling.total_chem_storage]) to leverage:"
+		chem_tip["abilities"] = chem_hungry.Copy(1, min(length(chem_hungry) + 1, 6))
+		tips += list(chem_tip)
+
+	return tips
+
+/datum/genetic_matrix/proc/collect_incompatibilities(list/catalog)
+	var/list/warnings = list()
+
+	if(!changeling.can_respec)
+		warnings += "Absorb additional genomes to enable readaptation."
+
+	var/list/points_short = list()
+	var/list/absorb_short = list()
+	var/list/dna_short = list()
+
+	for(var/list/ability_data as anything in catalog)
+		if(changeling.purchased_powers[ability_data["path"]])
+			continue
+
+		var/points_needed = ability_data["genetic_point_required"] - changeling.genetic_points
+		if(points_needed > 0)
+			var/list/list_for_cost = points_short[points_needed]
+			if(!islist(list_for_cost))
+				list_for_cost = list()
+				points_short[points_needed] = list_for_cost
+			list_for_cost += ability_data["name"]
+
+		var/absorb_needed = ability_data["absorbs_required"] - changeling.true_absorbs
+		if(absorb_needed > 0)
+			var/list/list_for_absorb = absorb_short[absorb_needed]
+			if(!islist(list_for_absorb))
+				list_for_absorb = list()
+				absorb_short[absorb_needed] = list_for_absorb
+			list_for_absorb += ability_data["name"]
+
+		var/dna_needed = ability_data["dna_required"] - changeling.absorbed_count
+		if(dna_needed > 0)
+			var/list/list_for_dna = dna_short[dna_needed]
+			if(!islist(list_for_dna))
+				list_for_dna = list()
+				dna_short[dna_needed] = list_for_dna
+			list_for_dna += ability_data["name"]
+
+	for(var/needed in points_short)
+		var/list/names = points_short[needed]
+		warnings += "Need [needed] more genetic point[needed == 1 ? "" : "s"] for [english_list(names)]."
+
+	for(var/needed_absorb in absorb_short)
+		var/list/absorb_names = absorb_short[needed_absorb]
+		warnings += "Need [needed_absorb] more absorb[needed_absorb == 1 ? "" : "s"] for [english_list(absorb_names)]."
+
+	for(var/needed_dna in dna_short)
+		var/list/dna_names = dna_short[needed_dna]
+		warnings += "Need [needed_dna] more DNA sample[needed_dna == 1 ? "" : "s"] for [english_list(dna_names)]."
+
+	return warnings
 
 /datum/genetic_matrix/proc/build_preset_payload()
 	var/list/output = list()
@@ -253,22 +295,14 @@
 			if(changeling.can_respec)
 				changeling.readapt()
 
-		if("craft")
-			var/recipe_id = params["id"]
-			if(istext(recipe_id))
+		if("evolve")
+			var/datum/action/changeling/power_path = text2path(params["path"])
+			if(power_path)
 				var/slot_choice = lowertext(params["slot"])
 				var/slot_identifier = CHANGELING_SECONDARY_BUILD_SLOTS
 				if(slot_choice == CHANGELING_KEY_BUILD_SLOT || slot_choice == "primary")
 					slot_identifier = CHANGELING_KEY_BUILD_SLOT
-				changeling.craft_recipe(recipe_id, slot_identifier)
-			else if(params["path"])
-				var/datum/action/changeling/power_path = text2path(params["path"])
-				if(power_path)
-					var/slot_choice = lowertext(params["slot"])
-					var/slot_identifier = CHANGELING_SECONDARY_BUILD_SLOTS
-					if(slot_choice == CHANGELING_KEY_BUILD_SLOT || slot_choice == "primary")
-						slot_identifier = CHANGELING_KEY_BUILD_SLOT
-					changeling.craft_recipe_for_power(power_path, slot_identifier)
+				changeling.purchase_power(power_path, slot_identifier)
 
 		if("set_primary")
 			var/datum/action/changeling/promote_path = text2path(params["path"])

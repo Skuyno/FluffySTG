@@ -862,14 +862,19 @@ GLOBAL_LIST_EMPTY(possible_items)
 
 /datum/objective/absorb_changeling/check_completion()
 	var/list/datum/mind/owners = get_owners()
-        for(var/datum/mind/ling_mind as anything in owners)
-                var/datum/antagonist/changeling/changeling = ling_mind.has_antag_datum(/datum/antagonist/changeling)
-                if(!changeling)
-                        continue
+	for(var/datum/mind/ling_mind as anything in owners)
+		var/datum/antagonist/changeling/changeling = ling_mind.has_antag_datum(/datum/antagonist/changeling)
+		if(!changeling)
+			continue
 
-                if(changeling.absorbed_changeling_count > 0)
-                        return TRUE
-        return completed
+		var/total_genetic_points = changeling.genetic_points
+		for(var/power_path in changeling.purchased_powers)
+			var/datum/action/changeling/power = changeling.purchased_powers[power_path]
+			total_genetic_points += power.dna_cost
+
+		if(total_genetic_points > initial(changeling.genetic_points))
+			return TRUE
+	return completed
 
 //End Changeling Objectives
 
