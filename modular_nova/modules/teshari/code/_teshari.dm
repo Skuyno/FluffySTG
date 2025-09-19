@@ -15,6 +15,7 @@
 	digitigrade_customization = DIGITIGRADE_NEVER
 	changesource_flags = MIRROR_BADMIN | WABBAJACK | MIRROR_MAGIC | MIRROR_PRIDE | ERT_SPAWN | RACE_SWAP | SLIME_EXTRACT
 	payday_modifier = 1.0
+	cytology_cell_ids = list(/datum/micro_organism/cell_line/teshari)
 	mutanttongue = /obj/item/organ/tongue/teshari
 	custom_worn_icons = list(
 		LOADOUT_ITEM_HEAD = TESHARI_HEAD_ICON,

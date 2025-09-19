@@ -1,8 +1,9 @@
 /// Coordinating datum for the changeling genetic matrix interface.
 /datum/genetic_matrix
-	var/name = "Genetic Matrix"
-	var/datum/antagonist/changeling/changeling
-	var/datum/changeling_bio_incubator/listened_incubator
+        var/name = "Genetic Matrix"
+        var/datum/antagonist/changeling/changeling
+        var/datum/changeling_bio_incubator/listened_incubator
+        var/list/composer_preview = list()
 
 /datum/genetic_matrix/New(datum/antagonist/changeling/changeling)
 	. = ..()
@@ -10,9 +11,10 @@
 	register_with_incubator()
 
 /datum/genetic_matrix/Destroy()
-	unregister_from_incubator()
-	changeling = null
-	return ..()
+        unregister_from_incubator()
+        changeling = null
+        composer_preview = null
+        return ..()
 
 /datum/genetic_matrix/proc/register_with_incubator()
 	unregister_from_incubator()
@@ -30,10 +32,29 @@
 		listened_incubator = null
 
 /datum/genetic_matrix/proc/on_bio_incubator_updated(datum/changeling_bio_incubator/incubator, update_flags)
-	SIGNAL_HANDLER
-	if(QDELETED(src))
-		return
-	SStgui.update_uis(src)
+        SIGNAL_HANDLER
+        if(QDELETED(src))
+                return
+        SStgui.update_uis(src)
+
+/datum/genetic_matrix/proc/set_composer_preview(list/matches)
+        composer_preview = list()
+        if(!islist(matches))
+                return
+        for(var/entry in matches)
+                if(!islist(entry))
+                        continue
+                composer_preview += list(entry.Copy())
+
+/datum/genetic_matrix/proc/get_composer_preview()
+        var/list/output = list()
+        if(!islist(composer_preview))
+                return output
+        for(var/entry in composer_preview)
+                if(!islist(entry))
+                        continue
+                output += list(entry.Copy())
+        return output
 
 /datum/genetic_matrix/ui_state(mob/user)
 	return GLOB.always_state
@@ -72,20 +93,21 @@
 	var/datum/changeling_bio_incubator/incubator = changeling.bio_incubator
 	changeling.ensure_genetic_matrix_setup()
 	changeling.prune_genetic_matrix_assignments()
-	data["builds"] = changeling.get_genetic_matrix_builds_data()
-	data["resultCatalog"] = changeling.get_genetic_matrix_profile_catalog()
-	var/list/module_catalog = changeling.get_genetic_matrix_module_catalog()
-	data["moduleCatalog"] = module_catalog
-	data["abilityCatalog"] = module_catalog
-	var/list/module_storage = changeling.get_genetic_matrix_module_storage()
-	data["modules"] = module_storage
-	data["abilities"] = module_storage
-	data["cells"] = changeling.get_genetic_matrix_profile_storage()
-	data["cytologyCells"] = incubator ? incubator.get_cells_data() : list()
-	data["recipes"] = incubator ? incubator.get_recipes_data() : list()
-	data["skills"] = changeling.get_genetic_matrix_skills_data()
-	data["canAddBuild"] = incubator ? incubator.can_add_build() : FALSE
-	return data
+        data["builds"] = changeling.get_genetic_matrix_builds_data()
+        data["profiles"] = changeling.get_genetic_matrix_profile_catalog()
+        data["cytologyCells"] = incubator ? incubator.get_cells_data() : list()
+        var/list/module_catalog = changeling.get_genetic_matrix_module_catalog()
+        data["moduleCatalog"] = module_catalog
+        data["modules"] = changeling.get_genetic_matrix_module_storage()
+        var/list/ability_catalog = changeling.get_genetic_matrix_ability_catalog()
+        data["abilityCatalog"] = ability_catalog
+        data["abilities"] = changeling.get_genetic_matrix_ability_storage()
+        data["recipes"] = incubator ? incubator.get_recipes_data() : list()
+        data["composerMatches"] = get_composer_preview()
+        data["standardSkills"] = changeling.get_standard_skill_catalog()
+        data["standardSkillState"] = changeling.get_standard_skill_state()
+        data["canAddBuild"] = incubator ? incubator.can_add_build() : FALSE
+        return data
 
 /datum/genetic_matrix/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	. = ..()
@@ -94,11 +116,33 @@
 	if(!changeling)
 		return FALSE
 	var/mob/user = ui.user
-	var/datum/changeling_bio_incubator/incubator = changeling.bio_incubator
-	switch(action)
-		if("create_build")
-			if(!incubator || !incubator.can_add_build())
-				return FALSE
+        var/datum/changeling_bio_incubator/incubator = changeling.bio_incubator
+        switch(action)
+                if("composer_check")
+                        var/list/cells = changeling.parse_genetic_matrix_array(params["cells"])
+                        var/list/abilities = changeling.parse_genetic_matrix_array(params["abilities"])
+                        var/list/matches = changeling.evaluate_genetic_matrix_selection(cells, abilities)
+                        set_composer_preview(matches)
+                        return TRUE
+                if("composer_craft")
+                        var/list/cells = changeling.parse_genetic_matrix_array(params["cells"])
+                        var/list/abilities = changeling.parse_genetic_matrix_array(params["abilities"])
+                        var/list/results = changeling.craft_genetic_matrix_modules(cells, abilities, user)
+                        set_composer_preview(results)
+                        return TRUE
+                if("standard_readapt")
+                        if(changeling.can_respec)
+                                changeling.readapt()
+                        return TRUE
+                if("standard_evolve")
+                        var/path = text2path(params["path"])
+                        if(!path)
+                                return FALSE
+                        changeling.purchase_power(path)
+                        return TRUE
+                if("create_build")
+                        if(!incubator || !incubator.can_add_build())
+                                return FALSE
 			var/default_name = "Matrix Build [incubator.builds.len + 1]"
 			var/new_name = tgui_input_text(user, "Name the new build.", "Create Genetic Matrix Build", default_name, 32)
 			if(isnull(new_name))
@@ -231,41 +275,161 @@
 
 /// Aggregate module information available to the changeling.
 /datum/antagonist/changeling/proc/get_genetic_matrix_module_catalog()
-	var/list/catalog = list()
-	var/list/seen_ids = list()
-	if(bio_incubator)
-		for(var/list/entry as anything in bio_incubator.get_crafted_module_catalog())
-			var/id = entry["id"]
-			if(!id)
-				continue
-			catalog += list(entry.Copy())
-			seen_ids[id] = TRUE
-	for(var/datum/action/changeling/innate as anything in innate_powers)
-		var/path = innate.type
-		if(!ispath(path) || seen_ids["[path]"])
-			continue
-		var/list/data = get_genetic_matrix_module_data_from_path(path)
-		if(!data)
-			continue
-		data["source"] = "innate"
-		catalog += list(data)
-		seen_ids[data["id"]] = TRUE
-	for(var/path in purchased_powers)
-		var/id = "[path]"
-		if(seen_ids[id])
-			continue
-		var/list/data = get_genetic_matrix_module_data_from_path(path)
-		if(!data)
-			continue
-		data["source"] = "purchased"
-		catalog += list(data)
-		seen_ids[id] = TRUE
-	sortTim(catalog, GLOBAL_PROC_REF(cmp_assoc_list_name))
-	return catalog
+        var/list/catalog = list()
+        if(bio_incubator)
+                for(var/list/entry as anything in bio_incubator.get_crafted_module_catalog())
+                        if(!islist(entry))
+                                continue
+                        catalog += list(entry.Copy())
+        sortTim(catalog, GLOBAL_PROC_REF(cmp_assoc_list_name))
+        return catalog
 
 /// Provide detailed module data for the storage tab.
 /datum/antagonist/changeling/proc/get_genetic_matrix_module_storage()
-	return get_genetic_matrix_module_catalog()
+        return get_genetic_matrix_module_catalog()
+
+/datum/antagonist/changeling/proc/parse_genetic_matrix_array(value)
+        var/list/output = list()
+        if(isnull(value))
+                return output
+        if(islist(value))
+                for(var/entry in value)
+                        output += list(entry)
+                return output
+        if(istext(value))
+                var/list/decoded = json_decode(value)
+                if(islist(decoded))
+                        for(var/entry in decoded)
+                                output += list(entry)
+        return output
+
+/datum/antagonist/changeling/proc/get_standard_skill_catalog()
+        var/list/catalog = list()
+        for(var/datum/action/changeling/ability_path as anything in all_powers)
+                var/dna_cost = initial(ability_path.dna_cost)
+                if(dna_cost < 0)
+                        continue
+                var/list/ability_data = list(
+                        "id" = "[ability_path]",
+                        "path" = ability_path,
+                        "name" = initial(ability_path.name),
+                        "desc" = initial(ability_path.desc),
+                        "helptext" = initial(ability_path.helptext),
+                        "genetic_point_required" = dna_cost,
+                        "absorbs_required" = initial(ability_path.req_absorbs),
+                        "dna_required" = initial(ability_path.req_dna),
+                        "category" = "ability",
+                )
+                catalog += list(ability_data)
+        sortTim(catalog, GLOBAL_PROC_REF(cmp_assoc_list_name))
+        return catalog
+
+/datum/antagonist/changeling/proc/get_standard_skill_state()
+        var/list/owned = list()
+        for(var/datum/action/changeling/innate as anything in innate_powers)
+                var/id = "[innate.type]"
+                if(!(id in owned))
+                        owned += id
+        for(var/path in purchased_powers)
+                var/id = "[path]"
+                if(!(id in owned))
+                        owned += id
+        return list(
+                "can_readapt" = can_respec,
+                "genetic_points" = genetic_points,
+                "absorb_count" = true_absorbs,
+                "dna_count" = absorbed_count,
+                "owned" = owned,
+        )
+
+/datum/antagonist/changeling/proc/get_genetic_matrix_ability_catalog()
+        var/list/catalog = list()
+        var/list/standard_catalog = get_standard_skill_catalog()
+        var/list/state = get_standard_skill_state()
+        var/list/owned = state["owned"]
+        if(!islist(owned))
+                owned = list()
+        var/list/owned_lookup = list()
+        for(var/id in owned)
+                owned_lookup[id] = TRUE
+        for(var/list/entry as anything in standard_catalog)
+                var/id = entry["id"]
+                if(isnull(id) || !owned_lookup[id])
+                        continue
+                var/list/copy = entry.Copy()
+                var/datum/action/changeling/path = entry["path"]
+                var/source = "purchased"
+                if(ispath(path) && initial(path.dna_cost) == CHANGELING_POWER_INNATE)
+                        source = "innate"
+                copy["source"] = source
+                copy["slotType"] = BIO_INCUBATOR_SLOT_FLEX
+                catalog += list(copy)
+        sortTim(catalog, GLOBAL_PROC_REF(cmp_assoc_list_name))
+        return catalog
+
+/datum/antagonist/changeling/proc/get_genetic_matrix_ability_storage()
+        return get_genetic_matrix_ability_catalog()
+
+/datum/antagonist/changeling/proc/evaluate_genetic_matrix_selection(list/raw_cells, list/raw_abilities)
+        if(!bio_incubator)
+                create_bio_incubator()
+        var/list/cell_ids = list()
+        if(islist(raw_cells))
+                for(var/entry in raw_cells)
+                        var/id = bio_incubator.sanitize_module_id(entry)
+                        if(isnull(id) || id in cell_ids)
+                                continue
+                        cell_ids += id
+        var/list/ability_ids = list()
+        if(islist(raw_abilities))
+                for(var/entry in raw_abilities)
+                        var/id = bio_incubator.sanitize_module_id(entry)
+                        if(isnull(id) || id in ability_ids)
+                                continue
+                        ability_ids += id
+        var/list/results = list()
+        for(var/datum/changeling_genetic_recipe/recipe as anything in GLOB.changeling_genetic_recipes)
+                if(!recipe.matches(cell_ids, ability_ids))
+                        continue
+                var/list/module = recipe.get_module_data()
+                var/module_id = bio_incubator.sanitize_module_id(module["id"]) || recipe.id
+                module["id"] = module_id
+                var/already = bio_incubator.has_module(module_id)
+                results += list(list(
+                        "recipeId" = recipe.id,
+                        "name" = recipe.name,
+                        "module" = module.Copy(),
+                        "alreadyUnlocked" = already,
+                ))
+        sortTim(results, GLOBAL_PROC_REF(cmp_assoc_list_name))
+        return results
+
+/datum/antagonist/changeling/proc/craft_genetic_matrix_modules(list/raw_cells, list/raw_abilities, mob/user)
+        var/list/results = evaluate_genetic_matrix_selection(raw_cells, raw_abilities)
+        if(!bio_incubator)
+                create_bio_incubator()
+        var/created = 0
+        for(var/list/entry as anything in results)
+                if(!islist(entry))
+                        continue
+                if(entry["alreadyUnlocked"])
+                        continue
+                var/list/module = entry["module"]
+                if(!islist(module))
+                        continue
+                var/module_id = bio_incubator.sanitize_module_id(module["id"])
+                if(isnull(module_id))
+                        continue
+                module["id"] = module_id
+                if(!bio_incubator.register_module(module_id, module))
+                        continue
+                bio_incubator.add_recipe(entry["recipeId"])
+                entry["alreadyUnlocked"] = TRUE
+                entry["crafted"] = TRUE
+                created++
+        if(created && user)
+                to_chat(user, span_notice("We weave [created] new genetic module[created == 1 ? "" : "s"]."))
+        return results
 
 /// Return a dataset summarizing the owner's skills.
 /datum/antagonist/changeling/proc/get_genetic_matrix_skills_data()
@@ -312,21 +476,12 @@
 
 /// Determine whether the changeling currently possesses a given module identifier.
 /datum/antagonist/changeling/proc/has_genetic_matrix_module(module_identifier)
-	if(isnull(module_identifier))
-		return FALSE
-	var/id_text = bio_incubator?.sanitize_module_id(module_identifier)
-	if(!id_text)
-		return FALSE
-	if(bio_incubator?.has_module(id_text))
-		return TRUE
-	var/path = text2path(id_text)
-	if(ispath(path, /datum/action/changeling))
-		if(purchased_powers && purchased_powers[path])
-			return TRUE
-		for(var/datum/action/changeling/innate as anything in innate_powers)
-			if(innate.type == path)
-				return TRUE
-	return FALSE
+        if(isnull(module_identifier))
+                return FALSE
+        var/id_text = bio_incubator?.sanitize_module_id(module_identifier)
+        if(!id_text)
+                return FALSE
+        return bio_incubator?.has_module(id_text)
 
 /// Locate a matrix build using its reference string.
 /datum/antagonist/changeling/proc/find_genetic_matrix_build(identifier)
@@ -371,20 +526,22 @@
 
 /// Convert an ability type path to UI-friendly data for compatibility.
 /datum/antagonist/changeling/proc/get_genetic_matrix_module_data_from_path(datum/action/changeling/ability_path)
-	if(isnull(ability_path))
-		return null
-	var/list/data = list(
-		"id" = "[ability_path]",
-		"name" = initial(ability_path.name),
-		"desc" = initial(ability_path.desc),
-		"helptext" = initial(ability_path.helptext),
-		"chemical_cost" = initial(ability_path.chemical_cost),
-		"dna_cost" = initial(ability_path.dna_cost),
-		"req_dna" = initial(ability_path.req_dna),
-		"req_absorbs" = initial(ability_path.req_absorbs),
-		"button_icon_state" = initial(ability_path.button_icon_state),
-	)
-	return data
+        if(isnull(ability_path))
+                return null
+        var/list/data = list(
+                "id" = "[ability_path]",
+                "name" = initial(ability_path.name),
+                "desc" = initial(ability_path.desc),
+                "helptext" = initial(ability_path.helptext),
+                "chemical_cost" = initial(ability_path.chemical_cost),
+                "dna_cost" = initial(ability_path.dna_cost),
+                "req_dna" = initial(ability_path.req_dna),
+                "req_absorbs" = initial(ability_path.req_absorbs),
+                "button_icon_state" = initial(ability_path.button_icon_state),
+                "category" = "ability",
+                "slotType" = BIO_INCUBATOR_SLOT_FLEX,
+        )
+        return data
 
 /// Legacy helper for callers expecting the old name.
 /datum/antagonist/changeling/proc/get_genetic_matrix_ability_data(datum/action/changeling/ability_path)
