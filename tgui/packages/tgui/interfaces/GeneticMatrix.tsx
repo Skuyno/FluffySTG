@@ -125,21 +125,22 @@ type GeneticMatrixData = {
 export const GeneticMatrix = () => {
   const { data } = useBackend<GeneticMatrixData>();
   const [searchQuery, setSearchQuery] = useState('');
+  const abilities = data.abilities ?? [];
 
   const filteredAbilities = useMemo(() => {
     if (!searchQuery || searchQuery.length < 2) {
-      return data.abilities;
+      return abilities;
     }
 
     const lowered = searchQuery.toLowerCase();
-    return data.abilities.filter((ability) => {
+    return abilities.filter((ability) => {
       return (
         ability.name.toLowerCase().includes(lowered) ||
         ability.desc.toLowerCase().includes(lowered) ||
         ability.helptext.toLowerCase().includes(lowered)
       );
     });
-  }, [data.abilities, searchQuery]);
+  }, [abilities, searchQuery]);
 
   return (
     <Window width={1100} height={640} theme="syndicate">
@@ -206,6 +207,7 @@ const AbilityCatalogSection = (props: {
     absorb_count,
     dna_count,
   } = data;
+  const abilities = data.abilities ?? [];
 
   return (
     <Section
@@ -234,7 +236,7 @@ const AbilityCatalogSection = (props: {
     >
       {!filteredAbilities.length ? (
         <NoticeBox>
-          {data.abilities.length
+          {abilities.length
             ? 'No sequences matched those search terms.'
             : 'No evolutions are currently available.'}
         </NoticeBox>
@@ -366,15 +368,15 @@ const AbilityCatalogSection = (props: {
 
 const ActiveEffectsSection = () => {
   const { data } = useBackend<GeneticMatrixData>();
-  const { active_effects } = data;
+  const activeEffects = data.active_effects ?? [];
 
   return (
     <Section fill scrollable title="Active Effects">
-      {!active_effects.length ? (
+      {!activeEffects.length ? (
         <NoticeBox>No evolutions are currently manifested.</NoticeBox>
       ) : (
         <Stack vertical spacing={1}>
-          {active_effects.map((effect) => (
+          {activeEffects.map((effect) => (
             <Stack.Item
               key={String(effect.path ?? effect.name)}
               className="candystripe"
@@ -606,7 +608,7 @@ const BuildSlotCard = (props: {
 
 const BiomaterialSection = () => {
   const { data } = useBackend<GeneticMatrixData>();
-  const { biomaterials } = data;
+  const biomaterials = data.biomaterials ?? [];
 
   return (
     <Section title="Biomaterial Stores" scrollable>
@@ -657,15 +659,15 @@ const BiomaterialSection = () => {
 
 const SignatureSection = () => {
   const { data } = useBackend<GeneticMatrixData>();
-  const { signature_cells } = data;
+  const signatureCells = data.signature_cells ?? [];
 
   return (
     <Section title="Signature Cells" scrollable>
-      {!signature_cells.length ? (
+      {!signatureCells.length ? (
         <NoticeBox>No harvested signatures stored.</NoticeBox>
       ) : (
         <Stack vertical spacing={1}>
-          {signature_cells.map((cell) => (
+          {signatureCells.map((cell) => (
             <Stack.Item key={cell.id} className="candystripe">
               <Stack vertical spacing={0.5}>
                 <Stack align="baseline" justify="space-between">
@@ -690,17 +692,17 @@ const SignatureSection = () => {
 
 const SynergySection = () => {
   const { data } = useBackend<GeneticMatrixData>();
-  const { synergy_tips } = data;
+  const synergyTips = data.synergy_tips ?? [];
 
   return (
     <Section title="Synergy Guidance" scrollable>
-      {!synergy_tips.length ? (
+      {!synergyTips.length ? (
         <NoticeBox>
           Integrate additional genomes to unlock synergy insights.
         </NoticeBox>
       ) : (
         <Stack vertical spacing={1}>
-          {synergy_tips.map((tip) => (
+          {synergyTips.map((tip) => (
             <Stack.Item key={tip.title} className="candystripe">
               <Stack vertical spacing={0.5}>
                 <Box bold>{tip.title}</Box>
@@ -721,7 +723,7 @@ const SynergySection = () => {
 
 const WarningsSection = () => {
   const { data } = useBackend<GeneticMatrixData>();
-  const { incompatibilities } = data;
+  const incompatibilities = data.incompatibilities ?? [];
 
   return (
     <Section title="Incompatibilities" scrollable>
@@ -744,7 +746,8 @@ const WarningsSection = () => {
 
 const PresetSection = () => {
   const { act, data } = useBackend<GeneticMatrixData>();
-  const { presets, preset_limit } = data;
+  const presets = data.presets ?? [];
+  const { preset_limit } = data;
   const [newPresetName, setNewPresetName] = useState('');
 
   const presetsFull = presets.length >= preset_limit && preset_limit > 0;
@@ -813,7 +816,8 @@ const PresetRow = (props: { preset: GeneticPreset }) => {
   const { preset } = props;
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(preset.name);
-  const { primary, secondaries } = preset;
+  const { primary } = preset;
+  const secondaries = preset.secondaries ?? [];
 
   useEffect(() => {
     setDraftName(preset.name);
@@ -832,7 +836,7 @@ const PresetRow = (props: { preset: GeneticPreset }) => {
     if (primary) {
       lines.push(`Primary: ${primary.name ?? 'Uncatalogued sequence'}`);
     }
-    if (secondaries?.length) {
+    if (secondaries.length) {
       for (const slot of secondaries) {
         lines.push(
           `Secondary #${slot.index}: ${slot.name ?? 'Uncatalogued sequence'}`,
