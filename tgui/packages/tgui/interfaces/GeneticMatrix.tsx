@@ -66,6 +66,12 @@ type AbilityEntry = {
   button_icon_state: string | null;
   source?: string;
   slot?: number;
+  abilityId?: string;
+  moduleId?: string;
+  moduleCategory?: string;
+  moduleSource?: string;
+  allowsDuplicates?: BooleanLike;
+  allowKeySlot?: BooleanLike;
 };
 
 type BuildEntry = {
@@ -84,6 +90,11 @@ type SkillEntry = {
   desc: string;
 };
 
+type RecipeEntry = {
+  id: string;
+  name: string;
+};
+
 type GeneticMatrixData = {
   maxAbilitySlots: number;
   maxBuilds: number;
@@ -93,6 +104,7 @@ type GeneticMatrixData = {
   cells: ProfileEntry[];
   abilities: AbilityEntry[];
   skills: SkillEntry[];
+  recipes?: RecipeEntry[];
   canAddBuild: BooleanLike;
 };
 
@@ -317,7 +329,9 @@ const MatrixTab = ({
     return new Set(
       selectedBuild.abilities
         .filter((entry): entry is AbilityEntry => Boolean(entry))
-        .map((entry) => entry.id),
+        .filter((entry) => !asBoolean(entry.allowsDuplicates))
+        .map((entry) => entry.moduleId ?? entry.id)
+        .filter((id): id is string => Boolean(id)),
     );
   }, [selectedBuild]);
 
