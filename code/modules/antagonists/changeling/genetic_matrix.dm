@@ -112,7 +112,7 @@
 			var/datum/changeling_bio_incubator/build/build = changeling.find_genetic_matrix_build(params["build"])
 			if(!build)
 				return FALSE
-			if(tgui_alert(user, "Delete build \"[build.name]\"?", "Remove Build", list("Delete", "Cancel")) != "Delete")
+      if(tgui_alert(user, "Delete build \"[build.name]\"?", "Remove Build", list("Delete", "Cancel")) != "Delete")
 				return FALSE
 			changeling.remove_genetic_matrix_build(build)
 			return TRUE
