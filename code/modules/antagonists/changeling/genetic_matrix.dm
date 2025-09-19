@@ -291,50 +291,50 @@
 		return
 
 	switch(action)
-	if("readapt")
-		if(changeling.can_respec)
-			changeling.readapt()
+		if("readapt")
+			if(changeling.can_respec)
+				changeling.readapt()
 
-	if("evolve")
-		var/datum/action/changeling/power_path = text2path(params["path"])
-		if(power_path)
-			var/slot_choice = lowertext(params["slot"])
-			var/slot_identifier = CHANGELING_SECONDARY_BUILD_SLOTS
-			if(slot_choice == CHANGELING_KEY_BUILD_SLOT || slot_choice == "primary")
-				slot_identifier = CHANGELING_KEY_BUILD_SLOT
-			changeling.purchase_power(power_path, slot_identifier)
+		if("evolve")
+			var/datum/action/changeling/power_path = text2path(params["path"])
+			if(power_path)
+				var/slot_choice = lowertext(params["slot"])
+				var/slot_identifier = CHANGELING_SECONDARY_BUILD_SLOTS
+				if(slot_choice == CHANGELING_KEY_BUILD_SLOT || slot_choice == "primary")
+					slot_identifier = CHANGELING_KEY_BUILD_SLOT
+				changeling.purchase_power(power_path, slot_identifier)
 
-	if("set_primary")
-		var/datum/action/changeling/promote_path = text2path(params["path"])
-		if(promote_path)
-			changeling.set_active_key_power(promote_path)
+		if("set_primary")
+			var/datum/action/changeling/promote_path = text2path(params["path"])
+			if(promote_path)
+				changeling.set_active_key_power(promote_path)
 
-	if("retire_power")
-		var/datum/action/changeling/retire_path = text2path(params["path"])
-		if(retire_path)
-			changeling.remove_power(retire_path)
+		if("retire_power")
+			var/datum/action/changeling/retire_path = text2path(params["path"])
+			if(retire_path)
+				changeling.remove_power(retire_path)
 
-	if("save_preset")
-		var/preset_name = sanitize_text(params["name"], "")
-		preset_name = htmlrendertext(preset_name)
-		if(!length(preset_name))
-			preset_name = "Matrix Preset [length(changeling.genetic_presets) + 1]"
-		changeling.save_genetic_preset(preset_name)
+		if("save_preset")
+			var/preset_name = sanitize_text(params["name"], "")
+			preset_name = htmlrendertext(preset_name)
+			if(!length(preset_name))
+				preset_name = "Matrix Preset [length(changeling.genetic_presets) + 1]"
+			changeling.save_genetic_preset(preset_name)
 
-	if("apply_preset")
-		var/idx = text2num(params["id"])
-		changeling.apply_genetic_preset(idx)
+		if("apply_preset")
+			var/idx = text2num(params["id"])
+			changeling.apply_genetic_preset(idx)
 
-	if("delete_preset")
-		var/delete_idx = text2num(params["id"])
-		changeling.delete_genetic_preset(delete_idx)
+		if("delete_preset")
+			var/delete_idx = text2num(params["id"])
+			changeling.delete_genetic_preset(delete_idx)
 
-	if("rename_preset")
-		var/rename_idx = text2num(params["id"])
-		var/new_name = sanitize_text(params["name"], "")
-		new_name = htmlrendertext(new_name)
-		if(length(new_name))
-			changeling.rename_genetic_preset(rename_idx, new_name)
+		if("rename_preset")
+			var/rename_idx = text2num(params["id"])
+			var/new_name = sanitize_text(params["name"], "")
+			new_name = htmlrendertext(new_name)
+			if(length(new_name))
+				changeling.rename_genetic_preset(rename_idx, new_name)
 
 	return TRUE
 
