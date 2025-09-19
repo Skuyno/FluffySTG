@@ -1,6 +1,15 @@
 /// Helper to format the text that gets thrown onto the chem hud element.
 #define FORMAT_CHEM_CHARGES_TEXT(charges) MAPTEXT("<div align='center' valign='middle' style='position:relative; top:0px; left:6px'><font color='#dd66dd'>[round(charges)]</font></div>")
 
+/// Identifier used for the active key slot within a changeling's build.
+#define CHANGELING_KEY_BUILD_SLOT "key"
+/// Identifier used for the set of secondary slots within a changeling's build.
+#define CHANGELING_SECONDARY_BUILD_SLOTS "secondary"
+/// Maximum number of secondary slots a changeling can maintain concurrently.
+#define CHANGELING_SECONDARY_SLOT_LIMIT 7
+/// Blueprint payload key used when ingesting crafting data.
+#define CHANGELING_BUILD_BLUEPRINT "build"
+
 /// Normalizes identifiers for biomaterial records.
 /proc/changeling_sanitize_material_id(identifier)
 	if(isnull(identifier))
@@ -425,20 +434,18 @@
 /datum/antagonist/changeling/proc/get_biomaterial_category(category_id)
 	if(!biomaterial_inventory)
 		biomaterial_inventory = list()
-        var/list/category_entry = biomaterial_inventory[category_id]
-        if(!islist(category_entry))
-                var/display_name
-                var/category_id_text = lowertext("[category_id]")
-                for(var/list/default_entry as anything in default_biomaterial_categories)
-                        var/default_id = default_entry["id"]
-                        if(lowertext("[default_id]") == category_id_text)
-                                display_name = default_entry["name"]
-                                break
-                category_entry = list(
-                        "id" = category_id,
-                        "name" = display_name || capitalize(replacetext("[category_id]", "_", " ")), 
-                        "items" = list(),
-                )
+	var/list/category_entry = biomaterial_inventory[category_id]
+	if(!islist(category_entry))
+		var/display_name
+		for(var/list/default_entry as anything in default_biomaterial_categories)
+			if(lowertext(text(default_entry["id"])) == lowertext(text(category_id)))
+				display_name = default_entry["name"]
+				break
+		category_entry = list(
+			"id" = category_id,
+			"name" = display_name || capitalize(replacetext(text(category_id), "_", " ")),
+			"items" = list(),
+		)
 		biomaterial_inventory[category_id] = category_entry
 	return category_entry
 
@@ -541,15 +548,13 @@
 			CHANGELING_HARVEST_DESCRIPTION = sample_description,
 			CHANGELING_HARVEST_AMOUNT = amount,
 		))
-                if(entry[CHANGELING_HARVEST_SIGNATURE] && istype(target, /mob/living/carbon))
-                        var/mob/living/carbon/carbon_target = target
-                        if(carbon_target.dna)
-                                var/signature_id = carbon_target.dna.unique_enzymes || changeling_sanitize_material_id(carbon_target.real_name || material_id)
-                                var/list/signature_metadata = list(
-                                        "name" = carbon_target.real_name || sample_name,
-                                        "description" = "A distinctive cytology signature harvested from [carbon_target].",
-                                )
-                                adjust_signature_cell(signature_id, 1, signature_metadata)
+		if(entry[CHANGELING_HARVEST_SIGNATURE] && target.dna)
+			var/signature_id = target.dna.unique_enzymes || changeling_sanitize_material_id(target.real_name || material_id)
+			var/list/signature_metadata = list(
+				"name" = target.real_name || sample_name,
+				"description" = "A distinctive cytology signature harvested from [target].",
+			)
+			adjust_signature_cell(signature_id, 1, signature_metadata)
 	return results
 
 /datum/antagonist/changeling/proc/harvest_biomaterials_from_samples(list/samples, atom/source)
@@ -659,7 +664,7 @@
 	blueprint[CHANGELING_SECONDARY_BUILD_SLOTS] = secondary_paths
 	return blueprint
 
-/datum/antagonist/changeling/proc/build_slot_payload(datum/action/changeling/power_path, datum/action/changeling/power, slot_id, slot_index)
+/datum/antagonist/changeling/proc/build_slot_payload(power_path, datum/action/changeling/power, slot_id, slot_index)
 	var/list/payload = list(
 		"slot" = slot_id,
 		"index" = slot_index,
@@ -713,21 +718,21 @@
 				var/list/item_entry = items[material_id]
 				if(!islist(item_entry))
 					continue
-                                var/list/item_payload = list(
-                                        "id" = item_entry["id"] || material_id,
-                                        "name" = item_entry["name"] || capitalize(replacetext("[material_id]", "_", " ")), 
-                                        "count" = max(0, item_entry["count"] || 0),
-                                )
+				var/list/item_payload = list(
+					"id" = item_entry["id"] || material_id,
+					"name" = item_entry["name"] || capitalize(replacetext(text(material_id), "_", " ")),
+					"count" = max(0, item_entry["count"] || 0),
+				)
 				if(item_entry["description"])
 					item_payload["description"] = item_entry["description"]
 				if(item_entry["quality"])
 					item_payload["quality"] = item_entry["quality"]
 				items_payload += list(item_payload)
-                var/list/category_payload = list(
-                        "id" = category_entry["id"] || category_id,
-                        "name" = category_entry["name"] || capitalize(replacetext("[category_id]", "_", " ")), 
-                        "items" = items_payload,
-                )
+		var/list/category_payload = list(
+			"id" = category_entry["id"] || category_id,
+			"name" = category_entry["name"] || capitalize(replacetext(text(category_id), "_", " ")),
+			"items" = items_payload,
+		)
 		output += list(category_payload)
 	return output
 
@@ -739,11 +744,11 @@
 		var/list/cell_entry = signature_cells[cell_id]
 		if(!islist(cell_entry))
 			continue
-                var/list/entry_payload = list(
-                        "id" = cell_entry["id"] || cell_id,
-                        "name" = cell_entry["name"] || capitalize(replacetext("[cell_id]", "_", " ")), 
-                        "count" = max(0, cell_entry["count"] || 0),
-                )
+		var/list/entry_payload = list(
+			"id" = cell_entry["id"] || cell_id,
+			"name" = cell_entry["name"] || capitalize(replacetext(text(cell_id), "_", " ")),
+			"count" = max(0, cell_entry["count"] || 0),
+		)
 		if(cell_entry["description"])
 			entry_payload["description"] = cell_entry["description"]
 		output += list(entry_payload)
@@ -810,7 +815,7 @@
 		if(secondary_slots[index] == power_path)
 			secondary_slots.Cut(index, index + 1)
 
-/datum/antagonist/changeling/proc/remove_power(datum/action/changeling/power_path, refund_points = TRUE)
+/datum/antagonist/changeling/proc/remove_power(power_path, refund_points = TRUE)
 	var/datum/action/changeling/power = purchased_powers[power_path]
 	if(!power)
 		return FALSE
@@ -826,14 +831,14 @@
 	synchronize_build_state()
 	return TRUE
 
-/datum/antagonist/changeling/proc/get_power_display_name(datum/action/changeling/power_path)
+/datum/antagonist/changeling/proc/get_power_display_name(power_path)
 	if(purchased_powers[power_path])
 		return purchased_powers[power_path].name
 	if(ispath(power_path, /datum/action/changeling))
 		return initial(power_path.name)
 	return "sequence"
 
-/datum/antagonist/changeling/proc/set_active_key_power(datum/action/changeling/power_path)
+/datum/antagonist/changeling/proc/set_active_key_power(power_path)
 	if(!ispath(power_path, /datum/action/changeling))
 		return FALSE
 	var/datum/action/changeling/power = purchased_powers[power_path]
@@ -895,17 +900,16 @@
 	else
 		active_build_slots[CHANGELING_KEY_BUILD_SLOT] = null
 	var/list/validated_secondaries = list()
-        for(var/path in secondary_paths)
-                if(path == key_path)
-                        continue
-                if(!purchased_powers[path])
-                        if(purchase_power(path, CHANGELING_SECONDARY_BUILD_SLOTS, TRUE))
-                                applied++
-                        else
-                                var/datum/action/changeling/ability_path = path
-                                failures += initial(ability_path.name)
-                                continue
-                validated_secondaries += path
+	for(var/path in secondary_paths)
+		if(path == key_path)
+			continue
+		if(!purchased_powers[path])
+			if(purchase_power(path, CHANGELING_SECONDARY_BUILD_SLOTS, TRUE))
+				applied++
+			else
+				failures += initial(path.name)
+				continue
+		validated_secondaries += path
 	reset_active_build_slots()
 	if(ispath(key_path, /datum/action/changeling) && purchased_powers[key_path])
 		active_build_slots[CHANGELING_KEY_BUILD_SLOT] = key_path
@@ -954,11 +958,8 @@
 		return FALSE
 	var/list/preset = genetic_presets[index]
 	genetic_presets.Cut(index, index + 1)
-        if(owner?.current && preset)
-                var/preset_name = preset["name"]
-                if(!istext(preset_name) || !length(preset_name))
-                        preset_name = "lost"
-                to_chat(owner.current, span_notice("We purge the [preset_name] template."))
+	if(owner?.current && preset)
+		to_chat(owner.current, span_notice("We purge the [preset ? preset[\"name\"] : \"lost\"] template."))
 	return TRUE
 
 /datum/antagonist/changeling/proc/rename_genetic_preset(index, new_name)
