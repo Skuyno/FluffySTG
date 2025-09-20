@@ -149,8 +149,6 @@ GLOBAL_LIST_EMPTY(features_by_species)
 	var/inherent_respiration_type = RESPIRATION_OXYGEN
 	///List of factions the mob gain upon gaining this species.
 	var/list/inherent_factions
-	/// Cytology cell line identifiers linked to this species.
-	var/list/cytology_cell_ids
 
 	///What gas does this species breathe? Used by suffocation screen alerts, most of actual gas breathing is handled by mutantlungs. See [life.dm][code/modules/mob/living/carbon/human/life.dm]
 	var/breathid = GAS_O2
@@ -2223,8 +2221,3 @@ GLOBAL_LIST_EMPTY(features_by_species)
 		return HUMAN_HEIGHT_TALLEST
 
 	return null
-
-/datum/species/proc/get_cytology_cell_ids()
-	if(!cytology_cell_ids)
-		return list()
-	return cytology_cell_ids.Copy()

@@ -7,10 +7,6 @@
 #define BIO_INCUBATOR_UPDATE_BUILDS (1<<3)
 #define BIO_INCUBATOR_UPDATE_ALL (BIO_INCUBATOR_UPDATE_CELLS | BIO_INCUBATOR_UPDATE_RECIPES | BIO_INCUBATOR_UPDATE_MODULES | BIO_INCUBATOR_UPDATE_BUILDS)
 
-#define BIO_INCUBATOR_CATEGORY_KEY "key_active"
-#define BIO_INCUBATOR_CATEGORY_PASSIVE "passive"
-#define BIO_INCUBATOR_CATEGORY_UPGRADE "upgrade"
-
 #define BIO_INCUBATOR_SLOT_KEY "key"
 #define BIO_INCUBATOR_SLOT_FLEX "flex"
 
@@ -131,141 +127,50 @@
 			return FALSE
 		notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
 		return TRUE
-        var/module_id = sanitize_module_id(module_identifier)
-        if(!changeling?.has_genetic_matrix_module(module_id))
-                return FALSE
-        var/list/module_data = get_module_data(module_id)
-        if(!islist(module_data))
-                return FALSE
-        if(!module_slot_allowed(module_id, slot))
-                return FALSE
-        for(var/i in 1 to build.module_ids.len)
-                if(i == slot)
-                        continue
-                var/other_id = build.module_ids[i]
-                if(isnull(other_id) || other_id == module_id)
-                        continue
-                var/list/other_data = get_module_data(other_id)
-                if(!islist(other_data))
-                        continue
-                if(modules_conflict(module_data, other_data))
-                        return FALSE
-        if(!build.set_module(slot, module_id))
-                return FALSE
-        notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
-        return TRUE
+	var/module_id = sanitize_module_id(module_identifier)
+	if(!changeling?.has_genetic_matrix_module(module_id))
+		return FALSE
+	if(!module_slot_allowed(module_id, slot))
+		return FALSE
+	if(!build.set_module(slot, module_id))
+		return FALSE
+	notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
+	return TRUE
 
 /datum/changeling_bio_incubator/proc/sanitize_module_id(module_identifier)
-        if(isnull(module_identifier))
-                return null
-        if(istext(module_identifier))
-                return module_identifier
-        if(ispath(module_identifier))
-                return "[module_identifier]"
-        return "[module_identifier]"
-
-/datum/changeling_bio_incubator/proc/normalize_category(category)
-        if(!istext(category))
-                return BIO_INCUBATOR_CATEGORY_PASSIVE
-        return lowertext(category)
-
-/datum/changeling_bio_incubator/proc/build_tag_lookup(list/raw)
-        var/list/lookup = list()
-        if(!islist(raw))
-                return lookup
-        for(var/tag in raw)
-                if(isnull(tag))
-                        continue
-                lookup[lowertext("[tag]")] = TRUE
-        return lookup
-
-/datum/changeling_bio_incubator/proc/prepare_tag_list(list/raw)
-        if(!islist(raw))
-                return list()
-        var/list/output = list()
-        for(var/entry in raw)
-                if(isnull(entry))
-                        continue
-                var/text_entry = "[entry]"
-                if(!(text_entry in output))
-                        output += text_entry
-        return output
-
-/datum/changeling_bio_incubator/proc/prepare_conflict_list(list/raw)
-        if(!islist(raw))
-                return list()
-        var/list/output = list()
-        for(var/entry in raw)
-                var/id = sanitize_module_id(entry)
-                if(isnull(id))
-                        continue
-                if(!(id in output))
-                        output += id
-        return output
-
-/datum/changeling_bio_incubator/proc/modules_conflict(list/module_a, list/module_b)
-        if(!islist(module_a) || !islist(module_b))
-                return FALSE
-        var/id_a = sanitize_module_id(module_a["id"])
-        var/id_b = sanitize_module_id(module_b["id"])
-        if(isnull(id_a) || isnull(id_b))
-                return FALSE
-        if(id_a == id_b)
-                return TRUE
-        var/list/conflicts_a = prepare_conflict_list(module_a["conflicts"])
-        var/list/conflicts_b = prepare_conflict_list(module_b["conflicts"])
-        if(id_a in conflicts_b || id_b in conflicts_a)
-                return TRUE
-        var/list/conflict_tags_a = build_tag_lookup(module_a["conflictTags"])
-        var/list/conflict_tags_b = build_tag_lookup(module_b["conflictTags"])
-        if(conflict_tags_a.len || conflict_tags_b.len)
-                var/list/tags_a = build_tag_lookup(module_a["tags"])
-                var/list/tags_b = build_tag_lookup(module_b["tags"])
-                for(var/tag in tags_a)
-                        if(conflict_tags_b[tag])
-                                return TRUE
-                for(var/tag in tags_b)
-                        if(conflict_tags_a[tag])
-                                return TRUE
-        return FALSE
-
-/datum/changeling_bio_incubator/proc/get_module_category(module_id)
-        var/list/data = get_module_data(module_id)
-        if(!islist(data))
-                return BIO_INCUBATOR_CATEGORY_PASSIVE
-        return normalize_category(data["category"])
+	if(isnull(module_identifier))
+		return null
+	if(istext(module_identifier))
+		return module_identifier
+	if(ispath(module_identifier))
+		return "[module_identifier]"
+	return "[module_identifier]"
 
 /datum/changeling_bio_incubator/proc/module_slot_allowed(module_id, slot)
-        if(isnull(module_id))
-                return TRUE
-        var/list/module_data = get_module_data(module_id)
-        if(!islist(module_data))
-                return FALSE
-        var/slot_type = module_data["slotType"] || BIO_INCUBATOR_SLOT_FLEX
-        var/category = normalize_category(module_data["category"])
-        if(slot == 1)
-                return slot_type == BIO_INCUBATOR_SLOT_KEY || category == BIO_INCUBATOR_CATEGORY_KEY
-        if(slot_type == BIO_INCUBATOR_SLOT_KEY || category == BIO_INCUBATOR_CATEGORY_KEY)
-                return FALSE
-        return TRUE
+	if(isnull(module_id))
+		return TRUE
+	var/category = get_module_slot_category(module_id)
+	if(slot == 1)
+		return category == BIO_INCUBATOR_SLOT_KEY
+	return category != BIO_INCUBATOR_SLOT_KEY
+
+/datum/changeling_bio_incubator/proc/get_module_slot_category(module_id)
+	var/list/module_data = crafted_modules?[module_id]
+	if(islist(module_data))
+		return module_data["slotType"] || BIO_INCUBATOR_SLOT_FLEX
+	return BIO_INCUBATOR_SLOT_FLEX
 
 /datum/changeling_bio_incubator/proc/register_module(module_id, list/module_data)
-        if(isnull(module_id) || !islist(module_data))
-                return FALSE
-        module_id = sanitize_module_id(module_id)
-        var/list/data_copy = module_data.Copy()
-        data_copy["id"] = module_id
-        if(!data_copy["category"])
-                data_copy["category"] = BIO_INCUBATOR_CATEGORY_PASSIVE
-        data_copy["category"] = normalize_category(data_copy["category"])
-        if(!data_copy["slotType"])
-                data_copy["slotType"] = BIO_INCUBATOR_SLOT_FLEX
-        data_copy["tags"] = prepare_tag_list(data_copy["tags"])
-        data_copy["conflicts"] = prepare_conflict_list(data_copy["conflicts"])
-        data_copy["conflictTags"] = prepare_tag_list(data_copy["conflictTags"])
-        crafted_modules[module_id] = data_copy
-        notify_update(BIO_INCUBATOR_UPDATE_MODULES)
-        return TRUE
+	if(isnull(module_id) || !islist(module_data))
+		return FALSE
+	module_id = sanitize_module_id(module_id)
+	var/list/data_copy = module_data.Copy()
+	data_copy["id"] = module_id
+	if(!data_copy["slotType"])
+		data_copy["slotType"] = BIO_INCUBATOR_SLOT_FLEX
+	crafted_modules[module_id] = data_copy
+	notify_update(BIO_INCUBATOR_UPDATE_MODULES)
+	return TRUE
 
 /datum/changeling_bio_incubator/proc/unregister_module(module_id)
 	module_id = sanitize_module_id(module_id)
@@ -276,8 +181,8 @@
 	return TRUE
 
 /datum/changeling_bio_incubator/proc/has_module(module_id)
-        module_id = sanitize_module_id(module_id)
-        return crafted_modules[module_id] != null
+	module_id = sanitize_module_id(module_id)
+	return crafted_modules[module_id] != null
 
 /datum/changeling_bio_incubator/proc/get_crafted_module_catalog()
 	var/list/catalog = list()
@@ -289,13 +194,21 @@
 	return catalog
 
 /datum/changeling_bio_incubator/proc/get_module_data(module_id)
-        module_id = sanitize_module_id(module_id)
-        if(isnull(module_id))
-                return null
-        var/list/entry = crafted_modules[module_id]
-        if(islist(entry))
-                return entry.Copy()
-        return null
+	module_id = sanitize_module_id(module_id)
+	if(isnull(module_id))
+		return null
+	var/list/entry = crafted_modules[module_id]
+	if(islist(entry))
+		return entry.Copy()
+	if(changeling)
+		var/path = text2path(module_id)
+		if(ispath(path, /datum/action/changeling))
+			var/list/result = changeling.get_genetic_matrix_module_data_from_path(path)
+			if(result)
+				result["id"] = module_id
+				result["slotType"] = BIO_INCUBATOR_SLOT_FLEX
+				return result
+	return null
 
 /datum/changeling_bio_incubator/proc/add_cell(cell_identifier)
 	var/cell_id = sanitize_module_id(cell_identifier)
@@ -445,9 +358,3 @@
 #undef BIO_INCUBATOR_MAX_BUILDS
 #undef BIO_INCUBATOR_UPDATE_CELLS
 #undef BIO_INCUBATOR_UPDATE_RECIPES
-#undef BIO_INCUBATOR_UPDATE_MODULES
-#undef BIO_INCUBATOR_UPDATE_BUILDS
-#undef BIO_INCUBATOR_UPDATE_ALL
-#undef BIO_INCUBATOR_CATEGORY_KEY
-#undef BIO_INCUBATOR_CATEGORY_PASSIVE
-#undef BIO_INCUBATOR_CATEGORY_UPGRADE

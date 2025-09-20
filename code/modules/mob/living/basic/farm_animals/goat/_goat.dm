@@ -19,7 +19,6 @@
 	attack_vis_effect = ATTACK_EFFECT_KICK
 
 	butcher_results = list(/obj/item/food/meat/slab/grassfed = 4)
-	cytology_cell_ids = list(/datum/micro_organism/cell_line/goat)
 
 	faction = list(FACTION_NEUTRAL)
 	mob_biotypes = MOB_ORGANIC | MOB_BEAST

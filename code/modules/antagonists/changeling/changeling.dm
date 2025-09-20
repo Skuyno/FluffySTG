@@ -337,9 +337,7 @@
 	// sort-of hack done here: we use in_given_range here because it's quicker.
 	// actual ling stings do pathfinding to determine whether the target's "in range".
 	// however, this is "close enough" preliminary checks to not block click
-	if(!chosen_sting.can_target_atom(ling, clicked))
-		return
-	if(!IN_GIVEN_RANGE(ling, clicked, sting_range))
+	if(!isliving(clicked) || !IN_GIVEN_RANGE(ling, clicked, sting_range))
 		return
 
 	INVOKE_ASYNC(chosen_sting, TYPE_PROC_REF(/datum/action/changeling/sting, try_to_sting), ling, clicked)
