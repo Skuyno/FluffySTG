@@ -63,7 +63,7 @@ GLOBAL_LIST_INIT(changeling_cell_registry, list(
         CHANGELING_CELL_REGISTRY_DESC = "Hyperdense combat fibers from rare predators.",
         CHANGELING_CELL_REGISTRY_TYPES = list(
             /mob/living/basic/carp,
-            /mob/living/basic/carp/megacarp,
+            /mob/living/basic/carp/mega,
             /mob/living/simple_animal/hostile/megafauna,
         ),
         CHANGELING_CELL_REGISTRY_KEYWORDS = list("predator", "megafauna", "carp", "dragon", "goliath"),
@@ -155,8 +155,8 @@ GLOBAL_LIST_INIT(changeling_cell_registry, list(
     var/list/type_list = entry[CHANGELING_CELL_REGISTRY_TYPES]
     if(!islist(type_list) || !type_list.len)
         return FALSE
-    for(var/path/type_path in type_list)
-        if(ispath(type_path) && istype(target, type_path))
+    for(var/path in type_list)
+        if(ispath(path) && istype(target, path))
             return TRUE
     return FALSE
 
