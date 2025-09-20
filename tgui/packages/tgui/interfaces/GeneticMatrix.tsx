@@ -5,6 +5,7 @@ import {
   Button,
   Divider,
   Icon,
+  Input,
   NoticeBox,
   Section,
   Stack,
@@ -57,16 +58,20 @@ export type ProfileEntry = {
 export type ModuleEntry = {
   id: string;
   name: string;
-  desc: string;
-  helptext: string;
-  chemical_cost: number;
-  dna_cost: number;
-  req_dna: number;
-  req_absorbs: number;
-  button_icon_state: string | null;
+  desc?: string | null;
+  helptext?: string | null;
+  chemical_cost?: number;
+  dna_cost?: number;
+  req_dna?: number;
+  req_absorbs?: number;
+  button_icon_state?: string | null;
   source?: string;
   slot?: number;
   slotType?: string;
+  category?: string;
+  tags?: string[];
+  exclusiveTags?: string[];
+  crafted?: BooleanLike;
 };
 
 export type BuildEntry = {
@@ -82,34 +87,61 @@ export type CytologyCellEntry = {
   desc: string | null;
 };
 
+export type RecipeCellRequirement = {
+  id: string;
+  name: string;
+  have: BooleanLike;
+};
+
+export type RecipeAbilityRequirement = {
+  id: string;
+  name: string;
+  desc?: string | null;
+  have: BooleanLike;
+};
+
 export type RecipeEntry = {
   id: string;
   name: string;
+  desc?: string | null;
+  module?: ModuleEntry | null;
+  requiredCells: RecipeCellRequirement[];
+  requiredAbilities: RecipeAbilityRequirement[];
+  unlocked: BooleanLike;
+  learned: BooleanLike;
+  crafted: BooleanLike;
 };
 
-export type SkillEntry = {
+export type StandardAbilityEntry = {
   id: string;
   name: string;
-  level: number;
-  levelName: string;
-  exp: number;
   desc: string;
+  helptext?: string | null;
+  dnaCost: number;
+  absorbsRequired: number;
+  dnaRequired: number;
+  chemicalCost: number;
+  button_icon_state?: string | null;
+  owned: BooleanLike;
+  hasPoints: BooleanLike;
+  hasAbsorbs: BooleanLike;
+  hasDNA: BooleanLike;
 };
 
 type GeneticMatrixData = {
-  maxAbilitySlots?: number;
   maxModuleSlots?: number;
   maxBuilds: number;
   builds: BuildEntry[];
-  resultCatalog: ProfileEntry[];
-  abilityCatalog?: ModuleEntry[];
-  moduleCatalog?: ModuleEntry[];
-  cells: ProfileEntry[];
-  cytologyCells?: CytologyCellEntry[];
-  abilities?: ModuleEntry[];
-  modules?: ModuleEntry[];
-  recipes?: RecipeEntry[];
-  skills: SkillEntry[];
+  profiles: ProfileEntry[];
+  modules: ModuleEntry[];
+  abilities: ModuleEntry[];
+  cells: CytologyCellEntry[];
+  recipes: RecipeEntry[];
+  standardAbilities: StandardAbilityEntry[];
+  geneticPoints: number;
+  absorbs: number;
+  dnaSamples: number;
+  canReadapt: BooleanLike;
   canAddBuild: BooleanLike;
 };
 
@@ -119,44 +151,33 @@ type DragPayload =
   | { type: 'module'; id: string }
   | { type: 'module-slot'; id: string; buildId: string; slot: number }
   | { type: 'ability'; id: string }
-  | { type: 'ability-slot'; id: string; buildId: string; slot: number };
+  | { type: 'ability-slot'; id: string; buildId: string; slot: number }
+  | { type: 'cell'; id: string }
+  | { type: 'composer-cell'; id: string }
+  | { type: 'composer-ability'; id: string };
 
 export const GeneticMatrix = () => {
   const { act, data } = useBackend<GeneticMatrixData>();
   const {
     builds = [],
-    resultCatalog = [],
-    moduleCatalog = [],
-    abilityCatalog = [],
-    cells = [],
-    cytologyCells = [],
+    profiles = [],
     modules = [],
     abilities = [],
+    cells = [],
     recipes = [],
-    skills = [],
+    standardAbilities = [],
+    geneticPoints = 0,
+    absorbs = 0,
+    dnaSamples = 0,
+    canReadapt,
     canAddBuild,
-    maxModuleSlots,
-    maxAbilitySlots = 0,
+    maxModuleSlots = 0,
     maxBuilds = 0,
   } = data;
 
-  const availableCatalog = moduleCatalog.length ? moduleCatalog : abilityCatalog;
-  const availableModules = modules.length ? modules : abilities;
-  const maxSlots = maxModuleSlots ?? maxAbilitySlots ?? 0;
-
-  const [activeTabRaw, setActiveTabRaw] = useLocalState<
-    'matrix' | 'cells' | 'modules' | 'skills' | 'abilities'
+  const [activeTab, setActiveTab] = useLocalState<
+    'matrix' | 'cells' | 'abilities' | 'skills'
   >('genetic-matrix/tab', 'matrix');
-  const activeTab = activeTabRaw === 'abilities' ? 'modules' : activeTabRaw;
-  const setActiveTab = useCallback(
-    (tab: 'matrix' | 'cells' | 'modules' | 'skills') => setActiveTabRaw(tab),
-    [setActiveTabRaw],
-  );
-  useEffect(() => {
-    if (activeTabRaw === 'abilities') {
-      setActiveTabRaw('modules');
-    }
-  }, [activeTabRaw, setActiveTabRaw]);
   const [selectedBuildId, setSelectedBuildId] = useLocalState<string | undefined>(
     'genetic-matrix/selected-build',
     undefined,
@@ -182,7 +203,7 @@ export const GeneticMatrix = () => {
   );
 
   return (
-    <Window width={1024} height={720}>
+    <Window width={1060} height={720}>
       <Window.Content>
         <Stack vertical fill>
           <Stack.Item>
@@ -197,13 +218,13 @@ export const GeneticMatrix = () => {
                 selected={activeTab === 'cells'}
                 onClick={() => setActiveTab('cells')}
               >
-                DNA Storage
+                Cells Storage
               </Tabs.Tab>
               <Tabs.Tab
-                selected={activeTab === 'modules'}
-                onClick={() => setActiveTab('modules')}
+                selected={activeTab === 'abilities'}
+                onClick={() => setActiveTab('abilities')}
               >
-                Module Storage
+                Abilities Storage
               </Tabs.Tab>
               <Tabs.Tab
                 selected={activeTab === 'skills'}
@@ -218,27 +239,35 @@ export const GeneticMatrix = () => {
               <MatrixTab
                 act={act}
                 builds={builds}
+                profiles={profiles}
+                modules={modules}
+                abilities={abilities}
+                cells={cells}
+                recipes={recipes}
                 selectedBuild={selectedBuild}
                 selectedBuildId={selectedBuildId}
                 onSelectBuild={setSelectedBuildId}
-                resultCatalog={resultCatalog}
-                moduleCatalog={availableCatalog}
-                maxModuleSlots={maxSlots}
+                maxModuleSlots={maxModuleSlots}
                 canAddBuild={asBoolean(canAddBuild)}
                 maxBuilds={maxBuilds}
               />
             )}
             {activeTab === 'cells' && (
-              <CellsTab
-                profiles={cells}
-                cytologyCells={cytologyCells}
-                recipes={recipes}
+              <CellsTab profiles={profiles} cells={cells} recipes={recipes} />
+            )}
+            {activeTab === 'abilities' && (
+              <AbilityStorageTab abilities={abilities} />
+            )}
+            {activeTab === 'skills' && (
+              <StandardSkillsTab
+                act={act}
+                abilities={standardAbilities}
+                geneticPoints={geneticPoints}
+                absorbs={absorbs}
+                dnaSamples={dnaSamples}
+                canReadapt={asBoolean(canReadapt)}
               />
             )}
-            {activeTab === 'modules' && (
-              <ModuleStorageTab modules={availableModules} />
-            )}
-            {activeTab === 'skills' && <SkillsTab skills={skills} />}
           </Stack.Item>
         </Stack>
       </Window.Content>
@@ -249,11 +278,14 @@ export const GeneticMatrix = () => {
 type MatrixTabProps = {
   act: (action: string, payload?: Record<string, unknown>) => void;
   builds: BuildEntry[];
+  profiles: ProfileEntry[];
+  modules: ModuleEntry[];
+  abilities: ModuleEntry[];
+  cells: CytologyCellEntry[];
+  recipes: RecipeEntry[];
   selectedBuild: BuildEntry | undefined;
   selectedBuildId: string | undefined;
   onSelectBuild: (id: string) => void;
-  resultCatalog: ProfileEntry[];
-  moduleCatalog: ModuleEntry[];
   maxModuleSlots: number;
   canAddBuild: boolean;
   maxBuilds: number;
@@ -262,11 +294,14 @@ type MatrixTabProps = {
 const MatrixTab = ({
   act,
   builds,
+  profiles,
+  modules,
+  abilities,
+  cells,
+  recipes,
   selectedBuild,
   selectedBuildId,
   onSelectBuild,
-  resultCatalog,
-  moduleCatalog,
   maxModuleSlots,
   canAddBuild,
   maxBuilds,
@@ -305,6 +340,46 @@ const MatrixTab = ({
     },
     [dragPayload],
   );
+
+  const [selectedCells, setSelectedCells] = useState<string[]>([]);
+  const [selectedAbilities, setSelectedAbilities] = useState<string[]>([]);
+  const [checkedRecipeIds, setCheckedRecipeIds] = useState<string[]>([]);
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
+
+  const matchingRecipes = useMemo(() => {
+    if (!selectedCells.length && !selectedAbilities.length) {
+      return [];
+    }
+    const cellSet = new Set(selectedCells);
+    const abilitySet = new Set(selectedAbilities);
+    return recipes.filter((recipe) => {
+      if (recipe.requiredCells.length !== cellSet.size) {
+        return false;
+      }
+      if (recipe.requiredAbilities.length !== abilitySet.size) {
+        return false;
+      }
+      if (!recipe.requiredCells.every((req) => cellSet.has(req.id))) {
+        return false;
+      }
+      if (!recipe.requiredAbilities.every((req) => abilitySet.has(req.id))) {
+        return false;
+      }
+      return true;
+    });
+  }, [recipes, selectedCells, selectedAbilities]);
+
+  useEffect(() => {
+    setCheckedRecipeIds((previous) =>
+      previous.filter((id) => matchingRecipes.some((recipe) => recipe.id === id)),
+    );
+    if (
+      selectedRecipeId &&
+      !matchingRecipes.some((recipe) => recipe.id === selectedRecipeId)
+    ) {
+      setSelectedRecipeId(null);
+    }
+  }, [matchingRecipes, selectedRecipeId]);
 
   const handleAssignProfile = useCallback(
     (buildId: string, profileId: string | null) => {
@@ -353,17 +428,6 @@ const MatrixTab = ({
     act('create_build');
   }, [act]);
 
-  const assignedModuleIds = useMemo(() => {
-    if (!selectedBuild) {
-      return new Set<string>();
-    }
-    return new Set(
-      selectedBuild.modules
-        .filter((entry): entry is ModuleEntry => Boolean(entry))
-        .map((entry) => entry.id),
-    );
-  }, [selectedBuild]);
-
   const handleProfileDrop = useCallback(
     (payload: DragPayload, targetBuild: BuildEntry) => {
       if (payload.type === 'profile') {
@@ -383,11 +447,11 @@ const MatrixTab = ({
 
   const handleModuleDrop = useCallback(
     (payload: DragPayload, targetBuild: BuildEntry, slot: number) => {
-      if (payload.type === 'module' || payload.type === 'ability') {
+      if (payload.type === 'module') {
         handleAssignModule(targetBuild.id, slot, payload.id);
         return;
       }
-      if (payload.type === 'module-slot' || payload.type === 'ability-slot') {
+      if (payload.type === 'module-slot') {
         if (payload.buildId === targetBuild.id && payload.slot === slot) {
           return;
         }
@@ -396,6 +460,34 @@ const MatrixTab = ({
       }
     },
     [act, handleAssignModule],
+  );
+
+  const handleModuleDoubleClick = useCallback(
+    (module: ModuleEntry) => {
+      if (!selectedBuild || maxModuleSlots <= 0) {
+        return;
+      }
+      const slotType = module.slotType?.toLowerCase();
+      const isKeySlot = slotType === 'key' || slotType === 'key_active';
+      const validSlots: number[] = [];
+      for (let slot = 1; slot <= maxModuleSlots; slot += 1) {
+        if (slot === 1) {
+          if (isKeySlot) {
+            validSlots.push(slot);
+          }
+        } else if (!isKeySlot) {
+          validSlots.push(slot);
+        }
+      }
+      if (!validSlots.length) {
+        return;
+      }
+      const targetSlot =
+        validSlots.find((slot) => !selectedBuild.modules?.[slot - 1]) ??
+        validSlots[0];
+      handleAssignModule(selectedBuild.id, targetSlot, module.id);
+    },
+    [handleAssignModule, maxModuleSlots, selectedBuild],
   );
 
   const handleProfileDoubleClick = useCallback(
@@ -408,29 +500,89 @@ const MatrixTab = ({
     [handleAssignProfile, selectedBuild],
   );
 
-  const handleModuleDoubleClick = useCallback(
-    (module: ModuleEntry) => {
-      if (!selectedBuild || maxModuleSlots <= 0) {
-        return;
-      }
-      const openIndex =
-        selectedBuild.modules.findIndex((entry) => !entry) + 1;
-      const slot =
-        openIndex > 0
-          ? openIndex
-          : selectedBuild.modules.length > 0
-            ? 1
-            : 0;
-      if (slot > 0) {
-        handleAssignModule(selectedBuild.id, slot, module.id);
-      }
-    },
-    [handleAssignModule, maxModuleSlots, selectedBuild],
+  const handleAddCell = useCallback((id: string) => {
+    setSelectedCells((previous) =>
+      previous.includes(id) ? previous : [...previous, id],
+    );
+    setCheckedRecipeIds([]);
+    setSelectedRecipeId(null);
+  }, []);
+
+  const handleRemoveCell = useCallback((id: string) => {
+    setSelectedCells((previous) => previous.filter((entry) => entry !== id));
+    setCheckedRecipeIds([]);
+    setSelectedRecipeId(null);
+  }, []);
+
+  const handleAddAbility = useCallback((id: string) => {
+    setSelectedAbilities((previous) =>
+      previous.includes(id) ? previous : [...previous, id],
+    );
+    setCheckedRecipeIds([]);
+    setSelectedRecipeId(null);
+  }, []);
+
+  const handleRemoveAbility = useCallback((id: string) => {
+    setSelectedAbilities((previous) => previous.filter((entry) => entry !== id));
+    setCheckedRecipeIds([]);
+    setSelectedRecipeId(null);
+  }, []);
+
+  const handleClearComposer = useCallback(() => {
+    setSelectedCells([]);
+    setSelectedAbilities([]);
+    setCheckedRecipeIds([]);
+    setSelectedRecipeId(null);
+  }, []);
+
+  const handleCheckRecipes = useCallback(() => {
+    const ids = matchingRecipes.map((recipe) => recipe.id);
+    setCheckedRecipeIds(ids);
+    if (ids.length === 1) {
+      setSelectedRecipeId(ids[0]);
+    } else if (!ids.includes(selectedRecipeId ?? '')) {
+      setSelectedRecipeId(null);
+    }
+  }, [matchingRecipes, selectedRecipeId]);
+
+  const selectedRecipe = useMemo(
+    () => recipes.find((recipe) => recipe.id === selectedRecipeId) ?? null,
+    [recipes, selectedRecipeId],
   );
 
+  const handleCraft = useCallback(() => {
+    if (!selectedRecipe) {
+      return;
+    }
+    act('craft_module', { recipe: selectedRecipe.id });
+  }, [act, selectedRecipe]);
+
+  const assignedModuleIds = useMemo(() => {
+    if (!selectedBuild) {
+      return new Set<string>();
+    }
+    return new Set(
+      selectedBuild.modules
+        .filter((entry): entry is ModuleEntry => Boolean(entry))
+        .map((entry) => entry.id),
+    );
+  }, [selectedBuild]);
+
+  const canCraft =
+    !!selectedRecipe &&
+    asBoolean(selectedRecipe.unlocked) &&
+    !asBoolean(selectedRecipe.crafted);
+  const craftDisabledReason = !selectedRecipe
+    ? 'Select a recipe to synthesize.'
+    : !asBoolean(selectedRecipe.unlocked)
+      ? 'We lack the proper cells or abilities.'
+      : asBoolean(selectedRecipe.crafted)
+        ? 'This module already exists in our catalog.'
+        : '';
+
   return (
-    <Stack fill gap={1}>
-      <Stack.Item width="280px">
+    <Stack vertical fill gap={1}>
+      <Stack.Item>
         <BuildList
           builds={builds}
           selectedBuildId={selectedBuildId}
@@ -444,28 +596,71 @@ const MatrixTab = ({
         />
       </Stack.Item>
       <Stack.Item grow>
-        <Stack vertical fill gap={1}>
-          <Stack.Item>
-            <BuildEditor
-              build={selectedBuild}
-              maxModuleSlots={maxModuleSlots}
+        <Stack fill gap={1}>
+          <Stack.Item width="320px">
+            <CraftComposer
+              cells={cells}
+              abilities={abilities}
+              recipes={recipes}
+              selectedCells={selectedCells}
+              selectedAbilities={selectedAbilities}
+              matchingRecipes={matchingRecipes}
+              checkedRecipeIds={checkedRecipeIds}
+              selectedRecipeId={selectedRecipeId}
+              selectedRecipe={selectedRecipe}
+              canCraft={canCraft}
+              craftDisabledReason={craftDisabledReason}
+              onAddCell={handleAddCell}
+              onRemoveCell={handleRemoveCell}
+              onAddAbility={handleAddAbility}
+              onRemoveAbility={handleRemoveAbility}
+              onClear={handleClearComposer}
+              onCheck={handleCheckRecipes}
+              onSelectRecipe={setSelectedRecipeId}
+              onCraft={handleCraft}
               dragPayload={dragPayload}
               beginDrag={beginDrag}
               endDrag={endDrag}
               parsePayload={parsePayload}
-              onClearProfile={(buildId) => handleAssignProfile(buildId, null)}
-              onClearModule={(buildId, slot) => handleAssignModule(buildId, slot, null)}
-              onClearBuild={handleClearBuild}
-              onProfileDropped={handleProfileDrop}
-              onModuleDropped={handleModuleDrop}
             />
           </Stack.Item>
           <Stack.Item grow>
-            <Stack fill gap={1}>
+            <ModuleList
+              title="Result Catalog"
+              modules={modules}
+              allowDrag
+              onDragStart={(module, event) =>
+                beginDrag(event, { type: 'module', id: module.id })
+              }
+              onDragEnd={endDrag}
+              onDoubleClick={handleModuleDoubleClick}
+              assignedModuleIds={assignedModuleIds}
+              emptyMessage="We have not crafted any modules yet."
+            />
+          </Stack.Item>
+          <Stack.Item grow>
+            <Stack vertical fill gap={1}>
+              <Stack.Item>
+                <BuildEditor
+                  build={selectedBuild}
+                  maxModuleSlots={maxModuleSlots}
+                  dragPayload={dragPayload}
+                  beginDrag={beginDrag}
+                  endDrag={endDrag}
+                  parsePayload={parsePayload}
+                  onClearProfile={(buildId) => handleAssignProfile(buildId, null)}
+                  onClearModule={(buildId, slot) =>
+                    handleAssignModule(buildId, slot, null)
+                  }
+                  onClearBuild={handleClearBuild}
+                  onProfileDropped={handleProfileDrop}
+                  onModuleDropped={handleModuleDrop}
+                />
+              </Stack.Item>
               <Stack.Item grow>
                 <ProfileCatalog
-                  title="Result Catalog"
-                  profiles={resultCatalog}
+                  title="DNA Profiles"
+                  profiles={profiles}
                   allowDrag
                   onDragStart={(profile, event) =>
                     beginDrag(event, { type: 'profile', id: profile.id })
@@ -476,20 +671,6 @@ const MatrixTab = ({
                   emptyMessage="We have not stored any DNA samples yet."
                 />
               </Stack.Item>
-              <Stack.Item grow>
-                <ModuleList
-                  title="Module Catalog"
-                  modules={moduleCatalog}
-                  allowDrag
-                  onDragStart={(module, event) =>
-                    beginDrag(event, { type: 'module', id: module.id })
-                  }
-                  onDragEnd={endDrag}
-                  onDoubleClick={handleModuleDoubleClick}
-                  assignedModuleIds={assignedModuleIds}
-                  emptyMessage="We do not possess any modules to assign."
-                />
-              </Stack.Item>
             </Stack>
           </Stack.Item>
         </Stack>
@@ -497,6 +678,436 @@ const MatrixTab = ({
     </Stack>
   );
 };
+
+type CraftComposerProps = {
+  cells: CytologyCellEntry[];
+  abilities: ModuleEntry[];
+  recipes: RecipeEntry[];
+  selectedCells: string[];
+  selectedAbilities: string[];
+  matchingRecipes: RecipeEntry[];
+  checkedRecipeIds: string[];
+  selectedRecipeId: string | null;
+  selectedRecipe: RecipeEntry | null;
+  canCraft: boolean;
+  craftDisabledReason: string;
+  onAddCell: (id: string) => void;
+  onRemoveCell: (id: string) => void;
+  onAddAbility: (id: string) => void;
+  onRemoveAbility: (id: string) => void;
+  onClear: () => void;
+  onCheck: () => void;
+  onSelectRecipe: (id: string | null) => void;
+  onCraft: () => void;
+  dragPayload: DragPayload | null;
+  beginDrag: (event: DragEvent, payload: DragPayload) => void;
+  endDrag: () => void;
+  parsePayload: (event: DragEvent) => DragPayload | null;
+};
+
+const CraftComposer = ({
+  cells,
+  abilities,
+  recipes,
+  selectedCells,
+  selectedAbilities,
+  matchingRecipes,
+  checkedRecipeIds,
+  selectedRecipeId,
+  selectedRecipe,
+  canCraft,
+  craftDisabledReason,
+  onAddCell,
+  onRemoveCell,
+  onAddAbility,
+  onRemoveAbility,
+  onClear,
+  onCheck,
+  onSelectRecipe,
+  onCraft,
+  dragPayload,
+  beginDrag,
+  endDrag,
+  parsePayload,
+}: CraftComposerProps) => {
+  const [cellSearch, setCellSearch] = useState('');
+  const [abilitySearch, setAbilitySearch] = useState('');
+
+  const filteredCells = useMemo(() => {
+    const query = cellSearch.toLowerCase();
+    if (!query) {
+      return cells;
+    }
+    return cells.filter((cell) =>
+      cell.name.toLowerCase().includes(query) ||
+      (cell.desc ? cell.desc.toLowerCase().includes(query) : false),
+    );
+  }, [cells, cellSearch]);
+
+  const filteredAbilities = useMemo(() => {
+    const query = abilitySearch.toLowerCase();
+    if (!query) {
+      return abilities;
+    }
+    return abilities.filter((ability) =>
+      ability.name.toLowerCase().includes(query) ||
+      (ability.desc ? ability.desc.toLowerCase().includes(query) : false),
+    );
+  }, [abilities, abilitySearch]);
+
+  const cellDropActive = dragPayload?.type === 'cell';
+  const abilityDropActive = dragPayload?.type === 'ability';
+
+  return (
+    <Stack vertical fill gap={1}>
+      <Stack.Item>
+        <Section title="Cells" fill>
+          <Stack vertical gap={1}>
+            <Stack.Item>
+              <Input
+                value={cellSearch}
+                onInput={(_, value) => setCellSearch(value)}
+                placeholder="Search cells..."
+              />
+            </Stack.Item>
+            <Stack.Item>
+              <Stack vertical gap={1} style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                {filteredCells.length === 0 ? (
+                  <Box color="label">No matching cells.</Box>
+                ) : (
+                  filteredCells.map((cell) => (
+                    <Box
+                      key={cell.id}
+                      className="candystripe"
+                      p={1}
+                      draggable
+                      onDragStart={(event) =>
+                        beginDrag(event, { type: 'cell', id: cell.id })
+                      }
+                      onDragEnd={endDrag}
+                      onDoubleClick={() => onAddCell(cell.id)}
+                    >
+                      <Box bold>{cell.name}</Box>
+                      {cell.desc && <Box color="label">{cell.desc}</Box>}
+                    </Box>
+                  ))
+                )}
+              </Stack>
+            </Stack.Item>
+          </Stack>
+        </Section>
+      </Stack.Item>
+      <Stack.Item>
+        <Section title="Abilities" fill>
+          <Stack vertical gap={1}>
+            <Stack.Item>
+              <Input
+                value={abilitySearch}
+                onInput={(_, value) => setAbilitySearch(value)}
+                placeholder="Search abilities..."
+              />
+            </Stack.Item>
+            <Stack.Item>
+              <Stack vertical gap={1} style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                {filteredAbilities.length === 0 ? (
+                  <Box color="label">No matching abilities.</Box>
+                ) : (
+                  filteredAbilities.map((ability) => (
+                    <Box
+                      key={ability.id}
+                      className="candystripe"
+                      p={1}
+                      draggable
+                      onDragStart={(event) =>
+                        beginDrag(event, { type: 'ability', id: ability.id })
+                      }
+                      onDragEnd={endDrag}
+                      onDoubleClick={() => onAddAbility(ability.id)}
+                    >
+                      <Box bold>{ability.name}</Box>
+                      {ability.source && (
+                        <Box color="average">Source: {formatSource(ability.source)}</Box>
+                      )}
+                      {ability.desc && <Box color="label">{ability.desc}</Box>}
+                    </Box>
+                  ))
+                )}
+              </Stack>
+            </Stack.Item>
+          </Stack>
+        </Section>
+      </Stack.Item>
+      <Stack.Item>
+        <Section title="Selected Inputs" fill>
+          <Stack vertical gap={1}>
+            <Stack.Item>
+              <Box
+                p={1}
+                style={{
+                  border: `1px dashed ${
+                    cellDropActive ? '#7fc' : 'rgba(255, 255, 255, 0.2)'
+                  }`,
+                  borderRadius: '6px',
+                  minHeight: '64px',
+                  backgroundColor: cellDropActive
+                    ? 'rgba(64, 160, 255, 0.08)'
+                    : 'rgba(255,255,255,0.03)',
+                }}
+                onDragOver={(event) => {
+                  const payload = parsePayload(event);
+                  if (payload?.type === 'cell') {
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = 'move';
+                  }
+                }}
+                onDrop={(event) => {
+                  const payload = parsePayload(event);
+                  if (payload?.type === 'cell') {
+                    event.preventDefault();
+                    onAddCell(payload.id);
+                    endDrag();
+                  }
+                }}
+              >
+                {selectedCells.length === 0 ? (
+                  <Box color="label">Drop or select cells to include them.</Box>
+                ) : (
+                  <Stack wrap="wrap" gap={0.5}>
+                    {selectedCells.map((id) => {
+                      const cell = cells.find((entry) => entry.id === id);
+                      return (
+                        <Stack.Item key={id}>
+                          <Box className="candystripe" p={0.5}>
+                            <Stack align="center" gap={0.5}>
+                              <Stack.Item grow>{cell?.name ?? id}</Stack.Item>
+                              <Stack.Item>
+                                <Button
+                                  icon="times"
+                                  compact
+                                  tooltip="Remove cell"
+                                  onClick={() => onRemoveCell(id)}
+                                />
+                              </Stack.Item>
+                            </Stack>
+                          </Box>
+                        </Stack.Item>
+                      );
+                    })}
+                  </Stack>
+                )}
+              </Box>
+            </Stack.Item>
+            <Stack.Item>
+              <Box
+                p={1}
+                style={{
+                  border: `1px dashed ${
+                    abilityDropActive ? '#7fc' : 'rgba(255, 255, 255, 0.2)'
+                  }`,
+                  borderRadius: '6px',
+                  minHeight: '64px',
+                  backgroundColor: abilityDropActive
+                    ? 'rgba(64, 160, 255, 0.08)'
+                    : 'rgba(255,255,255,0.03)',
+                }}
+                onDragOver={(event) => {
+                  const payload = parsePayload(event);
+                  if (payload?.type === 'ability') {
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = 'move';
+                  }
+                }}
+                onDrop={(event) => {
+                  const payload = parsePayload(event);
+                  if (payload?.type === 'ability') {
+                    event.preventDefault();
+                    onAddAbility(payload.id);
+                    endDrag();
+                  }
+                }}
+              >
+                {selectedAbilities.length === 0 ? (
+                  <Box color="label">Drop or select abilities to include them.</Box>
+                ) : (
+                  <Stack wrap="wrap" gap={0.5}>
+                    {selectedAbilities.map((id) => {
+                      const ability = abilities.find((entry) => entry.id === id);
+                      return (
+                        <Stack.Item key={id}>
+                          <Box className="candystripe" p={0.5}>
+                            <Stack align="center" gap={0.5}>
+                              <Stack.Item grow>{ability?.name ?? id}</Stack.Item>
+                              <Stack.Item>
+                                <Button
+                                  icon="times"
+                                  compact
+                                  tooltip="Remove ability"
+                                  onClick={() => onRemoveAbility(id)}
+                                />
+                              </Stack.Item>
+                            </Stack>
+                          </Box>
+                        </Stack.Item>
+                      );
+                    })}
+                  </Stack>
+                )}
+              </Box>
+            </Stack.Item>
+            <Stack.Item>
+              <Stack justify="space-between">
+                <Stack.Item>
+                  <Button icon="redo" onClick={onClear}>
+                    Clear
+                  </Button>
+                </Stack.Item>
+                <Stack.Item>
+                  <Button
+                    icon="search"
+                    onClick={onCheck}
+                    disabled={!selectedCells.length && !selectedAbilities.length}
+                  >
+                    Check Recipes
+                  </Button>
+                </Stack.Item>
+                <Stack.Item>
+                  <Button
+                    icon="flask"
+                    color="good"
+                    disabled={!canCraft}
+                    tooltip={craftDisabledReason}
+                    onClick={onCraft}
+                  >
+                    Craft
+                  </Button>
+                </Stack.Item>
+              </Stack>
+            </Stack.Item>
+          </Stack>
+        </Section>
+      </Stack.Item>
+      <Stack.Item grow>
+        <Section title="Recipe Results" fill scrollable>
+          {checkedRecipeIds.length === 0 ? (
+            <NoticeBox>
+              Select inputs and press Check Recipes to preview potential modules.
+            </NoticeBox>
+          ) : matchingRecipes.length === 0 ? (
+            <NoticeBox>No recipes match this combination.</NoticeBox>
+          ) : (
+            <Stack vertical gap={1}>
+              {matchingRecipes.map((recipe) => {
+                const module = recipe.module;
+                const learned = asBoolean(recipe.learned);
+                const unlocked = asBoolean(recipe.unlocked);
+                const crafted = asBoolean(recipe.crafted);
+                const isSelected = selectedRecipeId === recipe.id;
+                return (
+                  <Box
+                    key={recipe.id}
+                    className="candystripe"
+                    p={1}
+                    style={{
+                      border: `1px solid ${
+                        isSelected ? '#7fc' : 'rgba(255, 255, 255, 0.1)'
+                      }`,
+                      borderRadius: '6px',
+                      backgroundColor: isSelected
+                        ? 'rgba(64, 160, 255, 0.08)'
+                        : 'rgba(255,255,255,0.03)',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => onSelectRecipe(recipe.id)}
+                  >
+                    <Stack vertical gap={0.5}>
+                      <Stack.Item>
+                        <Stack justify="space-between" align="center">
+                          <Stack.Item>
+                            <Box bold>{module?.name ?? recipe.name}</Box>
+                          </Stack.Item>
+                          <Stack.Item>
+                            {crafted ? (
+                              <Box color="average">
+                                <Icon name="check" mr={0.5} /> Synthesized
+                              </Box>
+                            ) : unlocked ? (
+                              <Box color="good">
+                                <Icon name="check" mr={0.5} /> Ready
+                              </Box>
+                            ) : learned ? (
+                              <Box color="average">
+                                <Icon name="hourglass-half" mr={0.5} /> Missing
+                              </Box>
+                            ) : (
+                              <Box color="bad">
+                                <Icon name="question" mr={0.5} /> Unknown
+                              </Box>
+                            )}
+                          </Stack.Item>
+                        </Stack>
+                      </Stack.Item>
+                      {module?.category && (
+                        <Stack.Item>
+                          <Box color="average">
+                            Category: {formatCategory(module.category)}
+                          </Box>
+                        </Stack.Item>
+                      )}
+                      {module?.tags && module.tags.length > 0 && (
+                        <Stack.Item>
+                          <Box color="average">Tags: {module.tags.join(', ')}</Box>
+                        </Stack.Item>
+                      )}
+                      {module?.exclusiveTags && module.exclusiveTags.length > 0 && (
+                        <Stack.Item>
+                          <Box color="bad">
+                            Exclusive: {module.exclusiveTags.join(', ')}
+                          </Box>
+                        </Stack.Item>
+                      )}
+                      {module?.desc && (
+                        <Stack.Item>
+                          <Box color="label">{module.desc}</Box>
+                        </Stack.Item>
+                      )}
+                      {module?.helptext && (
+                        <Stack.Item>
+                          <Box color="good">{module.helptext}</Box>
+                        </Stack.Item>
+                      )}
+                      {recipe.desc && (
+                        <Stack.Item>
+                          <Box color="label">{recipe.desc}</Box>
+                        </Stack.Item>
+                      )}
+                      <Stack.Item>
+                        <Box color="label">
+                          Cells: {' '}
+                          {recipe.requiredCells
+                            .map((req) => req.name)
+                            .join(', ') || 'None'}
+                        </Box>
+                      </Stack.Item>
+                      <Stack.Item>
+                        <Box color="label">
+                          Abilities: {' '}
+                          {recipe.requiredAbilities
+                            .map((req) => req.name)
+                            .join(', ') || 'None'}
+                        </Box>
+                      </Stack.Item>
+                    </Stack>
+                  </Box>
+                );
+              })}
+            </Stack>
+          )}
+        </Section>
+      </Stack.Item>
+    </Stack>
+  );
+};
+
 
 type BuildListProps = {
   builds: BuildEntry[];
@@ -523,99 +1134,62 @@ const BuildList = ({
 }: BuildListProps) => (
   <Section
     title="Builds"
+    buttons={
+      <Button
+        icon="plus"
+        disabled={!canAddBuild}
+        tooltip={canAddBuild ? undefined : 'Bio-incubator build slots full.'}
+        onClick={onCreate}
+      >
+        New Build
+      </Button>
+    }
     fill
     scrollable
-    buttons={
-      <Stack align="center" gap={1}>
-        <Stack.Item textColor="label">
-          {builds.length}/{maxBuilds}
-        </Stack.Item>
-        <Stack.Item>
-          <Button
-            icon="plus"
-            tooltip="Create a new build"
-            disabled={!canAddBuild}
-            onClick={onCreate}
-          >
-            New
-          </Button>
-        </Stack.Item>
-      </Stack>
-    }
   >
     {builds.length === 0 ? (
-      <NoticeBox>
-        No builds configured yet. Create a build to start composing the matrix.
-      </NoticeBox>
+      <NoticeBox>No builds configured.</NoticeBox>
     ) : (
-      <Stack vertical gap={1}>
-        {builds.map((build) => {
-          const isSelected = selectedBuildId === build.id;
-          const hasAssignments =
-            Boolean(build.profile) || build.modules.some((module) => module);
-          return (
-            <Box
-              key={build.id}
-              className="candystripe"
-              p={1}
-              style={{
-                border: `1px solid ${
-                  isSelected ? '#7fc' : 'rgba(255, 255, 255, 0.1)'
-                }`,
-                borderRadius: '6px',
-                backgroundColor: isSelected
-                  ? 'rgba(64, 160, 255, 0.08)'
-                  : 'rgba(255,255,255,0.03)',
-              }}
-            >
-              <Stack vertical gap={0.5}>
-                <Stack.Item>
-                  <Button
-                    fluid
-                    selected={isSelected}
-                    onClick={() => onSelect(build.id)}
-                  >
-                    {build.name}
-                  </Button>
-                </Stack.Item>
-                <Stack.Item>
-                  <Stack gap={1} wrap>
-                    <Stack.Item>
-                      <Button
-                        icon="pen"
-                        tooltip="Rename this build"
-                        onClick={() => onRename(build.id)}
-                      />
-                    </Stack.Item>
-                    <Stack.Item>
-                      <Button
-                        icon="eraser"
-                        tooltip="Clear all assignments"
-                        disabled={!hasAssignments}
-                        onClick={() => onClear(build.id)}
-                      />
-                    </Stack.Item>
-                    <Stack.Item>
-                      <Button
-                        icon="trash"
-                        color="bad"
-                        tooltip="Delete this build"
-                        onClick={() => onDelete(build.id)}
-                      />
-                    </Stack.Item>
-                  </Stack>
-                </Stack.Item>
-                {build.profile && (
-                  <Stack.Item color="label">
-                    Profile: {build.profile.name}
+      <Stack vertical gap={0.5}>
+        {builds.map((build) => (
+          <Box
+            key={build.id}
+            className="candystripe"
+            p={1}
+            style={{
+              border: `1px solid ${
+                build.id === selectedBuildId ? '#7fc' : 'rgba(255,255,255,0.1)'
+              }`,
+              borderRadius: '6px',
+              cursor: 'pointer',
+            }}
+            onClick={() => onSelect(build.id)}
+          >
+            <Stack justify="space-between" align="center" gap={1}>
+              <Stack.Item grow>
+                <Box bold>{build.name}</Box>
+              </Stack.Item>
+              <Stack.Item>
+                <Stack gap={0.5}>
+                  <Stack.Item>
+                    <Button icon="edit" compact tooltip="Rename" onClick={() => onRename(build.id)} />
                   </Stack.Item>
-                )}
-              </Stack>
-            </Box>
-          );
-        })}
+                  <Stack.Item>
+                    <Button icon="eraser" compact tooltip="Clear" onClick={() => onClear(build.id)} />
+                  </Stack.Item>
+                  <Stack.Item>
+                    <Button icon="trash" compact tooltip="Delete" onClick={() => onDelete(build.id)} />
+                  </Stack.Item>
+                </Stack>
+              </Stack.Item>
+            </Stack>
+          </Box>
+        ))}
       </Stack>
     )}
+    <Box color="label" mt={1}>
+      Slots used: {builds.length}/{maxBuilds}
+    </Box>
   </Section>
 );
 
@@ -649,9 +1223,7 @@ const BuildEditor = ({
   if (!build) {
     return (
       <Section title="Build Editor">
-        <NoticeBox>
-          Select or create a build to begin editing your genetic matrix.
-        </NoticeBox>
+        <NoticeBox>Select or create a build to begin editing your genetic matrix.</NoticeBox>
       </Section>
     );
   }
@@ -659,6 +1231,20 @@ const BuildEditor = ({
   const profile = build.profile;
   const profileActive =
     dragPayload?.type === 'profile' || dragPayload?.type === 'profile-slot';
+
+  const exclusiveCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    build.modules.forEach((entry) => {
+      if (!entry?.exclusiveTags) {
+        return;
+      }
+      entry.exclusiveTags.forEach((tag) => {
+        const key = tag.toLowerCase();
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      });
+    });
+    return counts;
+  }, [build.modules]);
 
   return (
     <Section
@@ -715,7 +1301,7 @@ const BuildEditor = ({
                   borderRadius: '6px',
                   minHeight: '96px',
                   backgroundColor: profileActive
-                    ? 'rgba(64, 160, 255, 0.1)'
+                    ? 'rgba(64, 160, 255, 0.08)'
                     : 'rgba(255,255,255,0.03)',
                 }}
               >
@@ -723,7 +1309,7 @@ const BuildEditor = ({
                   <ProfileSummary profile={profile} />
                 ) : (
                   <Box color="label">
-                    Drag a DNA profile from the catalog to assign it to this build.
+                    Drag a DNA profile from the list to assign it to this build.
                   </Box>
                 )}
               </Box>
@@ -770,11 +1356,12 @@ const BuildEditor = ({
               const highlight =
                 dragPayload &&
                 (dragPayload.type === 'module' ||
-                  dragPayload.type === 'ability' ||
-                  ((dragPayload.type === 'module-slot' ||
-                    dragPayload.type === 'ability-slot') &&
-                    (dragPayload.buildId !== build.id ||
-                      dragPayload.slot !== slot)));
+                  (dragPayload.type === 'module-slot' &&
+                    (dragPayload.buildId !== build.id || dragPayload.slot !== slot)));
+              const conflictTags =
+                moduleEntry?.exclusiveTags?.filter(
+                  (tag) => (exclusiveCounts.get(tag.toLowerCase()) ?? 0) > 1,
+                ) ?? [];
               return (
                 <Stack align="center" gap={1} key={slot}>
                   <Stack.Item width="64px">
@@ -805,9 +1392,7 @@ const BuildEditor = ({
                         }
                         if (
                           payload.type === 'module' ||
-                          payload.type === 'ability' ||
-                          payload.type === 'module-slot' ||
-                          payload.type === 'ability-slot'
+                          payload.type === 'module-slot'
                         ) {
                           event.preventDefault();
                           event.dataTransfer.dropEffect = 'move';
@@ -820,9 +1405,7 @@ const BuildEditor = ({
                         }
                         if (
                           payload.type === 'module' ||
-                          payload.type === 'ability' ||
-                          payload.type === 'module-slot' ||
-                          payload.type === 'ability-slot'
+                          payload.type === 'module-slot'
                         ) {
                           event.preventDefault();
                           onModuleDropped(payload, build, slot);
@@ -836,12 +1419,16 @@ const BuildEditor = ({
                         borderRadius: '6px',
                         minHeight: '72px',
                         backgroundColor: highlight
-                          ? 'rgba(64, 160, 255, 0.1)'
+                          ? 'rgba(64, 160, 255, 0.08)'
                           : 'rgba(255,255,255,0.03)',
                       }}
                     >
                       {moduleEntry ? (
-                        <ModuleSummary module={moduleEntry} showSource={false} />
+                        <ModuleSummary
+                          module={moduleEntry}
+                          showSource={false}
+                          conflictTags={conflictTags}
+                        />
                       ) : (
                         <Box color="label">Drop a module here.</Box>
                       )}
@@ -859,9 +1446,7 @@ const BuildEditor = ({
               );
             })}
             {maxModuleSlots === 0 && (
-              <NoticeBox>
-                This build has no module slots available.
-              </NoticeBox>
+              <NoticeBox>This build has no module slots available.</NoticeBox>
             )}
           </Stack>
         </Stack.Item>
@@ -879,6 +1464,58 @@ type ProfileCatalogProps = {
   onDoubleClick?: (profile: ProfileEntry) => void;
   highlightId?: string;
   emptyMessage?: string;
+};
+
+type ProfileSummaryProps = {
+  profile: ProfileEntry;
+};
+
+const ProfileSummary = ({ profile }: ProfileSummaryProps) => {
+  const isProtected = asBoolean(profile.protected);
+  const basicDetails = [
+    profile.age !== null && profile.age !== undefined
+      ? `Age: ${formatValue(profile.age)}`
+      : null,
+    profile.physique ? `Physique: ${profile.physique}` : null,
+    profile.voice ? `Voice: ${profile.voice}` : null,
+  ].filter((entry): entry is string => Boolean(entry));
+
+  return (
+    <Stack vertical gap={0.25}>
+      <Stack.Item>
+        <Stack justify="space-between" align="center">
+          <Stack.Item>
+            <Box bold>{profile.name}</Box>
+          </Stack.Item>
+          {isProtected && (
+            <Stack.Item>
+              <Box color="average">
+                <Icon name="shield-alt" mr={0.5} /> Protected
+              </Box>
+            </Stack.Item>
+          )}
+        </Stack>
+      </Stack.Item>
+      {basicDetails.length > 0 && (
+        <Stack.Item color="label">{basicDetails.join(' • ')}</Stack.Item>
+      )}
+      {profile.quirks.length > 0 && (
+        <Stack.Item color="average">
+          Quirks: {profile.quirks.join(', ')}
+        </Stack.Item>
+      )}
+      {profile.skillchips.length > 0 && (
+        <Stack.Item color="average">
+          Skillchips: {profile.skillchips.join(', ')}
+        </Stack.Item>
+      )}
+      {profile.scar_count > 0 && (
+        <Stack.Item color="label">
+          Scars recorded: {profile.scar_count}
+        </Stack.Item>
+      )}
+    </Stack>
+  );
 };
 
 const ProfileCatalog = ({
@@ -935,7 +1572,7 @@ const ProfileCatalog = ({
 type ModuleListProps = {
   title: string;
   modules: ModuleEntry[];
-  allowDrag?: boolean;
+  allowDrag: boolean;
   onDragStart?: (module: ModuleEntry, event: DragEvent) => void;
   onDragEnd?: () => void;
   onDoubleClick?: (module: ModuleEntry) => void;
@@ -946,7 +1583,7 @@ type ModuleListProps = {
 const ModuleList = ({
   title,
   modules,
-  allowDrag = false,
+  allowDrag,
   onDragStart,
   onDragEnd,
   onDoubleClick,
@@ -967,9 +1604,7 @@ const ModuleList = ({
               p={1}
               draggable={allowDrag}
               onDragStart={
-                allowDrag
-                  ? (event) => onDragStart?.(module, event)
-                  : undefined
+                allowDrag ? (event) => onDragStart?.(module, event) : undefined
               }
               onDragEnd={allowDrag ? onDragEnd : undefined}
               onDoubleClick={
@@ -981,7 +1616,7 @@ const ModuleList = ({
                 }`,
                 borderRadius: '6px',
                 backgroundColor: isAssigned
-                  ? 'rgba(64, 160, 255, 0.08)'
+                  ? 'rgba(64, 160, 255, 0.06)'
                   : 'rgba(255,255,255,0.03)',
               }}
             >
@@ -994,68 +1629,13 @@ const ModuleList = ({
   </Section>
 );
 
-const formatSource = (source?: string) => {
-  if (!source) {
-    return '';
-  }
-  const lowered = source.toLowerCase();
-  if (lowered === 'innate') {
-    return 'Innate';
-  }
-  if (lowered === 'purchased') {
-    return 'Purchased';
-  }
-  return source;
-};
-
-type ProfileSummaryProps = {
-  profile: ProfileEntry;
-};
-
-const ProfileSummary = ({ profile }: ProfileSummaryProps) => {
-  const protectedProfile = asBoolean(profile.protected);
-  const quirks = profile.quirks ?? [];
-  const skillchips = profile.skillchips ?? [];
-  return (
-    <Stack vertical gap={0.5}>
-      <Stack.Item>
-        <Stack align="center" gap={0.5}>
-          <Stack.Item>
-            <Box bold>{profile.name}</Box>
-          </Stack.Item>
-          {protectedProfile && (
-            <Stack.Item>
-              <Icon name="shield-alt" color="good" />
-            </Stack.Item>
-          )}
-        </Stack>
-      </Stack.Item>
-      <Stack.Item color="label">
-        Age: {formatValue(profile.age)} | Physique: {formatValue(profile.physique)} |
-        {' '}
-        Voice: {formatValue(profile.voice)}
-      </Stack.Item>
-      {quirks.length > 0 && (
-        <Stack.Item color="label">
-          Quirks: {quirks.join(', ')}
-        </Stack.Item>
-      )}
-      {skillchips.length > 0 && (
-        <Stack.Item color="label">
-          Skillchips: {skillchips.join(', ')}
-        </Stack.Item>
-      )}
-      <Stack.Item color="label">Scars: {profile.scar_count}</Stack.Item>
-    </Stack>
-  );
-};
-
 type ModuleSummaryProps = {
   module: ModuleEntry;
   showSource?: boolean;
+  conflictTags?: string[];
 };
 
-const ModuleSummary = ({ module, showSource = true }: ModuleSummaryProps) => {
+const ModuleSummary = ({ module, showSource = true, conflictTags = [] }: ModuleSummaryProps) => {
   const sourceLabel = showSource ? formatSource(module.source) : '';
   const sourceColor = module.source?.toLowerCase() === 'innate' ? 'good' : 'average';
   return (
@@ -1072,109 +1652,303 @@ const ModuleSummary = ({ module, showSource = true }: ModuleSummaryProps) => {
           )}
         </Stack>
       </Stack.Item>
-      <Stack.Item color="label">
-        Chems: {module.chemical_cost} | DNA: {module.dna_cost} | Required DNA:{' '}
-        {module.req_dna} | Required Absorbs: {module.req_absorbs}
-      </Stack.Item>
-      {module.slotType === 'key' && (
-        <Stack.Item color="good">Key Active Module</Stack.Item>
+      {module.category && (
+        <Stack.Item color="average">Category: {formatCategory(module.category)}</Stack.Item>
+      )}
+      {module.tags && module.tags.length > 0 && (
+        <Stack.Item color="average">Tags: {module.tags.join(', ')}</Stack.Item>
+      )}
+      {module.exclusiveTags && module.exclusiveTags.length > 0 && (
+        <Stack.Item color="bad">Exclusive: {module.exclusiveTags.join(', ')}</Stack.Item>
+      )}
+      {conflictTags.length > 0 && (
+        <Stack.Item color="bad">
+          Conflict with: {conflictTags.join(', ')}
+        </Stack.Item>
       )}
       {module.desc && <Stack.Item>{module.desc}</Stack.Item>}
       {module.helptext && <Stack.Item color="good">{module.helptext}</Stack.Item>}
+      {(module.chemical_cost !== undefined ||
+        module.dna_cost !== undefined ||
+        module.req_dna !== undefined ||
+        module.req_absorbs !== undefined) && (
+        <Stack.Item color="label">
+          {module.chemical_cost !== undefined && `Chems: ${module.chemical_cost} `}
+          {module.dna_cost !== undefined && `DNA Cost: ${module.dna_cost} `}
+          {module.req_dna !== undefined && `Required DNA: ${module.req_dna} `}
+          {module.req_absorbs !== undefined && `Required Absorbs: ${module.req_absorbs}`}
+        </Stack.Item>
+      )}
     </Stack>
   );
 };
 
+const formatSource = (source?: string) => {
+  if (!source) {
+    return '';
+  }
+  const lowered = source.toLowerCase();
+  if (lowered === 'innate') {
+    return 'Innate';
+  }
+  if (lowered === 'purchased') {
+    return 'Purchased';
+  }
+  if (lowered === 'crafted') {
+    return 'Crafted';
+  }
+  return source;
+};
+
+const formatCategory = (category?: string) => {
+  if (!category) {
+    return '';
+  }
+  const lowered = category.toLowerCase();
+  if (lowered === 'key_active') {
+    return 'Key Active';
+  }
+  if (lowered === 'passive') {
+    return 'Passive';
+  }
+  if (lowered === 'upgrade') {
+    return 'Upgrade';
+  }
+  return category;
+};
+
 type CellsTabProps = {
   profiles: ProfileEntry[];
-  cytologyCells: CytologyCellEntry[];
+  cells: CytologyCellEntry[];
   recipes: RecipeEntry[];
 };
 
-const CellsTab = ({ profiles, cytologyCells, recipes }: CellsTabProps) => (
+const CellsTab = ({ profiles, cells, recipes }: CellsTabProps) => {
+  const [cellSearch, setCellSearch] = useState('');
+
+  const filteredCells = useMemo(() => {
+    const query = cellSearch.toLowerCase();
+    if (!query) {
+      return cells;
+    }
+    return cells.filter((cell) =>
+      cell.name.toLowerCase().includes(query) ||
+      (cell.desc ? cell.desc.toLowerCase().includes(query) : false),
+    );
+  }, [cells, cellSearch]);
+
+  return (
+    <Stack vertical fill gap={1}>
+      <Stack.Item>
+        <ProfileCatalog
+          title="DNA Profiles"
+          profiles={profiles}
+          allowDrag={false}
+          emptyMessage="No stored DNA profiles."
+        />
+      </Stack.Item>
+      <Stack.Item>
+        <Section title="Cytology Cells" fill scrollable>
+          <Stack vertical gap={1}>
+            <Stack.Item>
+              <Input
+                value={cellSearch}
+                onInput={(_, value) => setCellSearch(value)}
+                placeholder="Search cytology cells..."
+              />
+            </Stack.Item>
+            <Stack.Item>
+              {filteredCells.length === 0 ? (
+                <NoticeBox>No cells catalogued.</NoticeBox>
+              ) : (
+                <Stack vertical gap={1}>
+                  {filteredCells.map((cell) => (
+                    <Box key={cell.id} className="candystripe" p={1}>
+                      <Box bold>{cell.name}</Box>
+                      {cell.desc && <Box color="label">{cell.desc}</Box>}
+                    </Box>
+                  ))}
+                </Stack>
+              )}
+            </Stack.Item>
+          </Stack>
+        </Section>
+      </Stack.Item>
+      <Stack.Item grow>
+        <Section title="Known Recipes" fill scrollable>
+          {recipes.length === 0 ? (
+            <NoticeBox>No genetic recipes known.</NoticeBox>
+          ) : (
+            <Stack vertical gap={1}>
+              {recipes.map((recipe) => (
+                <Box key={recipe.id} className="candystripe" p={1}>
+                  <Stack justify="space-between" align="center">
+                    <Stack.Item>
+                      <Box bold>{recipe.module?.name ?? recipe.name}</Box>
+                    </Stack.Item>
+                    <Stack.Item>
+                      {asBoolean(recipe.crafted) ? (
+                        <Box color="average">
+                          <Icon name="check" mr={0.5} /> Synthesized
+                        </Box>
+                      ) : asBoolean(recipe.unlocked) ? (
+                        <Box color="good">
+                          <Icon name="check" mr={0.5} /> Ready
+                        </Box>
+                      ) : asBoolean(recipe.learned) ? (
+                        <Box color="average">
+                          <Icon name="hourglass-half" mr={0.5} /> Missing Inputs
+                        </Box>
+                      ) : (
+                        <Box color="bad">
+                          <Icon name="question" mr={0.5} /> Locked
+                        </Box>
+                      )}
+                    </Stack.Item>
+                  </Stack>
+                  <Box color="label">
+                    Cells: {recipe.requiredCells.map((req) => req.name).join(', ') || 'None'}
+                  </Box>
+                  <Box color="label">
+                    Abilities: {recipe.requiredAbilities.map((req) => req.name).join(', ') || 'None'}
+                  </Box>
+                </Box>
+              ))}
+            </Stack>
+          )}
+        </Section>
+      </Stack.Item>
+    </Stack>
+  );
+};
+
+type AbilityStorageTabProps = {
+  abilities: ModuleEntry[];
+};
+
+const AbilityStorageTab = ({ abilities }: AbilityStorageTabProps) => (
+  <Section title="Abilities Storage" fill scrollable>
+    {abilities.length === 0 ? (
+      <NoticeBox>No abilities catalogued.</NoticeBox>
+    ) : (
+      <Stack vertical gap={1}>
+        {abilities.map((ability) => (
+          <Box key={ability.id} className="candystripe" p={1}>
+            <ModuleSummary module={ability} />
+          </Box>
+        ))}
+      </Stack>
+    )}
+  </Section>
+);
+
+type StandardSkillsTabProps = {
+  act: (action: string, payload?: Record<string, unknown>) => void;
+  abilities: StandardAbilityEntry[];
+  geneticPoints: number;
+  absorbs: number;
+  dnaSamples: number;
+  canReadapt: boolean;
+};
+
+const StandardSkillsTab = ({
+  act,
+  abilities,
+  geneticPoints,
+  absorbs,
+  dnaSamples,
+  canReadapt,
+}: StandardSkillsTabProps) => (
   <Stack vertical fill gap={1}>
     <Stack.Item>
-      <ProfileCatalog
-        title="DNA Profiles"
-        profiles={profiles}
-        allowDrag={false}
-        emptyMessage="We have no stored DNA samples."
-      />
-    </Stack.Item>
-    <Stack.Item>
-      <Section title="Cytology Cells" fill scrollable>
-        {cytologyCells.length === 0 ? (
-          <NoticeBox>No cytology cells catalogued.</NoticeBox>
-        ) : (
-          <Stack vertical gap={1}>
-            {cytologyCells.map((cell) => (
-              <Box key={cell.id} className="candystripe" p={1}>
-                <Box bold>{cell.name}</Box>
-                {cell.desc && <Box color="label">{cell.desc}</Box>}
-              </Box>
-            ))}
-          </Stack>
-        )}
+      <Section title="Genetic Resources">
+        <Table>
+          <Table.Row>
+            <Table.Cell>Genetic Points</Table.Cell>
+            <Table.Cell>{geneticPoints}</Table.Cell>
+          </Table.Row>
+          <Table.Row>
+            <Table.Cell>Absorbed Genomes</Table.Cell>
+            <Table.Cell>{absorbs}</Table.Cell>
+          </Table.Row>
+          <Table.Row>
+            <Table.Cell>Stored DNA Samples</Table.Cell>
+            <Table.Cell>{dnaSamples}</Table.Cell>
+          </Table.Row>
+        </Table>
+        <Button
+          icon="undo"
+          disabled={!canReadapt}
+          tooltip={canReadapt ? undefined : 'No readapt charges available.'}
+          onClick={() => act('readapt_standard')}
+        >
+          Readapt
+        </Button>
       </Section>
     </Stack.Item>
-    <Stack.Item>
-      <Section title="Known Recipes" fill scrollable>
-        {recipes.length === 0 ? (
-          <NoticeBox>No crafting recipes learned.</NoticeBox>
+    <Stack.Item grow>
+      <Section title="Standard Abilities" fill scrollable>
+        {abilities.length === 0 ? (
+          <NoticeBox>No abilities available for purchase.</NoticeBox>
         ) : (
-          <Stack vertical gap={1}>
-            {recipes.map((recipe) => (
-              <Box key={recipe.id} className="candystripe" p={1}>
-                {recipe.name}
-              </Box>
-            ))}
-          </Stack>
+          <Table>
+            <Table.Row header>
+              <Table.Cell>Ability</Table.Cell>
+              <Table.Cell>DNA Cost</Table.Cell>
+              <Table.Cell>DNA Required</Table.Cell>
+              <Table.Cell>Absorbs Required</Table.Cell>
+              <Table.Cell>Chemical Cost</Table.Cell>
+              <Table.Cell textAlign="right">Action</Table.Cell>
+            </Table.Row>
+            {abilities.map((ability) => {
+              const owned = asBoolean(ability.owned);
+              const hasPoints = asBoolean(ability.hasPoints);
+              const hasAbsorbs = asBoolean(ability.hasAbsorbs);
+              const hasDNA = asBoolean(ability.hasDNA);
+              const canPurchase = !owned && hasPoints && hasAbsorbs && hasDNA;
+              const disabledReason = owned
+                ? 'Already owned.'
+                : !hasPoints
+                  ? 'Not enough genetic points.'
+                  : !hasAbsorbs
+                    ? 'Insufficient absorbed genomes.'
+                    : !hasDNA
+                      ? 'Insufficient DNA samples.'
+                      : '';
+              return (
+                <Table.Row key={ability.id} className="candystripe">
+                  <Table.Cell>
+                    <Stack vertical gap={0.5}>
+                      <Stack.Item>
+                        <Box bold>{ability.name}</Box>
+                      </Stack.Item>
+                      <Stack.Item>{ability.desc}</Stack.Item>
+                      {ability.helptext && (
+                        <Stack.Item color="good">{ability.helptext}</Stack.Item>
+                      )}
+                    </Stack>
+                  </Table.Cell>
+                  <Table.Cell>{ability.dnaCost}</Table.Cell>
+                  <Table.Cell>{ability.dnaRequired}</Table.Cell>
+                  <Table.Cell>{ability.absorbsRequired}</Table.Cell>
+                  <Table.Cell>{ability.chemicalCost}</Table.Cell>
+                  <Table.Cell textAlign="right">
+                    <Button
+                      icon={owned ? 'check' : 'plus'}
+                      color={owned ? 'average' : 'good'}
+                      disabled={!canPurchase}
+                      tooltip={disabledReason}
+                      onClick={() => act('purchase_standard', { ability: ability.id })}
+                    >
+                      {owned ? 'Owned' : 'Purchase'}
+                    </Button>
+                  </Table.Cell>
+                </Table.Row>
+              );
+            })}
+          </Table>
         )}
       </Section>
     </Stack.Item>
   </Stack>
-);
-
-type ModuleStorageTabProps = {
-  modules: ModuleEntry[];
-};
-
-const ModuleStorageTab = ({ modules }: ModuleStorageTabProps) => (
-  <ModuleList
-    title="Module Storage"
-    modules={modules}
-    allowDrag={false}
-    emptyMessage="We have not catalogued any modules."
-  />
-);
-
-type SkillsTabProps = {
-  skills: SkillEntry[];
-};
-
-const SkillsTab = ({ skills }: SkillsTabProps) => (
-  <Section title="Standard Skills" fill scrollable>
-    {skills.length === 0 ? (
-      <NoticeBox>No skills recorded for this changeling.</NoticeBox>
-    ) : (
-      <Table>
-        <Table.Row header>
-          <Table.Cell>Skill</Table.Cell>
-          <Table.Cell>Level</Table.Cell>
-          <Table.Cell>Experience</Table.Cell>
-          <Table.Cell>Description</Table.Cell>
-        </Table.Row>
-        {skills.map((skill) => (
-          <Table.Row key={skill.id} className="candystripe">
-            <Table.Cell>{skill.name}</Table.Cell>
-            <Table.Cell>
-              {skill.levelName} (Level {skill.level})
-            </Table.Cell>
-            <Table.Cell>{skill.exp}</Table.Cell>
-            <Table.Cell>{skill.desc}</Table.Cell>
-          </Table.Row>
-        ))}
-      </Table>
-    )}
-  </Section>
 );

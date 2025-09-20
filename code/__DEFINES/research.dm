@@ -29,6 +29,11 @@
 #define CELL_LINE_TABLE_CARP "cell_line_carp_table"
 #define CELL_LINE_TABLE_CAT "cell_line_cat_table"
 #define CELL_LINE_TABLE_CHICKEN "cell_line_chicken_table"
+#define CELL_LINE_TABLE_HUMAN "cell_line_human_table"
+#define CELL_LINE_TABLE_VOX "cell_line_vox_table"
+#define CELL_LINE_TABLE_TAJARAN "cell_line_tajaran_table"
+#define CELL_LINE_TABLE_TESHARI "cell_line_teshari_table"
+#define CELL_LINE_TABLE_GOAT "cell_line_goat_table"
 #define CELL_LINE_TABLE_COCKROACH "cell_line_cockroach_table"
 #define CELL_LINE_TABLE_CORGI "cell_line_corgi_table"
 #define CELL_LINE_TABLE_COW "cell_line_cow_table"
@@ -55,6 +60,8 @@
 #define CELL_LINE_TABLE_QUEEN_BEE "cell_line_bee_queen_table"
 #define CELL_LINE_TABLE_BUTTERFLY "cell_line_butterfly_table"
 #define CELL_LINE_TABLE_MEGA_ARACHNID "cell_line_table_mega_arachnid"
+#define CELL_LINE_TABLE_COLOSSUS "cell_line_colossus_table"
+#define CELL_LINE_TABLE_RARE_PREDATOR "cell_line_rare_predator_table"
 
 //! Biopsy cell line organ types
 #define CELL_LINE_ORGAN_HEART "cell_line_organ_heart"
