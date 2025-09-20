@@ -8,16 +8,16 @@
 	allow_nonliving_targets = TRUE
 
 /datum/action/changeling/sting/harvest_cells/can_sting(mob/living/user, mob/living/target)
-       if(!can_use_harvest(user))
-               return FALSE
-       if(!target)
-               return FALSE
-       if(!isturf(user.loc))
-               return FALSE
-       var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
-       if(target.mob_biotypes & MOB_ROBOTIC)
-               user.balloon_alert(user, "no organic cells!")
-               return FALSE
+	if(!can_use_harvest(user))
+		return FALSE
+	if(!target)
+		return FALSE
+	if(!isturf(user.loc))
+		return FALSE
+	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
+	if(target.mob_biotypes & MOB_ROBOTIC)
+		user.balloon_alert(user, "no organic cells!")
+		return FALSE
 	if(!reachable_target(user, target, changeling?.sting_range || 0))
 		return FALSE
 	var/list/cell_ids = collect_cell_ids(target)
@@ -110,37 +110,37 @@
 	to_chat(target, span_warning("You feel a fleeting prick beneath your skin."))
 
 /datum/action/changeling/sting/harvest_cells/proc/collect_cell_ids(atom/target)
-       var/list/ids = list()
-       if(!target)
-               return ids
-       if(isliving(target))
-               var/mob/living/living_target = target
-               for(var/cell_id as anything in get_cell_id_from_living(living_target))
-                       if(!(cell_id in ids))
-                               ids += cell_id
-       else
-               for(var/cell_id as anything in get_cell_id_from_nonliving(target))
-                       if(!(cell_id in ids))
-                               ids += cell_id
-       return ids
+	var/list/ids = list()
+	if(!target)
+		return ids
+	if(isliving(target))
+		var/mob/living/living_target = target
+		for(var/cell_id as anything in get_cell_id_from_living(living_target))
+			if(!(cell_id in ids))
+				ids += cell_id
+	else
+		for(var/cell_id as anything in get_cell_id_from_nonliving(target))
+			if(!(cell_id in ids))
+				ids += cell_id
+	return ids
 
 /datum/action/changeling/sting/harvest_cells/proc/get_cell_id_from_living(mob/living/target)
-       var/list/ids = list()
-       if(!target)
-               return ids
-       for(var/cell_id as anything in changeling_get_cell_ids_from_mob(target))
-               if(!(cell_id in ids))
-                       ids += cell_id
-       return ids
+	var/list/ids = list()
+	if(!target)
+		return ids
+	for(var/cell_id as anything in changeling_get_cell_ids_from_mob(target))
+		if(!(cell_id in ids))
+			ids += cell_id
+	return ids
 
 /datum/action/changeling/sting/harvest_cells/proc/get_cell_id_from_nonliving(atom/target)
-       var/list/ids = list()
-       if(!target)
-               return ids
-       for(var/cell_id as anything in changeling_get_cell_ids_from_atom(target))
-               if(!(cell_id in ids))
-                       ids += cell_id
-       return ids
+	var/list/ids = list()
+	if(!target)
+		return ids
+	for(var/cell_id as anything in changeling_get_cell_ids_from_atom(target))
+		if(!(cell_id in ids))
+			ids += cell_id
+	return ids
 /datum/action/changeling/sting/harvest_cells/proc/can_use_harvest(mob/living/user)
 	if(!can_be_used_by(user))
 		return FALSE
