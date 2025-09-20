@@ -5,8 +5,8 @@
 ////////////////////////////////
 
 /datum/micro_organism/cell_line/mouse //nuisance cell line designed to complicate the growing of animal type cell lines.
-	desc = "Murine cells"
-	required_reagents = list(/datum/reagent/consumable/nutriment/protein)
+desc = "Murine cells"
+required_reagents = list(/datum/reagent/consumable/nutriment/protein)
 	supplementary_reagents = list(
 		/datum/reagent/growthserum = 2,
 		/datum/reagent/consumable/liquidgibs = 2,
@@ -25,8 +25,8 @@
 
 	virus_suspectibility = 2
 	growth_rate = VAT_GROWTH_RATE
-	resulting_atom = /mob/living/basic/mouse
-	resulting_atom_count = 2
+resulting_atom = /mob/living/basic/mouse
+resulting_atom_count = 2
 
 /datum/micro_organism/cell_line/human
 	desc = "Human somatic cells"
