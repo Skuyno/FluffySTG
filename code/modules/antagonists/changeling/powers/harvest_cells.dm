@@ -22,13 +22,14 @@
         return TRUE
 
 /datum/action/changeling/sting/harvest_cells/sting_action(mob/living/user, atom/target)
-        var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
-        if(!changeling)
-                return FALSE
-        changeling.create_bio_incubator()
-        var/datum/changeling_bio_incubator/incubator = changeling.bio_incubator
-        if(!incubator)
-                return FALSE
+	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
+	if(!changeling)
+		return FALSE
+	var/datum/changeling_bio_incubator/incubator = changeling.bio_incubator
+	if(!incubator)
+		incubator = changeling.create_bio_incubator()
+	if(!incubator)
+		return FALSE
         var/list/cell_ids = get_potential_cell_ids(target)
         if(!cell_ids.len)
                 user.balloon_alert(user, "no cytology cells!")
