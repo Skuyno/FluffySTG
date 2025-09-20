@@ -34,7 +34,7 @@
 	blood_volume = BLOOD_VOLUME_NORMAL
 
 	ai_controller = /datum/ai_controller/basic_controller/goat
-        cytology_cell_line = /datum/micro_organism/cell_line/goat
+       cell_line = CELL_LINE_TABLE_GOAT
 	/// How often will we develop an evil gleam in our eye?
 	var/gleam_delay = 20 SECONDS
 	/// Time until we can next gleam evilly

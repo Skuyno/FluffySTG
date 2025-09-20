@@ -27,7 +27,7 @@
 	gold_core_spawnable = FRIENDLY_SPAWN
 	blood_volume = BLOOD_VOLUME_NORMAL
 	ai_controller = /datum/ai_controller/basic_controller/cow
-        cytology_cell_line = /datum/micro_organism/cell_line/cow
+       cell_line = CELL_LINE_TABLE_COW
 	/// what this cow munches on, and what can be used to tame it.
 	var/list/food_types = list(/obj/item/food/grown/wheat)
 	/// message sent when tamed

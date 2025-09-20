@@ -48,8 +48,8 @@
 
 	/// If true we will run away from attackers even at full health
 	var/cowardly = FALSE
-	/// Cytology cells you can swab from this creature
-	var/cell_line = CELL_LINE_TABLE_CARP
+       /// Cytology cells you can swab from this creature
+       cell_line = CELL_LINE_TABLE_CARP
 	/// What colour is our 'healing' outline?
 	var/regenerate_colour = COLOR_PALE_GREEN
 	/// Ability which lets carp teleport around

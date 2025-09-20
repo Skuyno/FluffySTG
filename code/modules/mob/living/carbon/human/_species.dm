@@ -116,8 +116,8 @@ GLOBAL_LIST_EMPTY(features_by_species)
 	var/stunmod = 1
 	///multiplier for money paid at payday
 	var/payday_modifier = 1.0
-	/// Cytology cell line identifier supplied when harvesting this species.
-	var/cytology_cell_line
+       /// Cytology cell line table identifier supplied when harvesting this species.
+       var/cell_line
 	///Base electrocution coefficient.  Basically a multiplier for damage from electrocutions.
 	var/siemens_coeff = 1
 	///To use MUTCOLOR with a fixed color that's independent of the mcolor feature in DNA.
