@@ -666,13 +666,12 @@
 		if(!push_out_profile())
 			return
 
-	if(!first_profile)
-		first_profile = new_profile
-		current_profile = first_profile
+        if(!first_profile)
+                first_profile = new_profile
+                current_profile = first_profile
 
-	stored_profiles += new_profile
-	on_genetic_matrix_profile_added(new_profile)
-	absorbed_count++
+        stored_profiles += new_profile
+        absorbed_count++
 
 /*
  * Create a new profile from the given [profile_target]
@@ -695,11 +694,10 @@
 /datum/antagonist/changeling/proc/remove_profile(mob/living/carbon/human/profile_target, force = FALSE)
 	for(var/datum/changeling_profile/found_profile as anything in stored_profiles)
 		if(profile_target.real_name == found_profile.name)
-			if(found_profile.protected && !force)
-				continue
-			stored_profiles -= found_profile
-			on_genetic_matrix_profile_removed(found_profile)
-			qdel(found_profile)
+                        if(found_profile.protected && !force)
+                                continue
+                        stored_profiles -= found_profile
+                        qdel(found_profile)
 
 /*
  * Removes the highest changeling profile from the list
@@ -714,11 +712,10 @@
 			profile_to_remove = found_profile
 			break
 
-	if(profile_to_remove)
-		stored_profiles -= profile_to_remove
-		on_genetic_matrix_profile_removed(profile_to_remove)
-		qdel(profile_to_remove)
-		return TRUE
+        if(profile_to_remove)
+                stored_profiles -= profile_to_remove
+                qdel(profile_to_remove)
+                return TRUE
 	return FALSE
 
 /*

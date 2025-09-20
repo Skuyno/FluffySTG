@@ -18,10 +18,10 @@ GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, list(
 			"exclusiveTags" = list("key_active"),
 			"button_icon_state" = "dissonant_shriek",
 		),
-		"requiredCells" = list(
-			"/datum/micro_organism/cell_line/vox",
-			"/datum/micro_organism/cell_line/tajaran",
-		),
+                "requiredCells" = list(
+                        CHANGELING_CELL_ID_VOX,
+                        CHANGELING_CELL_ID_TAJARAN,
+                ),
 		"requiredAbilities" = list(
 			/datum/action/changeling/dissonant_shriek,
 		),
@@ -40,10 +40,10 @@ GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, list(
 			"exclusiveTags" = list("healing"),
 			"button_icon_state" = "regenerate",
 		),
-		"requiredCells" = list(
-			"/datum/micro_organism/cell_line/human",
-			"/datum/micro_organism/cell_line/goat",
-		),
+                "requiredCells" = list(
+                        CHANGELING_CELL_ID_HUMAN,
+                        CHANGELING_CELL_ID_GOAT,
+                ),
 		"requiredAbilities" = list(
 			/datum/action/changeling/regenerate,
 		),
@@ -62,10 +62,10 @@ GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, list(
 			"exclusiveTags" = list("stealth"),
 			"button_icon_state" = "digital_camo",
 		),
-		"requiredCells" = list(
-			"/datum/micro_organism/cell_line/teshari",
-			"/datum/micro_organism/cell_line/chicken",
-		),
+                "requiredCells" = list(
+                        CHANGELING_CELL_ID_TESHARI,
+                        CHANGELING_CELL_ID_CHICKEN,
+                ),
 		"requiredAbilities" = list(
 			/datum/action/changeling/digitalcamo,
 		),
@@ -84,10 +84,10 @@ GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, list(
 			"exclusiveTags" = list("mobility"),
 			"button_icon_state" = "strained_muscles",
 		),
-		"requiredCells" = list(
-			"/datum/micro_organism/cell_line/tajaran",
-			"/datum/micro_organism/cell_line/rare_predator",
-		),
+                "requiredCells" = list(
+                        CHANGELING_CELL_ID_TAJARAN,
+                        CHANGELING_CELL_ID_RARE_PREDATOR,
+                ),
 		"requiredAbilities" = list(
 			/datum/action/changeling/strained_muscles,
 		),
@@ -106,10 +106,10 @@ GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, list(
 			"exclusiveTags" = list("adaptation"),
 			"button_icon_state" = null,
 		),
-		"requiredCells" = list(
-			"/datum/micro_organism/cell_line/vox",
-			"/datum/micro_organism/cell_line/colossus",
-		),
+                "requiredCells" = list(
+                        CHANGELING_CELL_ID_VOX,
+                        CHANGELING_CELL_ID_COLOSSUS,
+                ),
 		"requiredAbilities" = list(
 			/datum/action/changeling/void_adaption,
 		),
@@ -128,10 +128,10 @@ GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, list(
 			"exclusiveTags" = list("stamina"),
 			"button_icon_state" = "adrenaline",
 		),
-		"requiredCells" = list(
-			"/datum/micro_organism/cell_line/cow",
-			"/datum/micro_organism/cell_line/human",
-		),
+                "requiredCells" = list(
+                        CHANGELING_CELL_ID_COW,
+                        CHANGELING_CELL_ID_HUMAN,
+                ),
 		"requiredAbilities" = list(
 			/datum/action/changeling/adrenaline,
 		),

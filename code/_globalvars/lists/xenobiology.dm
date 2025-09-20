@@ -79,11 +79,6 @@ GLOBAL_LIST_INIT_TYPED(cell_line_tables, /list, list(
 	CELL_LINE_TABLE_QUEEN_BEE = list(/datum/micro_organism/cell_line/queen_bee = 1),
 	CELL_LINE_TABLE_BUTTERFLY = list(/datum/micro_organism/cell_line/butterfly = 1),
 	CELL_LINE_TABLE_MEGA_ARACHNID = list(/datum/micro_organism/cell_line/mega_arachnid = 1),
-	CELL_LINE_TABLE_VOX = list(/datum/micro_organism/cell_line/vox = 1),
-	CELL_LINE_TABLE_TAJARAN = list(/datum/micro_organism/cell_line/tajaran = 1),
-	CELL_LINE_TABLE_TESHARI = list(/datum/micro_organism/cell_line/teshari = 1),
-	CELL_LINE_TABLE_COLOSSUS = list(/datum/micro_organism/cell_line/colossus = 1),
-	CELL_LINE_TABLE_RARE_PREDATOR = list(/datum/micro_organism/cell_line/rare_predator = 1),
 	CELL_LINE_TABLE_ALGAE = list(
 		/datum/micro_organism/cell_line/frog = 2,
 		/datum/micro_organism/cell_line/mega_arachnid = 1,

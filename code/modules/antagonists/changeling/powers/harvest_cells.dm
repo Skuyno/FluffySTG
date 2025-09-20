@@ -1,7 +1,7 @@
 /datum/action/changeling/sting/harvest_cells
-	name = "Harvest Cells"
-	desc = "We silently pierce a victim or sample to obtain cytology-ready cell lines."
-	helptext = "Collects a cytology cell entry from living station species, barnyard animals, or cytology samples without alerting witnesses."
+        name = "Harvest Cells"
+        desc = "We silently pierce a victim to obtain adaptable cell signatures."
+        helptext = "Collects a compatible cell entry from living station species or barnyard animals without alerting witnesses."
 	button_icon_state = "sting_extract"
 	chemical_cost = 10
 	dna_cost = CHANGELING_POWER_INNATE
@@ -115,90 +115,24 @@
 	to_chat(target, span_warning("You feel a fleeting prick beneath your skin."))
 
 /datum/action/changeling/sting/harvest_cells/proc/collect_cell_ids(atom/target)
-	var/list/ids = list()
-	if(!target)
-		return ids
-	if(isliving(target))
-		var/mob/living/living_target = target
-		for(var/cell_id as anything in get_cell_id_from_living(living_target))
-			if(!(cell_id in ids))
-				ids += cell_id
-		return ids
-	if(istype(target, /obj/item/petri_dish))
-		var/obj/item/petri_dish/dish = target
-		if(dish.sample)
-			for(var/cell_id as anything in collect_cells_from_sample(dish.sample))
-				if(!(cell_id in ids))
-					ids += cell_id
-		return ids
-	if(istype(target, /obj/machinery/vatgrower))
-		var/obj/machinery/vatgrower/vat = target
-		if(vat.biological_sample)
-			for(var/cell_id as anything in collect_cells_from_sample(vat.biological_sample))
-				if(!(cell_id in ids))
-					ids += cell_id
-		return ids
-	if(istype(target, /datum/biological_sample))
-		for(var/cell_id as anything in collect_cells_from_sample(target))
-			if(!(cell_id in ids))
-				ids += cell_id
-	return ids
-
-/datum/action/changeling/sting/harvest_cells/proc/collect_cells_from_sample(datum/biological_sample/sample)
-	var/list/ids = list()
-	if(!sample)
-		return ids
-	for(var/datum/micro_organism/microbe as anything in sample.micro_organisms)
-		if(!istype(microbe, /datum/micro_organism/cell_line))
-			continue
-		var/datum/micro_organism/cell_line/cell_line = microbe
-		var/cell_id = "[cell_line.type]"
-		if(!(cell_id in ids))
-			ids += cell_id
-	return ids
+        var/list/ids = list()
+        if(!target)
+                return ids
+        if(isliving(target))
+                var/mob/living/living_target = target
+                for(var/cell_id as anything in get_cell_id_from_living(living_target))
+                        if(!(cell_id in ids))
+                                ids += cell_id
+        return ids
 
 /datum/action/changeling/sting/harvest_cells/proc/get_cell_id_from_living(mob/living/target)
-	var/list/ids = list()
-	if(!target)
-		return ids
-
-	var/cell_line_source = target.cell_line
-	if(cell_line_source)
-		if(istext(cell_line_source))
-			var/list/cell_line_table = GLOB.cell_line_tables?[cell_line_source]
-			if(islist(cell_line_table))
-				for(var/datum/micro_organism/cell_line/cell_type as anything in cell_line_table)
-					var/cell_id = "[cell_type]"
-					if(!(cell_id in ids))
-						ids += cell_id
-		else if(ispath(cell_line_source, /datum/micro_organism/cell_line))
-			var/cell_id = "[cell_line_source]"
-			if(!(cell_id in ids))
-				ids += cell_id
-
-	if(ids.len)
-		return ids
-
-	if(ishuman(target))
-		var/mob/living/carbon/human/human_target = target
-		if(!human_target.has_dna())
-			return ids
-		var/datum/species/species = human_target.dna?.species
-		var/species_cell_line = species?.cell_line
-		if(species_cell_line)
-			if(istext(species_cell_line))
-				var/list/species_cell_line_table = GLOB.cell_line_tables?[species_cell_line]
-				if(islist(species_cell_line_table))
-					for(var/datum/micro_organism/cell_line/cell_type as anything in species_cell_line_table)
-						var/cell_id = "[cell_type]"
-						if(!(cell_id in ids))
-							ids += cell_id
-			else if(ispath(species_cell_line, /datum/micro_organism/cell_line))
-				var/cell_id = "[species_cell_line]"
-				if(!(cell_id in ids))
-					ids += cell_id
-
-	return ids
+        var/list/ids = list()
+        if(!target)
+                return ids
+        for(var/cell_id as anything in changeling_get_cell_ids_from_mob(target))
+                if(!(cell_id in ids))
+                        ids += cell_id
+        return ids
 /datum/action/changeling/sting/harvest_cells/proc/can_use_harvest(mob/living/user)
 	if(!can_be_used_by(user))
 		return FALSE
