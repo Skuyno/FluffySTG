@@ -118,12 +118,12 @@
 	var/list/ids = list()
 	if(!target)
 		return ids
-	if(isliving(target))
-		var/mob/living/living_target = target
-		var/cell_id = get_cell_id_from_living(living_target)
-		if(cell_id && !(cell_id in ids))
-			ids += cell_id
-		return ids
+       if(isliving(target))
+               var/mob/living/living_target = target
+               for(var/cell_id as anything in get_cell_id_from_living(living_target))
+                       if(!(cell_id in ids))
+                               ids += cell_id
+               return ids
 	if(istype(target, /obj/item/petri_dish))
 		var/obj/item/petri_dish/dish = target
 		if(dish.sample)
@@ -158,16 +158,47 @@
 	return ids
 
 /datum/action/changeling/sting/harvest_cells/proc/get_cell_id_from_living(mob/living/target)
-	if(target.cytology_cell_line)
-		return "[target.cytology_cell_line]"
-	if(ishuman(target))
-		var/mob/living/carbon/human/human_target = target
-		if(!human_target.has_dna())
-			return null
-		var/datum/species/species = human_target.dna?.species
-		if(species?.cytology_cell_line)
-			return "[species.cytology_cell_line]"
-	return null
+       var/list/ids = list()
+       if(!target)
+               return ids
+
+       var/cell_line_source = target.cell_line
+       if(cell_line_source)
+               if(istext(cell_line_source))
+                       var/list/cell_line_table = GLOB.cell_line_tables?[cell_line_source]
+                       if(islist(cell_line_table))
+                               for(var/datum/micro_organism/cell_line/cell_type as anything in cell_line_table)
+                                       var/cell_id = "[cell_type]"
+                                       if(!(cell_id in ids))
+                                               ids += cell_id
+               else if(ispath(cell_line_source, /datum/micro_organism/cell_line))
+                       var/cell_id = "[cell_line_source]"
+                       if(!(cell_id in ids))
+                               ids += cell_id
+
+       if(ids.len)
+               return ids
+
+       if(ishuman(target))
+               var/mob/living/carbon/human/human_target = target
+               if(!human_target.has_dna())
+                       return ids
+               var/datum/species/species = human_target.dna?.species
+               var/species_cell_line = species?.cell_line
+               if(species_cell_line)
+                       if(istext(species_cell_line))
+                               var/list/species_cell_line_table = GLOB.cell_line_tables?[species_cell_line]
+                               if(islist(species_cell_line_table))
+                                       for(var/datum/micro_organism/cell_line/cell_type as anything in species_cell_line_table)
+                                               var/cell_id = "[cell_type]"
+                                               if(!(cell_id in ids))
+                                                       ids += cell_id
+                       else if(ispath(species_cell_line, /datum/micro_organism/cell_line))
+                               var/cell_id = "[species_cell_line]"
+                               if(!(cell_id in ids))
+                                       ids += cell_id
+
+       return ids
 
 /datum/action/changeling/sting/harvest_cells/proc/can_use_harvest(mob/living/user)
 	if(!can_be_used_by(user))
