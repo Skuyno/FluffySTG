@@ -43,14 +43,23 @@ GLOBAL_LIST_INIT(changeling_cell_registry, list(
     CHANGELING_CELL_ID_CHICKEN = list(
         CHANGELING_CELL_REGISTRY_NAME = "Chicken",
         CHANGELING_CELL_REGISTRY_DESC = "Docile barnyard avian samples.",
-        CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/chicken),
+        CHANGELING_CELL_REGISTRY_TYPES = list(
+            /mob/living/basic/chicken,
+            /obj/item/food/meat/slab/chicken,
+            /obj/item/food/meat/rawcutlet/chicken,
+            /obj/item/food/meat/cutlet/chicken,
+            /obj/item/food/meat/steak/chicken,
+        ),
         CHANGELING_CELL_REGISTRY_KEYWORDS = list("chicken", "hen"),
     ),
     CHANGELING_CELL_ID_COW = list(
         CHANGELING_CELL_REGISTRY_NAME = "Cow",
         CHANGELING_CELL_REGISTRY_DESC = "Heavy livestock tissue lattice.",
-        CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/cow),
-        CHANGELING_CELL_REGISTRY_KEYWORDS = list("cow", "cattle"),
+        CHANGELING_CELL_REGISTRY_TYPES = list(
+            /mob/living/basic/cow,
+            /obj/item/food/meat/slab/grassfed,
+        ),
+        CHANGELING_CELL_REGISTRY_KEYWORDS = list("cow", "cattle", "grassfed", "eco"),
     ),
     CHANGELING_CELL_ID_GOAT = list(
         CHANGELING_CELL_REGISTRY_NAME = "Goat",
@@ -151,7 +160,7 @@ GLOBAL_LIST_INIT(changeling_cell_registry, list(
             return TRUE
     return FALSE
 
-/proc/changeling_registry_entry_matches_type(list/entry, mob/living/target)
+/proc/changeling_registry_entry_matches_type(list/entry, atom/target)
     var/list/type_list = entry[CHANGELING_CELL_REGISTRY_TYPES]
     if(!islist(type_list) || !type_list.len)
         return FALSE
@@ -197,6 +206,24 @@ GLOBAL_LIST_INIT(changeling_cell_registry, list(
         if(!islist(entry))
             continue
         if(changeling_registry_entry_matches_name(entry, normalized_name))
+            if(!(cell_id in results))
+                results += cell_id
+    return results
+
+
+/proc/changeling_get_cell_ids_from_atom(atom/target)
+    var/list/results = list()
+    if(!target)
+        return results
+    var/list/registry = changeling_get_cell_registry()
+    for(var/cell_id as anything in changeling_get_cell_ids_from_name(target.name))
+        if(!(cell_id in results))
+            results += cell_id
+    for(var/cell_id in registry)
+        var/list/entry = registry[cell_id]
+        if(!islist(entry))
+            continue
+        if(changeling_registry_entry_matches_type(entry, target))
             if(!(cell_id in results))
                 results += cell_id
     return results
