@@ -533,7 +533,10 @@
 			for(var/ability_path in required_abilities)
 				var/list/ability_data = get_genetic_matrix_module_data_from_path(ability_path)
 				if(!islist(ability_data))
-					ability_data = list("name" = get_nice_name_from_path(ability_path))
+					var/nice_name = changeling_get_nice_name_from_path(ability_path)
+					if(incubator)
+						nice_name = incubator.get_nice_name_from_path(ability_path)
+					ability_data = list("name" = nice_name)
 				ability_entries += list(list(
 					"id" = "[ability_path]",
 					"name" = ability_data["name"],
