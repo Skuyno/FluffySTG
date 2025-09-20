@@ -1,6 +1,3 @@
-/mob/living/carbon/human
-	var/list/cytology_swab_element_args
-
 /mob/living/carbon/human/Initialize(mapload)
 	add_verb(src, /mob/living/proc/mob_sleep)
 	add_verb(src, /mob/living/proc/toggle_resting)
@@ -40,17 +37,6 @@
 	GLOB.human_list += src
 	ADD_TRAIT(src, TRAIT_CAN_MOUNT_HUMANS, INNATE_TRAIT)
 	ADD_TRAIT(src, TRAIT_CAN_MOUNT_CYBORGS, INNATE_TRAIT)
-	update_cytology_samples()
-
-/mob/living/carbon/human/proc/update_cytology_samples()
-	if(cytology_swab_element_args)
-	        RemoveElement(/datum/element/swabable, arglist(cytology_swab_element_args))
-	        cytology_swab_element_args = null
-	var/list/swab_configuration = dna?.species?.get_cytology_swab_config()
-	if(!swab_configuration)
-	        return
-	AddElement(/datum/element/swabable, arglist(swab_configuration))
-	cytology_swab_element_args = swab_configuration.Copy()
 
 /mob/living/carbon/human/proc/setup_physiology()
 	physiology = new()
