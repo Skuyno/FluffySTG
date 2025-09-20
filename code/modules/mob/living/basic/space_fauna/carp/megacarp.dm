@@ -20,7 +20,7 @@
 	base_pixel_x = -16
 	mob_size = MOB_SIZE_LARGE
 	obj_damage = 80
-        ridable_data = /datum/component/riding/creature/megacarp
+	ridable_data = /datum/component/riding/creature/megacarp
 	greyscale_config = /datum/greyscale_config/carp_mega
 	butcher_results = list(/obj/item/food/fishmeat/carp = 2, /obj/item/stack/sheet/animalhide/carp = 3)
 	ai_controller = /datum/ai_controller/basic_controller/carp/mega

@@ -27,8 +27,8 @@
 	gold_core_spawnable = FRIENDLY_SPAWN
 	blood_volume = BLOOD_VOLUME_NORMAL
 	ai_controller = /datum/ai_controller/basic_controller/cow
-        /// what this cow munches on, and what can be used to tame it.
-        var/list/food_types = list(/obj/item/food/grown/wheat)
+	/// what this cow munches on, and what can be used to tame it.
+	var/list/food_types = list(/obj/item/food/grown/wheat)
 	/// message sent when tamed
 	var/tame_message = "lets out a happy moo"
 	/// singular version for player cows
@@ -55,8 +55,8 @@
 		self_right_time = rand(25 SECONDS, 50 SECONDS), \
 		post_tipped_callback = CALLBACK(src, PROC_REF(after_cow_tipped)))
 	AddElement(/datum/element/pet_bonus, "moo")
-        setup_udder()
-        setup_eating()
+	setup_udder()
+	setup_eating()
 	. = ..()
 	ai_controller.set_blackboard_key(BB_BASIC_FOODS, typecacheof(food_types))
 

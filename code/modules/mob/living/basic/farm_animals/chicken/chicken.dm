@@ -57,7 +57,7 @@ GLOBAL_VAR_INIT(chicken_count, 0)
 	AddElement(/datum/element/ai_retaliate)
 	AddElement(/datum/element/pet_bonus, "cluck")
 	AddElement(/datum/element/footstep, FOOTSTEP_MOB_CLAW)
-        AddElement(/datum/element/animal_variety, "chicken", pick("brown", "black", "white"), modify_pixels = TRUE)
+	AddElement(/datum/element/animal_variety, "chicken", pick("brown", "black", "white"), modify_pixels = TRUE)
 	AddComponent(\
 		/datum/component/egg_layer,\
 		/obj/item/food/egg/organic,\
