@@ -4,6 +4,18 @@
 	update_body(is_creating = TRUE) //to update the carbon's new bodyparts appearance
 	living_flags &= ~STOP_OVERLAY_UPDATE_BODY_PARTS
 
+/mob/living/carbon/get_cytology_cell_ids()
+	var/list/ids = ..()
+	var/datum/dna/dna = src.dna
+	var/datum/species/species = dna?.species
+	if(species)
+		var/list/species_cells = species.get_cytology_cell_ids()
+		if(species_cells?.len)
+			for(var/entry in species_cells)
+				if(!(entry in ids))
+					ids += entry
+	return ids
+
 	register_context()
 
 	GLOB.carbon_list += src
