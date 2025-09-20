@@ -151,14 +151,6 @@ GLOBAL_LIST_EMPTY(features_by_species)
 	var/list/inherent_factions
 	/// Cytology cell line identifiers linked to this species.
 	var/list/cytology_cell_ids
-	/// Biopsy configuration used when swabbing this species.
-	var/cytology_sample_table
-	/// Virus table used when generating biopsy samples for this species.
-	var/cytology_sample_virus_table = CELL_VIRUS_TABLE_GENERIC_MOB
-	/// How many cell lines are generated per biopsy sample.
-	var/cytology_sample_amount = 1
-	/// Chance for biopsy samples from this species to contain a virus.
-	var/cytology_sample_virus_chance = 5
 
 	///What gas does this species breathe? Used by suffocation screen alerts, most of actual gas breathing is handled by mutantlungs. See [life.dm][code/modules/mob/living/carbon/human/life.dm]
 	var/breathid = GAS_O2
@@ -444,9 +436,7 @@ GLOBAL_LIST_EMPTY(features_by_species)
 	for(var/language in gaining_holder.blocked_understanding)
 		human_who_gained_species.add_blocked_language(language, UNDERSTOOD_LANGUAGE, LANGUAGE_SPECIES)
 	if(regenerate_icons)
-	        human_who_gained_species.regenerate_icons()
-
-	human_who_gained_species.update_cytology_samples()
+		human_who_gained_species.regenerate_icons()
 
 	SEND_SIGNAL(human_who_gained_species, COMSIG_SPECIES_GAIN, src, old_species)
 
@@ -2236,10 +2226,5 @@ GLOBAL_LIST_EMPTY(features_by_species)
 
 /datum/species/proc/get_cytology_cell_ids()
 	if(!cytology_cell_ids)
-	        return list()
+		return list()
 	return cytology_cell_ids.Copy()
-
-/datum/species/proc/get_cytology_swab_config()
-	if(!cytology_sample_table)
-	        return null
-	return list(cytology_sample_table, cytology_sample_virus_table, cytology_sample_amount, cytology_sample_virus_chance)
