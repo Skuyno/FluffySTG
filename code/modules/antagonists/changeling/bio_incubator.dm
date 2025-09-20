@@ -368,10 +368,6 @@
 	if(changeling?.genetic_matrix)
 		SStgui.update_uis(changeling.genetic_matrix)
 
-/// Convenience helper for notifying listeners that build data changed.
-/datum/changeling_bio_incubator/proc/notify_builds_changed()
-	notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
-
 /// Definition of a single build preset.
 /datum/changeling_bio_incubator/build
 	var/datum/changeling_bio_incubator/bio_incubator
