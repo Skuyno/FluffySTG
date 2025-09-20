@@ -245,6 +245,7 @@
 	QDEL_NULL(bio_incubator)
 	bio_incubator = new(src)
 	bio_incubator.ensure_default_build()
+	update_genetic_matrix_unlocks()
 	if(genetic_matrix)
 		genetic_matrix.register_with_incubator()
 	return bio_incubator
@@ -257,6 +258,7 @@
 	genetic_matrix = new(src)
 	genetic_matrix_action = new(genetic_matrix)
 	ensure_genetic_matrix_setup()
+	update_genetic_matrix_unlocks()
 	if(owner && owner.current)
 		genetic_matrix_action.Grant(owner.current)
 
@@ -272,6 +274,7 @@
 		var/datum/action/changeling/innate_ability = new path()
 		innate_powers += innate_ability
 		innate_ability.on_purchase(owner.current, TRUE)
+	update_genetic_matrix_unlocks()
 
 /*
  * Signal proc for [COMSIG_MOB_LOGIN].
@@ -334,15 +337,21 @@
 		return
 	if(!isliving(ling) || clicked == ling || ling.stat != CONSCIOUS)
 		return
+	var/datum/action/changeling/sting/sting = chosen_sting
 	// sort-of hack done here: we use in_given_range here because it's quicker.
 	// actual ling stings do pathfinding to determine whether the target's "in range".
 	// however, this is "close enough" preliminary checks to not block click
-	if(!isliving(clicked) || !IN_GIVEN_RANGE(ling, clicked, sting_range))
-		return
-
-	INVOKE_ASYNC(chosen_sting, TYPE_PROC_REF(/datum/action/changeling/sting, try_to_sting), ling, clicked)
-
-	return COMSIG_MOB_CANCEL_CLICKON
+	if(isliving(clicked))
+		if(!IN_GIVEN_RANGE(ling, clicked, sting_range))
+			return
+		INVOKE_ASYNC(sting, TYPE_PROC_REF(/datum/action/changeling/sting, try_to_sting), ling, clicked)
+		return COMSIG_MOB_CANCEL_CLICKON
+	else if(sting?.allow_nonliving_targets)
+		if(!IN_GIVEN_RANGE(ling, clicked, sting_range))
+			return
+		INVOKE_ASYNC(sting, TYPE_PROC_REF(/datum/action/changeling/sting, try_to_sting_nonliving), ling, clicked)
+		return COMSIG_MOB_CANCEL_CLICKON
+	return
 
 /datum/antagonist/changeling/proc/get_status_tab_item(mob/living/source, list/items)
 	SIGNAL_HANDLER
@@ -382,6 +391,7 @@
 	chem_recharge_rate = initial(chem_recharge_rate)
 	chem_recharge_slowdown = initial(chem_recharge_slowdown)
 	prune_genetic_matrix_assignments()
+	update_genetic_matrix_unlocks()
 
 /*
  * For resetting all of the changeling's action buttons. (IE, re-granting them all.)
@@ -458,6 +468,7 @@
 	new_action.on_purchase(owner.current) // Grant() is ran in this proc, see changeling_powers.dm.
 	log_changeling_power("[key_name(owner)] adapted the [new_action.name] power")
 	SSblackbox.record_feedback("tally", "changeling_power_purchase", 1, new_action.name)
+	update_genetic_matrix_unlocks()
 
 	return TRUE
 

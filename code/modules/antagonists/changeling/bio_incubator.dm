@@ -128,9 +128,18 @@
 		notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
 		return TRUE
 	var/module_id = sanitize_module_id(module_identifier)
+	if(isnull(module_id))
+		return FALSE
 	if(!changeling?.has_genetic_matrix_module(module_id))
 		return FALSE
+	var/list/module_data = get_module_data(module_id)
+	if(!islist(module_data))
+		return FALSE
 	if(!module_slot_allowed(module_id, slot))
+		return FALSE
+	if(build_has_exclusive_conflict(build, module_id, module_data, slot))
+		var/mob/living/user = changeling?.owner?.current
+		user?.balloon_alert(user, "module conflict!")
 		return FALSE
 	if(!build.set_module(slot, module_id))
 		return FALSE
@@ -146,6 +155,66 @@
 		return "[module_identifier]"
 	return "[module_identifier]"
 
+/datum/changeling_bio_incubator/proc/sanitize_slot_type(slot_type)
+	var/text_value = lowertext(trimtext(isnull(slot_type) ? "" : "[slot_type]"))
+	if(text_value == BIO_INCUBATOR_SLOT_KEY || text_value == "key" || text_value == "key_active")
+		return BIO_INCUBATOR_SLOT_KEY
+	return BIO_INCUBATOR_SLOT_FLEX
+
+/datum/changeling_bio_incubator/proc/sanitize_category(category)
+	if(isnull(category))
+		return null
+	var/text_value = lowertext(trimtext("[category]"))
+	return length(text_value) ? text_value : null
+
+/datum/changeling_bio_incubator/proc/sanitize_tag_list(list/tags)
+	var/list/output = list()
+	if(!islist(tags))
+		return output
+	for(var/tag in tags)
+		var/text_value = lowertext(trimtext(isnull(tag) ? "" : "[tag]"))
+		if(!length(text_value))
+			continue
+		if(!(text_value in output))
+			output += text_value
+	return output
+
+/datum/changeling_bio_incubator/proc/tag_lists_conflict(list/tags_a, list/tags_b)
+	var/list/a = sanitize_tag_list(tags_a)
+	var/list/b = sanitize_tag_list(tags_b)
+	if(!a.len || !b.len)
+		return FALSE
+	var/list/lookup = list()
+	for(var/tag in a)
+		lookup[tag] = TRUE
+	for(var/tag in b)
+		if(lookup[tag])
+			return TRUE
+	return FALSE
+
+/datum/changeling_bio_incubator/proc/build_has_exclusive_conflict(datum/changeling_bio_incubator/build/build, module_id, list/module_data, slot)
+	if(!build)
+		return FALSE
+	var/list/new_tags = module_data?["exclusiveTags"]
+	if(!islist(new_tags) || !new_tags.len)
+		return FALSE
+	new_tags = sanitize_tag_list(new_tags)
+	if(!new_tags.len)
+		return FALSE
+	build.ensure_slot_capacity()
+	for(var/i in 1 to build.module_ids.len)
+		if(i == slot)
+			continue
+		var/existing_id = build.module_ids[i]
+		if(!existing_id || existing_id == module_id)
+			continue
+		var/list/existing_data = get_module_data(existing_id)
+		if(!islist(existing_data))
+			continue
+		if(tag_lists_conflict(new_tags, existing_data["exclusiveTags"]))
+			return TRUE
+	return FALSE
+
 /datum/changeling_bio_incubator/proc/module_slot_allowed(module_id, slot)
 	if(isnull(module_id))
 		return TRUE
@@ -157,7 +226,7 @@
 /datum/changeling_bio_incubator/proc/get_module_slot_category(module_id)
 	var/list/module_data = crafted_modules?[module_id]
 	if(islist(module_data))
-		return module_data["slotType"] || BIO_INCUBATOR_SLOT_FLEX
+		return sanitize_slot_type(module_data["slotType"])
 	return BIO_INCUBATOR_SLOT_FLEX
 
 /datum/changeling_bio_incubator/proc/register_module(module_id, list/module_data)
@@ -166,8 +235,12 @@
 	module_id = sanitize_module_id(module_id)
 	var/list/data_copy = module_data.Copy()
 	data_copy["id"] = module_id
-	if(!data_copy["slotType"])
-		data_copy["slotType"] = BIO_INCUBATOR_SLOT_FLEX
+	data_copy["slotType"] = sanitize_slot_type(data_copy["slotType"])
+	data_copy["category"] = sanitize_category(data_copy["category"])
+	data_copy["tags"] = sanitize_tag_list(data_copy["tags"])
+	data_copy["exclusiveTags"] = sanitize_tag_list(data_copy["exclusiveTags"])
+	if(!data_copy["source"])
+		data_copy["source"] = "crafted"
 	crafted_modules[module_id] = data_copy
 	notify_update(BIO_INCUBATOR_UPDATE_MODULES)
 	return TRUE
@@ -200,14 +273,6 @@
 	var/list/entry = crafted_modules[module_id]
 	if(islist(entry))
 		return entry.Copy()
-	if(changeling)
-		var/path = text2path(module_id)
-		if(ispath(path, /datum/action/changeling))
-			var/list/result = changeling.get_genetic_matrix_module_data_from_path(path)
-			if(result)
-				result["id"] = module_id
-				result["slotType"] = BIO_INCUBATOR_SLOT_FLEX
-				return result
 	return null
 
 /datum/changeling_bio_incubator/proc/add_cell(cell_identifier)
@@ -218,6 +283,7 @@
 		return FALSE
 	cell_ids += cell_id
 	notify_update(BIO_INCUBATOR_UPDATE_CELLS)
+	changeling?.update_genetic_matrix_unlocks()
 	return TRUE
 
 /datum/changeling_bio_incubator/proc/get_cells_data()
@@ -264,6 +330,16 @@
 	if(recipe_id in recipe_ids)
 		return FALSE
 	recipe_ids += recipe_id
+	notify_update(BIO_INCUBATOR_UPDATE_RECIPES)
+	return TRUE
+
+/datum/changeling_bio_incubator/proc/remove_recipe(recipe_identifier)
+	var/recipe_id = sanitize_module_id(recipe_identifier)
+	if(isnull(recipe_id))
+		return FALSE
+	if(!(recipe_id in recipe_ids))
+		return FALSE
+	recipe_ids -= recipe_id
 	notify_update(BIO_INCUBATOR_UPDATE_RECIPES)
 	return TRUE
 

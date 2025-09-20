@@ -5,8 +5,8 @@
 ////////////////////////////////
 
 /datum/micro_organism/cell_line/mouse //nuisance cell line designed to complicate the growing of animal type cell lines.
-	desc = "Murine cells"
-	required_reagents = list(/datum/reagent/consumable/nutriment/protein)
+desc = "Murine cells"
+required_reagents = list(/datum/reagent/consumable/nutriment/protein)
 	supplementary_reagents = list(
 		/datum/reagent/growthserum = 2,
 		/datum/reagent/consumable/liquidgibs = 2,
@@ -25,45 +25,141 @@
 
 	virus_suspectibility = 2
 	growth_rate = VAT_GROWTH_RATE
-	resulting_atom = /mob/living/basic/mouse
-	resulting_atom_count = 2
+resulting_atom = /mob/living/basic/mouse
+resulting_atom_count = 2
+
+/datum/micro_organism/cell_line/human
+	desc = "Human somatic cells"
+	required_reagents = list(
+		/datum/reagent/consumable/nutriment/protein,
+		/datum/reagent/consumable/nutriment,
+	)
+	supplementary_reagents = list(
+		/datum/reagent/growthserum = 2,
+		/datum/reagent/consumable/nutriment/vitamin = 2,
+		/datum/reagent/medicine/c2/synthflesh = 1,
+	)
+	suppressive_reagents = list(
+		/datum/reagent/toxin = -2,
+		/datum/reagent/consumable/ethanol = -3,
+	)
+	virus_suspectibility = 1.5
+	growth_rate = VAT_GROWTH_RATE
+
+/datum/micro_organism/cell_line/vox
+	desc = "Avian-reptilian cell lattice"
+	required_reagents = list(
+		/datum/reagent/consumable/nutriment/protein,
+		/datum/reagent/consumable/nutriment,
+	)
+	supplementary_reagents = list(
+		/datum/reagent/consumable/nutriment/vitamin = 1,
+		/datum/reagent/consumable/liquidgibs = 1,
+		/datum/reagent/growthserum = 2,
+	)
+	suppressive_reagents = list(
+		/datum/reagent/consumable/garlic = -2,
+		/datum/reagent/toxin = -3,
+	)
+	virus_suspectibility = 1.2
+	growth_rate = VAT_GROWTH_RATE
+
+/datum/micro_organism/cell_line/tajaran
+	desc = "Feline humanoid cells"
+	required_reagents = list(
+		/datum/reagent/consumable/nutriment/protein,
+		/datum/reagent/consumable/liquidgibs,
+	)
+	supplementary_reagents = list(
+		/datum/reagent/growthserum = 3,
+		/datum/reagent/consumable/nutriment/vitamin = 2,
+	)
+	suppressive_reagents = list(
+		/datum/reagent/consumable/coco = -2,
+		/datum/reagent/consumable/coffee = -2,
+	)
+	virus_suspectibility = 1.4
+	growth_rate = VAT_GROWTH_RATE
+
+/datum/micro_organism/cell_line/teshari
+	desc = "Feathered theropod cells"
+	required_reagents = list(
+		/datum/reagent/consumable/nutriment/protein,
+	)
+	supplementary_reagents = list(
+		/datum/reagent/growthserum = 3,
+		/datum/reagent/consumable/nutriment/vitamin = 1,
+		/datum/reagent/consumable/eggyolk = 1,
+	)
+	suppressive_reagents = list(
+		/datum/reagent/toxin = -2,
+		/datum/reagent/fuel/oil = -2,
+	)
+	virus_suspectibility = 1.3
+	growth_rate = VAT_GROWTH_RATE
 
 /datum/micro_organism/cell_line/chicken //basic cell line designed as a good source of protein and eggyolk.
-	desc = "Galliform skin cells."
-	required_reagents = list(/datum/reagent/consumable/nutriment/protein)
+        desc = "Galliform skin cells."
+        required_reagents = list(
+                /datum/reagent/consumable/nutriment/protein,
+        )
 
-	supplementary_reagents = list(
-		/datum/reagent/consumable/rice = 4,
-		/datum/reagent/growthserum = 3,
-		/datum/reagent/consumable/eggyolk = 1,
-		/datum/reagent/consumable/nutriment/vitamin = 2)
+        supplementary_reagents = list(
+                /datum/reagent/consumable/rice = 4,
+                /datum/reagent/growthserum = 3,
+                /datum/reagent/consumable/eggyolk = 1,
+                /datum/reagent/consumable/nutriment/vitamin = 2,
+        )
 
-	suppressive_reagents = list(
-		/datum/reagent/fuel/oil = -4,
-		/datum/reagent/toxin = -2)
+        suppressive_reagents = list(
+                /datum/reagent/fuel/oil = -4,
+                /datum/reagent/toxin = -2,
+        )
 
-	virus_suspectibility = 1
-	growth_rate = VAT_GROWTH_RATE
-	resulting_atom = /mob/living/basic/chicken
+        virus_suspectibility = 1
+        growth_rate = VAT_GROWTH_RATE
+        resulting_atom = /mob/living/basic/chicken
 
 /datum/micro_organism/cell_line/cow
-	desc = "Bovine stem cells"
+        desc = "Bovine stem cells"
+        required_reagents = list(
+                /datum/reagent/consumable/nutriment/protein,
+                /datum/reagent/consumable/nutriment,
+                /datum/reagent/cellulose,
+        )
+
+        supplementary_reagents = list(
+                /datum/reagent/growthserum = 4,
+                /datum/reagent/consumable/nutriment/vitamin = 2,
+                /datum/reagent/consumable/rice = 2,
+                /datum/reagent/consumable/flour = 1,
+        )
+
+        suppressive_reagents = list(
+                /datum/reagent/toxin = -2,
+                /datum/reagent/toxin/carpotoxin = -5,
+        )
+
+        virus_suspectibility = 1
+        resulting_atom = /mob/living/basic/cow
+
+/datum/micro_organism/cell_line/goat
+	desc = "Caprine stem cells"
 	required_reagents = list(
-	/datum/reagent/consumable/nutriment/protein,
-	/datum/reagent/consumable/nutriment,
-	/datum/reagent/cellulose)
-
+		/datum/reagent/consumable/nutriment/protein,
+		/datum/reagent/consumable/nutriment,
+	)
 	supplementary_reagents = list(
-	/datum/reagent/growthserum = 4,
-	/datum/reagent/consumable/nutriment/vitamin = 2,
-	/datum/reagent/consumable/rice = 2,
-	/datum/reagent/consumable/flour = 1)
-
-	suppressive_reagents = list(/datum/reagent/toxin = -2,
-	/datum/reagent/toxin/carpotoxin = -5)
-
-	virus_suspectibility = 1
-	resulting_atom = /mob/living/basic/cow
+		/datum/reagent/growthserum = 2,
+		/datum/reagent/consumable/nutriment/vitamin = 2,
+		/datum/reagent/consumable/liquidgibs = 1,
+	)
+	suppressive_reagents = list(
+		/datum/reagent/toxin = -2,
+		/datum/reagent/consumable/coco = -1,
+	)
+	virus_suspectibility = 1.1
+	growth_rate = VAT_GROWTH_RATE
 
 /datum/micro_organism/cell_line/moonicorn
 	desc = "Fairyland Bovine stem cells"
@@ -731,5 +827,35 @@
 	)
 	virus_suspectibility = 0
 	resulting_atom = /mob/living/basic/snail
+
+/datum/micro_organism/cell_line/colossus
+        desc = "Crystalline colossus fragments"
+	required_reagents = list(
+		/datum/reagent/consumable/nutriment/protein,
+	)
+	supplementary_reagents = list(
+		/datum/reagent/growthserum = 1,
+		/datum/reagent/consumable/liquidgibs = 2,
+	)
+	suppressive_reagents = list(
+		/datum/reagent/toxin = -4,
+	)
+	virus_suspectibility = 0.5
+	growth_rate = VAT_GROWTH_RATE
+
+/datum/micro_organism/cell_line/rare_predator
+	desc = "Predatory apex cell cluster"
+	required_reagents = list(
+		/datum/reagent/consumable/nutriment/protein,
+		/datum/reagent/consumable/liquidgibs,
+	)
+	supplementary_reagents = list(
+		/datum/reagent/growthserum = 3,
+	)
+	suppressive_reagents = list(
+		/datum/reagent/consumable/condensedcapsaicin = -3,
+	)
+        virus_suspectibility = 2.5
+        growth_rate = VAT_GROWTH_RATE
 
 #undef VAT_GROWTH_RATE

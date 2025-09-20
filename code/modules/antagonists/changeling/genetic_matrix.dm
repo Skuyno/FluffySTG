@@ -71,19 +71,19 @@
 	register_with_incubator()
 	var/datum/changeling_bio_incubator/incubator = changeling.bio_incubator
 	changeling.ensure_genetic_matrix_setup()
+	changeling.update_genetic_matrix_unlocks()
 	changeling.prune_genetic_matrix_assignments()
 	data["builds"] = changeling.get_genetic_matrix_builds_data()
-	data["resultCatalog"] = changeling.get_genetic_matrix_profile_catalog()
-	var/list/module_catalog = changeling.get_genetic_matrix_module_catalog()
-	data["moduleCatalog"] = module_catalog
-	data["abilityCatalog"] = module_catalog
-	var/list/module_storage = changeling.get_genetic_matrix_module_storage()
-	data["modules"] = module_storage
-	data["abilities"] = module_storage
-	data["cells"] = changeling.get_genetic_matrix_profile_storage()
-	data["cytologyCells"] = incubator ? incubator.get_cells_data() : list()
-	data["recipes"] = incubator ? incubator.get_recipes_data() : list()
-	data["skills"] = changeling.get_genetic_matrix_skills_data()
+	data["profiles"] = changeling.get_genetic_matrix_profile_catalog()
+	data["modules"] = changeling.get_genetic_matrix_module_catalog()
+	data["abilities"] = changeling.get_genetic_matrix_ability_catalog()
+	data["cells"] = incubator ? incubator.get_cells_data() : list()
+	data["recipes"] = changeling.get_genetic_matrix_recipe_data()
+	data["standardAbilities"] = changeling.get_standard_ability_catalog()
+	data["geneticPoints"] = changeling.genetic_points
+	data["absorbs"] = changeling.true_absorbs
+	data["dnaSamples"] = changeling.absorbed_count
+	data["canReadapt"] = changeling.can_respec
 	data["canAddBuild"] = incubator ? incubator.can_add_build() : FALSE
 	return data
 
@@ -173,6 +173,21 @@
 				return FALSE
 			changeling.assign_genetic_matrix_module(build, null, slot)
 			return TRUE
+		if("craft_module")
+			var/recipe_id = params["recipe"]
+			if(!recipe_id)
+				return FALSE
+			return changeling.craft_genetic_matrix_module(recipe_id)
+		if("purchase_standard")
+			var/ability_id = params["ability"]
+			if(!ability_id)
+				return FALSE
+			var/datum/action/changeling/ability_path = text2path(ability_id)
+			if(!ispath(ability_path, /datum/action/changeling))
+				return FALSE
+			return changeling.purchase_power(ability_path)
+		if("readapt_standard")
+			return changeling.readapt()
 	return FALSE
 
 /datum/action/changeling/genetic_matrix
@@ -229,37 +244,89 @@
 /datum/antagonist/changeling/proc/get_genetic_matrix_profile_storage()
 	return get_genetic_matrix_profile_catalog()
 
-/// Aggregate module information available to the changeling.
+/// Aggregate crafted module information available to the changeling.
 /datum/antagonist/changeling/proc/get_genetic_matrix_module_catalog()
 	var/list/catalog = list()
-	var/list/seen_ids = list()
-	if(bio_incubator)
-		for(var/list/entry as anything in bio_incubator.get_crafted_module_catalog())
-			var/id = entry["id"]
-			if(!id)
-				continue
-			catalog += list(entry.Copy())
-			seen_ids[id] = TRUE
+	if(!bio_incubator)
+		return catalog
+	for(var/list/entry as anything in bio_incubator.get_crafted_module_catalog())
+		if(!islist(entry))
+			continue
+		var/list/copy = entry.Copy()
+		copy["crafted"] = TRUE
+		catalog += list(copy)
+	sortTim(catalog, GLOBAL_PROC_REF(cmp_assoc_list_name))
+	return catalog
+
+/// Aggregate ability information for display.
+/datum/antagonist/changeling/proc/get_genetic_matrix_ability_catalog()
+	var/list/catalog = list()
+	var/list/seen = list()
 	for(var/datum/action/changeling/innate as anything in innate_powers)
 		var/path = innate.type
-		if(!ispath(path) || seen_ids["[path]"])
+		if(!ispath(path, /datum/action/changeling))
+			continue
+		var/id = "[path]"
+		if(seen[id])
 			continue
 		var/list/data = get_genetic_matrix_module_data_from_path(path)
 		if(!data)
 			continue
+		if(!data["id"])
+			data["id"] = id
 		data["source"] = "innate"
+		data["category"] = "ability"
+		data["slotType"] = BIO_INCUBATOR_SLOT_FLEX
+		if(!islist(data["tags"]))
+			data["tags"] = list()
+		if(!islist(data["exclusiveTags"]))
+			data["exclusiveTags"] = list()
 		catalog += list(data)
-		seen_ids[data["id"]] = TRUE
+		seen[id] = TRUE
 	for(var/path in purchased_powers)
 		var/id = "[path]"
-		if(seen_ids[id])
+		if(seen[id])
 			continue
 		var/list/data = get_genetic_matrix_module_data_from_path(path)
 		if(!data)
 			continue
+		if(!data["id"])
+			data["id"] = id
 		data["source"] = "purchased"
+		data["category"] = "ability"
+		data["slotType"] = BIO_INCUBATOR_SLOT_FLEX
+		if(!islist(data["tags"]))
+			data["tags"] = list()
+		if(!islist(data["exclusiveTags"]))
+			data["exclusiveTags"] = list()
 		catalog += list(data)
-		seen_ids[id] = TRUE
+		seen[id] = TRUE
+	sortTim(catalog, GLOBAL_PROC_REF(cmp_assoc_list_name))
+	return catalog
+
+/// Produce the list of standard purchasable abilities for the Standard Skills tab.
+/datum/antagonist/changeling/proc/get_standard_ability_catalog()
+	var/list/catalog = list()
+	for(var/datum/action/changeling/ability_path as anything in all_powers)
+		var/dna_cost = initial(ability_path.dna_cost)
+		if(dna_cost < 0 || dna_cost == CHANGELING_POWER_INNATE)
+			continue
+		var/list/entry = list(
+			"id" = "[ability_path]",
+			"name" = initial(ability_path.name),
+			"desc" = initial(ability_path.desc),
+			"helptext" = initial(ability_path.helptext),
+			"dnaCost" = dna_cost,
+			"absorbsRequired" = initial(ability_path.req_absorbs),
+			"dnaRequired" = initial(ability_path.req_dna),
+			"chemicalCost" = initial(ability_path.chemical_cost),
+			"button_icon_state" = initial(ability_path.button_icon_state),
+		)
+		entry["owned"] = has_changeling_ability(ability_path)
+		entry["hasPoints"] = genetic_points >= dna_cost
+		entry["hasAbsorbs"] = true_absorbs >= entry["absorbsRequired"]
+		entry["hasDNA"] = absorbed_count >= entry["dnaRequired"]
+		catalog += list(entry)
 	sortTim(catalog, GLOBAL_PROC_REF(cmp_assoc_list_name))
 	return catalog
 
@@ -310,23 +377,187 @@
 /datum/antagonist/changeling/proc/assign_genetic_matrix_module(datum/changeling_bio_incubator/build/build, module_identifier, slot)
 	return bio_incubator ? bio_incubator.assign_module(build, module_identifier, slot) : FALSE
 
-/// Determine whether the changeling currently possesses a given module identifier.
+/// Determine whether the changeling currently possesses a given crafted module identifier.
 /datum/antagonist/changeling/proc/has_genetic_matrix_module(module_identifier)
 	if(isnull(module_identifier))
 		return FALSE
-	var/id_text = bio_incubator?.sanitize_module_id(module_identifier)
+	if(!bio_incubator)
+		return FALSE
+	var/id_text = bio_incubator.sanitize_module_id(module_identifier)
 	if(!id_text)
 		return FALSE
-	if(bio_incubator?.has_module(id_text))
+	return bio_incubator.has_module(id_text)
+
+/// Determine whether the changeling currently possesses a given ability.
+/datum/antagonist/changeling/proc/has_changeling_ability(ability_identifier)
+	if(isnull(ability_identifier))
+		return FALSE
+	var/datum/action/changeling/ability_path
+	if(ispath(ability_identifier, /datum/action/changeling))
+		ability_path = ability_identifier
+	else if(istext(ability_identifier))
+		ability_path = text2path(ability_identifier)
+	else
+		return FALSE
+	if(!ability_path)
+		return FALSE
+	if(purchased_powers[ability_path])
 		return TRUE
-	var/path = text2path(id_text)
-	if(ispath(path, /datum/action/changeling))
-		if(purchased_powers && purchased_powers[path])
+	for(var/datum/action/changeling/power as anything in innate_powers)
+		if(power.type == ability_path)
 			return TRUE
-		for(var/datum/action/changeling/innate as anything in innate_powers)
-			if(innate.type == path)
-				return TRUE
 	return FALSE
+
+/// Determine whether the changeling has collected a specific cytology cell identifier.
+/datum/antagonist/changeling/proc/has_cytology_cell(cell_identifier)
+	if(isnull(cell_identifier) || !bio_incubator)
+		return FALSE
+	var/cell_id = bio_incubator.sanitize_module_id(cell_identifier)
+	if(!cell_id)
+		return FALSE
+	return cell_id in bio_incubator.cell_ids
+
+/// Check if a recipe's requirements are satisfied by our inventory.
+/datum/antagonist/changeling/proc/can_access_genetic_recipe(list/recipe_data)
+	if(!islist(recipe_data))
+		return FALSE
+	var/list/required_cells = recipe_data["requiredCells"]
+	if(islist(required_cells))
+		for(var/cell_id in required_cells)
+			if(!has_cytology_cell(cell_id))
+				return FALSE
+	var/list/required_abilities = recipe_data["requiredAbilities"]
+	if(islist(required_abilities))
+		for(var/ability_id in required_abilities)
+			if(!has_changeling_ability(ability_id))
+				return FALSE
+	return TRUE
+
+/// Generate recipe metadata for the UI.
+/datum/antagonist/changeling/proc/get_genetic_matrix_recipe_data()
+	var/list/output = list()
+	var/datum/changeling_bio_incubator/incubator = bio_incubator
+	for(var/recipe_key in GLOB.changeling_genetic_matrix_recipes)
+		var/list/recipe = GLOB.changeling_genetic_matrix_recipes[recipe_key]
+		if(!islist(recipe))
+			continue
+		var/id_text = recipe["id"]
+		if(isnull(id_text))
+			id_text = recipe_key
+		var/sanitized_id = incubator ? incubator.sanitize_module_id(id_text) : "[id_text]"
+		var/list/entry = list(
+			"id" = sanitized_id,
+			"name" = recipe["name"],
+			"desc" = recipe["desc"],
+		)
+		var/list/module_block = null
+		if(islist(recipe["module"]))
+			module_block = recipe["module"].Copy()
+			if(isnull(module_block["id"]))
+				module_block["id"] = sanitized_id
+			if(incubator)
+				module_block["id"] = incubator.sanitize_module_id(module_block["id"])
+				module_block["slotType"] = incubator.sanitize_slot_type(module_block["slotType"])
+				module_block["category"] = incubator.sanitize_category(module_block["category"])
+				module_block["tags"] = incubator.sanitize_tag_list(module_block["tags"])
+				module_block["exclusiveTags"] = incubator.sanitize_tag_list(module_block["exclusiveTags"])
+		entry["module"] = module_block
+		var/list/cell_entries = list()
+		var/list/required_cells = recipe["requiredCells"]
+		if(islist(required_cells))
+			for(var/cell_id in required_cells)
+				var/text_id = incubator ? incubator.sanitize_module_id(cell_id) : "[cell_id]"
+				cell_entries += list(list(
+					"id" = text_id,
+					"name" = incubator ? incubator.get_nice_name_from_path(cell_id) : "[cell_id]",
+					"have" = has_cytology_cell(cell_id),
+				))
+		entry["requiredCells"] = cell_entries
+		var/list/ability_entries = list()
+		var/list/required_abilities = recipe["requiredAbilities"]
+		if(islist(required_abilities))
+			for(var/ability_path in required_abilities)
+				var/list/ability_data = get_genetic_matrix_module_data_from_path(ability_path)
+				if(!islist(ability_data))
+					ability_data = list("name" = get_nice_name_from_path(ability_path))
+				ability_entries += list(list(
+					"id" = "[ability_path]",
+					"name" = ability_data["name"],
+					"desc" = ability_data["desc"],
+					"have" = has_changeling_ability(ability_path),
+				))
+		entry["requiredAbilities"] = ability_entries
+		entry["unlocked"] = can_access_genetic_recipe(recipe)
+		entry["learned"] = incubator ? sanitized_id in incubator.recipe_ids : FALSE
+		var/module_id = module_block ? module_block["id"] : sanitized_id
+		entry["crafted"] = incubator ? incubator.has_module(module_id) : FALSE
+		output += list(entry)
+	return output
+
+/// Attempt to craft a module unlocked by a recipe.
+/datum/antagonist/changeling/proc/craft_genetic_matrix_module(recipe_identifier)
+	if(!bio_incubator)
+		create_bio_incubator()
+	var/datum/changeling_bio_incubator/incubator = bio_incubator
+	if(!incubator)
+		return FALSE
+	var/sanitized_id = incubator.sanitize_module_id(recipe_identifier)
+	if(!sanitized_id)
+		return FALSE
+	var/list/recipe = GLOB.changeling_genetic_matrix_recipes[sanitized_id]
+	if(!islist(recipe))
+		for(var/list/entry in GLOB.changeling_genetic_matrix_recipes)
+			if(!islist(entry))
+				continue
+			var/entry_id = entry["id"]
+			if(isnull(entry_id))
+				continue
+			if(incubator.sanitize_module_id(entry_id) == sanitized_id)
+				recipe = entry
+				break
+	if(!islist(recipe))
+		return FALSE
+	if(!can_access_genetic_recipe(recipe))
+		return FALSE
+	var/list/module_block = recipe["module"]
+	if(!islist(module_block))
+		return FALSE
+	var/module_id = module_block["id"]
+	if(isnull(module_id))
+		module_id = sanitized_id
+	module_id = incubator.sanitize_module_id(module_id)
+	if(incubator.has_module(module_id))
+		var/mob/living/user = owner?.current
+		user?.balloon_alert(user, "already crafted")
+		return FALSE
+	var/list/module_copy = module_block.Copy()
+	module_copy["id"] = module_id
+	if(!incubator.register_module(module_id, module_copy))
+		return FALSE
+	var/mob/living/user = owner?.current
+	if(user)
+		to_chat(user, span_notice("We weave [module_copy["name"]] into our genetic matrix."))
+	return TRUE
+
+/// Synchronize recipe unlocks with the contents of our incubator.
+/datum/antagonist/changeling/proc/update_genetic_matrix_unlocks()
+	if(!bio_incubator)
+		return
+	var/datum/changeling_bio_incubator/incubator = bio_incubator
+	for(var/recipe_key in GLOB.changeling_genetic_matrix_recipes)
+		var/list/recipe = GLOB.changeling_genetic_matrix_recipes[recipe_key]
+		if(!islist(recipe))
+			continue
+		var/id_text = recipe["id"]
+		if(isnull(id_text))
+			id_text = recipe_key
+		var/sanitized_id = incubator.sanitize_module_id(id_text)
+		if(!sanitized_id)
+			continue
+		if(can_access_genetic_recipe(recipe))
+			incubator.add_recipe(sanitized_id)
+		else
+			incubator.remove_recipe(sanitized_id)
 
 /// Locate a matrix build using its reference string.
 /datum/antagonist/changeling/proc/find_genetic_matrix_build(identifier)

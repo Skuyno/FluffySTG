@@ -32,6 +32,7 @@ GLOBAL_VAR_INIT(chicken_count, 0)
 	pass_flags = PASSTABLE | PASSMOB
 	mob_size = MOB_SIZE_SMALL
 	gold_core_spawnable = FRIENDLY_SPAWN
+        cytology_cell_line = /datum/micro_organism/cell_line/chicken
 
 	ai_controller = /datum/ai_controller/basic_controller/chicken
 
