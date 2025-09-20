@@ -73,9 +73,7 @@
 	changeling.ensure_genetic_matrix_setup()
 	changeling.update_genetic_matrix_unlocks()
 	changeling.prune_genetic_matrix_assignments()
-	var/datum/changeling_bio_incubator/build/active_build = changeling.get_active_genetic_matrix_build()
 	data["builds"] = changeling.get_genetic_matrix_builds_data()
-	data["activeBuild"] = active_build ? REF(active_build) : null
 	data["profiles"] = changeling.get_genetic_matrix_profile_catalog()
 	data["modules"] = changeling.get_genetic_matrix_module_catalog()
 	data["abilities"] = changeling.get_genetic_matrix_ability_catalog()
@@ -118,11 +116,6 @@
 				return FALSE
 			changeling.remove_genetic_matrix_build(build)
 			return TRUE
-		if("activate_build")
-			var/datum/changeling_bio_incubator/build/build = changeling.find_genetic_matrix_build(params["build"])
-			if(!build)
-				return FALSE
-			return changeling.activate_genetic_matrix_build(build)
 		if("rename_build")
 			var/datum/changeling_bio_incubator/build/build = changeling.find_genetic_matrix_build(params["build"])
 			if(!build)
@@ -196,7 +189,6 @@
 		if("readapt_standard")
 			return changeling.readapt()
 	return FALSE
-
 
 /datum/action/changeling/genetic_matrix
 	name = "Genetic Matrix"
@@ -376,52 +368,6 @@
 /// Clear all assignments from a specific build without deleting it.
 /datum/antagonist/changeling/proc/clear_genetic_matrix_build(datum/changeling_bio_incubator/build/build)
 	bio_incubator?.clear_build(build)
-
-/// Retrieve the build currently active for this changeling.
-/datum/antagonist/changeling/proc/get_active_genetic_matrix_build()
-	return bio_incubator ? bio_incubator.get_active_build() : null
-
-/// Set the changeling's active build preset.
-/datum/antagonist/changeling/proc/activate_genetic_matrix_build(datum/changeling_bio_incubator/build/build)
-	return bio_incubator ? bio_incubator.set_active_build(build) : FALSE
-
-/// Return the list of module identifiers assigned to the active build.
-/datum/antagonist/changeling/proc/get_active_genetic_matrix_modules()
-	var/list/modules = list()
-	var/datum/changeling_bio_incubator/build/active_build = get_active_genetic_matrix_build()
-	if(!active_build)
-		return modules
-	active_build.ensure_slot_capacity()
-	for(var/module_id in active_build.module_ids)
-		if(module_id)
-			modules += module_id
-	return modules
-
-/// Determine whether the active build includes a specific module identifier.
-/datum/antagonist/changeling/proc/has_active_genetic_matrix_module(module_identifier)
-	if(isnull(module_identifier) || !bio_incubator)
-		return FALSE
-	var/datum/changeling_bio_incubator/build/active_build = get_active_genetic_matrix_build()
-	if(!active_build)
-		return FALSE
-	var/id_text = bio_incubator.sanitize_module_id(module_identifier)
-	if(!id_text)
-		return FALSE
-	active_build.ensure_slot_capacity()
-	for(var/assigned in active_build.module_ids)
-		if(assigned == id_text)
-			return TRUE
-	return FALSE
-
-/// Align the active build to one associated with the provided profile, if available.
-/datum/antagonist/changeling/proc/sync_active_genetic_build_for_profile(datum/changeling_profile/profile)
-	if(!bio_incubator)
-		return
-	var/datum/changeling_bio_incubator/build/matching = bio_incubator.find_build_for_profile(profile)
-	if(matching)
-		bio_incubator.set_active_build(matching)
-	else
-		bio_incubator.ensure_default_build()
 
 /// Assign a DNA profile to a build.
 /datum/antagonist/changeling/proc/assign_genetic_matrix_profile(datum/changeling_bio_incubator/build/build, datum/changeling_profile/profile)
