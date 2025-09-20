@@ -118,50 +118,31 @@
 	var/list/ids = list()
 	if(!target)
 		return ids
-
-	var/swabbed = collect_cells_via_swab(target, ids)
-
-	if(istype(target, /datum/biological_sample))
-		for(var/cell_id as anything in collect_cells_from_sample(target))
+	if(isliving(target))
+		var/mob/living/living_target = target
+		for(var/cell_id as anything in get_cell_id_from_living(living_target))
 			if(!(cell_id in ids))
 				ids += cell_id
-	else if(istype(target, /obj/item/petri_dish))
+		return ids
+	if(istype(target, /obj/item/petri_dish))
 		var/obj/item/petri_dish/dish = target
 		if(dish.sample)
 			for(var/cell_id as anything in collect_cells_from_sample(dish.sample))
 				if(!(cell_id in ids))
 					ids += cell_id
-	else if(istype(target, /obj/machinery/vatgrower))
+		return ids
+	if(istype(target, /obj/machinery/vatgrower))
 		var/obj/machinery/vatgrower/vat = target
 		if(vat.biological_sample)
 			for(var/cell_id as anything in collect_cells_from_sample(vat.biological_sample))
 				if(!(cell_id in ids))
 					ids += cell_id
-
-	if(isliving(target) && !swabbed)
-		var/mob/living/living_target = target
-		for(var/cell_id as anything in get_cell_id_from_living(living_target))
+		return ids
+	if(istype(target, /datum/biological_sample))
+		for(var/cell_id as anything in collect_cells_from_sample(target))
 			if(!(cell_id in ids))
 				ids += cell_id
-
 	return ids
-
-/datum/action/changeling/sting/harvest_cells/proc/collect_cells_via_swab(atom/target, list/ids)
-	if(!target || !ids)
-		return FALSE
-
-	var/list/swabbed_samples = list()
-	var/swab_result = SEND_SIGNAL(target, COMSIG_SWAB_FOR_SAMPLES, swabbed_samples)
-	if(!(swab_result & COMPONENT_SWAB_FOUND))
-		return FALSE
-
-	for(var/datum/biological_sample/sample as anything in swabbed_samples)
-		for(var/cell_id as anything in collect_cells_from_sample(sample))
-			if(!(cell_id in ids))
-				ids += cell_id
-		qdel(sample)
-
-	return TRUE
 
 /datum/action/changeling/sting/harvest_cells/proc/collect_cells_from_sample(datum/biological_sample/sample)
 	var/list/ids = list()
