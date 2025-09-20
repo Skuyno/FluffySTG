@@ -114,7 +114,7 @@
 			var/datum/changeling_bio_incubator/build/build = changeling.find_genetic_matrix_build(params["build"])
 			if(!build)
 				return FALSE
-                        if(tgui_alert(user, "Delete build \"[build.name]\"?", "Remove Build", list("Delete", "Cancel")) != "Delete")
+			if(tgui_alert(user, "Delete build \"[build.name]\"?", "Remove Build", list("Delete", "Cancel")) != "Delete")
 				return FALSE
 			changeling.remove_genetic_matrix_build(build)
 			return TRUE
@@ -542,7 +542,7 @@
 				))
 		entry["requiredAbilities"] = ability_entries
 		entry["unlocked"] = can_access_genetic_recipe(recipe)
-		entry["learned"] = incubator ? sanitized_id in incubator.recipe_ids : FALSE
+		entry["learned"] = incubator ? (sanitized_id in incubator.recipe_ids) : FALSE
 		var/module_id = module_block ? module_block["id"] : sanitized_id
 		entry["crafted"] = incubator ? incubator.has_module(module_id) : FALSE
 		output += list(entry)
