@@ -47,11 +47,11 @@
 	resulting_atom = /mob/living/basic/chicken
 
 /datum/micro_organism/cell_line/cow
-        desc = "Bovine stem cells"
-        required_reagents = list(
-        /datum/reagent/consumable/nutriment/protein,
-        /datum/reagent/consumable/nutriment,
-        /datum/reagent/cellulose)
+	desc = "Bovine stem cells"
+	required_reagents = list(
+	/datum/reagent/consumable/nutriment/protein,
+	/datum/reagent/consumable/nutriment,
+	/datum/reagent/cellulose)
 
 	supplementary_reagents = list(
 	/datum/reagent/growthserum = 4,
@@ -62,33 +62,11 @@
 	suppressive_reagents = list(/datum/reagent/toxin = -2,
 	/datum/reagent/toxin/carpotoxin = -5)
 
-        virus_suspectibility = 1
-        resulting_atom = /mob/living/basic/cow
-
-/datum/micro_organism/cell_line/goat
-        desc = "Caprine somatic cells"
-        required_reagents = list(
-                /datum/reagent/consumable/nutriment/protein,
-                /datum/reagent/consumable/nutriment,
-        )
-
-        supplementary_reagents = list(
-                /datum/reagent/growthserum = 3,
-                /datum/reagent/consumable/nutriment/vitamin = 2,
-                /datum/reagent/consumable/liquidgibs = 1,
-        )
-
-        suppressive_reagents = list(
-                /datum/reagent/toxin = -2,
-                /datum/reagent/consumable/ethanol = -3,
-        )
-
-        virus_suspectibility = 1
-        growth_rate = VAT_GROWTH_RATE
-        resulting_atom = /mob/living/basic/goat
+	virus_suspectibility = 1
+	resulting_atom = /mob/living/basic/cow
 
 /datum/micro_organism/cell_line/moonicorn
-        desc = "Fairyland Bovine stem cells"
+	desc = "Fairyland Bovine stem cells"
 	required_reagents = list(
 		/datum/reagent/consumable/nutriment/protein,
 		/datum/reagent/consumable/nutriment,
@@ -153,10 +131,10 @@
 	resulting_atom = /mob/living/basic/pet/dog/corgi
 
 /datum/micro_organism/cell_line/pug
-        desc = "Squat canid cells"
-        required_reagents = list(
-                /datum/reagent/consumable/nutriment/protein,
-                /datum/reagent/consumable/liquidgibs)
+	desc = "Squat canid cells"
+	required_reagents = list(
+		/datum/reagent/consumable/nutriment/protein,
+		/datum/reagent/consumable/liquidgibs)
 
 	supplementary_reagents = list(
 		/datum/reagent/growthserum = 2,
@@ -167,103 +145,11 @@
 		/datum/reagent/consumable/tearjuice = -3,
 		/datum/reagent/consumable/coco = -2)
 
-        virus_suspectibility = 3
-        resulting_atom = /mob/living/basic/pet/dog/pug
-
-////////////////////////////////
-//// HUMANOIDS ////
-////////////////////////////////
-
-/datum/micro_organism/cell_line/human
-        desc = "Human somatic stem cells"
-        required_reagents = list(
-                /datum/reagent/consumable/nutriment/protein,
-                /datum/reagent/consumable/nutriment/vitamin,
-        )
-
-        supplementary_reagents = list(
-                /datum/reagent/growthserum = 4,
-                /datum/reagent/consumable/liquidgibs = 2,
-                /datum/reagent/consumable/milk = 1,
-        )
-
-        suppressive_reagents = list(
-                /datum/reagent/toxin = -3,
-                /datum/reagent/toxin/mutagen = -2,
-        )
-
-        virus_suspectibility = 1.5
-        growth_rate = VAT_GROWTH_RATE
-        resulting_atom = /mob/living/carbon/human
-
-/datum/micro_organism/cell_line/vox
-        desc = "Avian humanoid tissue"
-        required_reagents = list(
-                /datum/reagent/consumable/nutriment/protein,
-                /datum/reagent/consumable/nutriment,
-        )
-
-        supplementary_reagents = list(
-                /datum/reagent/growthserum = 3,
-                /datum/reagent/consumable/liquidgibs = 1,
-                /datum/reagent/consumable/rice = 2,
-        )
-
-        suppressive_reagents = list(
-                /datum/reagent/oxygen = -3,
-                /datum/reagent/consumable/ethanol = -2,
-        )
-
-        virus_suspectibility = 1.2
-        growth_rate = VAT_GROWTH_RATE
-        resulting_atom = /mob/living/carbon/human
-
-/datum/micro_organism/cell_line/tajaran
-        desc = "Feline humanoid cells"
-        required_reagents = list(
-                /datum/reagent/consumable/nutriment/protein,
-                /datum/reagent/consumable/liquidgibs,
-        )
-
-        supplementary_reagents = list(
-                /datum/reagent/growthserum = 3,
-                /datum/reagent/consumable/nutriment/vitamin = 2,
-                /datum/reagent/consumable/milk = 1,
-        )
-
-        suppressive_reagents = list(
-                /datum/reagent/consumable/chocolatepudding = -2,
-                /datum/reagent/consumable/coco = -2,
-        )
-
-        virus_suspectibility = 1.3
-        growth_rate = VAT_GROWTH_RATE
-        resulting_atom = /mob/living/carbon/human
-
-/datum/micro_organism/cell_line/teshari
-        desc = "Raptorial humanoid cells"
-        required_reagents = list(
-                /datum/reagent/consumable/nutriment/protein,
-                /datum/reagent/consumable/nutriment,
-        )
-
-        supplementary_reagents = list(
-                /datum/reagent/growthserum = 3,
-                /datum/reagent/consumable/nutriment/vitamin = 2,
-                /datum/reagent/consumable/rice = 1,
-        )
-
-        suppressive_reagents = list(
-                /datum/reagent/toxin = -2,
-                /datum/reagent/consumable/triple_citrus = -2,
-        )
-
-        virus_suspectibility = 1.1
-        growth_rate = VAT_GROWTH_RATE
-        resulting_atom = /mob/living/carbon/human
+	virus_suspectibility = 3
+	resulting_atom = /mob/living/basic/pet/dog/pug
 
 /datum/micro_organism/cell_line/bear //bears can't really compete directly with more powerful creatures, so i made it possible to grow them real fast.
-        desc = "Ursine cells"
+	desc = "Ursine cells"
 	required_reagents = list(
 		/datum/reagent/consumable/nutriment/protein,
 		/datum/reagent/consumable/liquidgibs,

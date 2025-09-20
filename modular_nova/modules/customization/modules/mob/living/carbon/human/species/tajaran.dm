@@ -16,7 +16,6 @@
 	payday_modifier = 1.0
 	species_language_holder = /datum/language_holder/tajaran
 	changesource_flags = MIRROR_BADMIN | WABBAJACK | MIRROR_MAGIC | MIRROR_PRIDE | ERT_SPAWN | RACE_SWAP | SLIME_EXTRACT
-	cytology_cell_ids = list(/datum/micro_organism/cell_line/tajaran)
 	examine_limb_id = SPECIES_MAMMAL
 	bodypart_overrides = list(
 		BODY_ZONE_HEAD = /obj/item/bodypart/head/mutant,

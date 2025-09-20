@@ -16,7 +16,6 @@ GLOBAL_VAR_INIT(chicken_count, 0)
 	icon_dead = "chicken_brown_dead"
 	density = FALSE
 	butcher_results = list(/obj/item/food/meat/slab/chicken = 2)
-	cytology_cell_ids = list(/datum/micro_organism/cell_line/chicken)
 	response_help_continuous = "pets"
 	response_help_simple = "pet"
 	response_disarm_continuous = "gently pushes aside"

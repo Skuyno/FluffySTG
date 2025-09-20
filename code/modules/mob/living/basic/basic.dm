@@ -11,8 +11,6 @@
 	fire_stack_decay_rate = -5 // Reasonably fast as NPCs will not usually actively extinguish themselves
 
 	var/basic_mob_flags = NONE
-	/// Cytology cell identifiers available from this creature.
-	var/list/cytology_cell_ids
 
 	///Defines how fast the basic mob can move. This is not a multiplier
 	var/speed = 1
@@ -104,14 +102,6 @@
 	var/unsuitable_cold_damage = 1
 	///This damage is taken when the body temp is too hot. Set both this and unsuitable_cold_damage to 0 to avoid adding the body_temp_sensitive element.
 	var/unsuitable_heat_damage = 1
-
-/mob/living/basic/get_cytology_cell_ids()
-	var/list/ids = ..()
-	if(cytology_cell_ids)
-		for(var/entry in cytology_cell_ids)
-			if(!(entry in ids))
-				ids += entry
-	return ids
 
 /mob/living/basic/Initialize(mapload)
 	. = ..()

@@ -31,9 +31,6 @@
 	changeling.lingstingdisplay.icon_state = null
 	changeling.lingstingdisplay.RemoveInvisibility(type)
 
-/datum/action/changeling/sting/proc/can_target_atom(mob/living/user, atom/target)
-	return istype(target, /mob/living)
-
 /mob/living/carbon/proc/unset_sting()
 	if(mind)
 		var/datum/antagonist/changeling/changeling = mind.has_antag_datum(/datum/antagonist/changeling)

@@ -29,20 +29,45 @@
 		ui.open()
 
 /datum/cellular_emporium/ui_static_data(mob/user)
-        var/list/data = list()
-        data["abilities"] = changeling?.get_standard_skill_catalog() || list()
-        return data
+	var/list/data = list()
+
+	var/static/list/abilities
+	if(isnull(abilities))
+		abilities = list()
+		for(var/datum/action/changeling/ability_path as anything in changeling.all_powers)
+
+			var/dna_cost = initial(ability_path.dna_cost)
+
+			if(dna_cost < 0) // 0 = free, but negatives are invalid
+				continue
+
+			var/list/ability_data = list()
+			ability_data["name"] = initial(ability_path.name)
+			ability_data["desc"] = initial(ability_path.desc)
+			ability_data["path"] = ability_path
+			ability_data["helptext"] = initial(ability_path.helptext)
+			ability_data["genetic_point_required"] = dna_cost
+			ability_data["absorbs_required"] = initial(ability_path.req_absorbs) // compares against changeling true_absorbs
+			ability_data["dna_required"] = initial(ability_path.req_dna) // compares against changeling absorbed_count
+
+			abilities += list(ability_data)
+
+		// Sorts abilities alphabetically by default
+		sortTim(abilities, /proc/cmp_assoc_list_name)
+
+	data["abilities"] = abilities
+	return data
 
 /datum/cellular_emporium/ui_data(mob/user)
-        var/list/data = list()
-        var/list/state = changeling?.get_standard_skill_state() || list()
-        data["can_readapt"] = state["can_readapt"]
-        data["owned_abilities"] = state["owned"] || list()
-        data["genetic_points_count"] = state["genetic_points"]
-        data["absorb_count"] = state["absorb_count"]
-        data["dna_count"] = state["dna_count"]
+	var/list/data = list()
 
-        return data
+	data["can_readapt"] = changeling.can_respec
+	data["owned_abilities"] = assoc_to_keys(changeling.purchased_powers)
+	data["genetic_points_count"] = changeling.genetic_points
+	data["absorb_count"] = changeling.true_absorbs
+	data["dna_count"] = changeling.absorbed_count
+
+	return data
 
 /datum/cellular_emporium/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	. = ..()
