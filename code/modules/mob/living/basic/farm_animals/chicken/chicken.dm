@@ -32,6 +32,8 @@ GLOBAL_VAR_INIT(chicken_count, 0)
 	pass_flags = PASSTABLE | PASSMOB
 	mob_size = MOB_SIZE_SMALL
 	gold_core_spawnable = FRIENDLY_SPAWN
+	var/cell_line = CELL_LINE_TABLE_CHICKEN
+	cytology_cell_line = /datum/micro_organism/cell_line/chicken
 
 	ai_controller = /datum/ai_controller/basic_controller/chicken
 
@@ -57,7 +59,8 @@ GLOBAL_VAR_INIT(chicken_count, 0)
 	AddElement(/datum/element/ai_retaliate)
 	AddElement(/datum/element/pet_bonus, "cluck")
 	AddElement(/datum/element/footstep, FOOTSTEP_MOB_CLAW)
-	AddElement(/datum/element/swabable, CELL_LINE_TABLE_CHICKEN, CELL_VIRUS_TABLE_GENERIC_MOB, 1, 5)
+	if(cell_line)
+		AddElement(/datum/element/swabable, cell_line, CELL_VIRUS_TABLE_GENERIC_MOB, 1, 5)
 	AddElement(/datum/element/animal_variety, "chicken", pick("brown", "black", "white"), modify_pixels = TRUE)
 	AddComponent(\
 		/datum/component/egg_layer,\

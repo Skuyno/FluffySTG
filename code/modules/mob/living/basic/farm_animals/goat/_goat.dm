@@ -34,6 +34,8 @@
 	blood_volume = BLOOD_VOLUME_NORMAL
 
 	ai_controller = /datum/ai_controller/basic_controller/goat
+	var/cell_line = CELL_LINE_TABLE_GOAT
+	cytology_cell_line = /datum/micro_organism/cell_line/goat
 	/// How often will we develop an evil gleam in our eye?
 	var/gleam_delay = 20 SECONDS
 	/// Time until we can next gleam evilly
@@ -51,6 +53,8 @@
 	AddElement(/datum/element/cliff_walking) //we walk the cliff
 	AddElement(/datum/element/footstep, footstep_type = FOOTSTEP_MOB_SHOE)
 	AddElement(/datum/element/ai_retaliate)
+	if(cell_line)
+		AddElement(/datum/element/swabable, cell_line, CELL_VIRUS_TABLE_GENERIC_MOB, 1, 5)
 
 	RegisterSignal(src, COMSIG_HOSTILE_PRE_ATTACKINGTARGET, PROC_REF(on_pre_attack))
 	RegisterSignal(src, COMSIG_ATOM_WAS_ATTACKED, PROC_REF(on_attacked))
