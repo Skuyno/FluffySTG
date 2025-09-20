@@ -79,6 +79,7 @@ export type BuildEntry = {
   name: string;
   profile: ProfileEntry | null;
   modules: (ModuleEntry | null)[];
+  active?: BooleanLike;
 };
 
 export type CytologyCellEntry = {
@@ -132,6 +133,7 @@ type GeneticMatrixData = {
   maxModuleSlots?: number;
   maxBuilds: number;
   builds: BuildEntry[];
+  activeBuild?: string | null;
   profiles: ProfileEntry[];
   modules: ModuleEntry[];
   abilities: ModuleEntry[];
@@ -173,6 +175,7 @@ export const GeneticMatrix = () => {
     canAddBuild,
     maxModuleSlots = 0,
     maxBuilds = 0,
+    activeBuild,
   } = data;
 
   const [activeTab, setActiveTab] = useLocalState<
@@ -182,6 +185,14 @@ export const GeneticMatrix = () => {
     'genetic-matrix/selected-build',
     undefined,
   );
+
+  const activeBuildId = useMemo(() => {
+    if (typeof activeBuild === 'string' && activeBuild.length > 0) {
+      return activeBuild;
+    }
+    const flagged = builds.find((build) => asBoolean(build.active));
+    return flagged?.id;
+  }, [activeBuild, builds]);
 
   useEffect(() => {
     if (!builds.length) {
@@ -193,9 +204,13 @@ export const GeneticMatrix = () => {
 
     const stillExists = builds.some((build) => build.id === selectedBuildId);
     if (!selectedBuildId || !stillExists) {
-      setSelectedBuildId(builds[0].id);
+      setSelectedBuildId(activeBuildId ?? builds[0].id);
+      return;
     }
-  }, [builds, selectedBuildId, setSelectedBuildId]);
+    if (activeBuildId && selectedBuildId !== activeBuildId) {
+      setSelectedBuildId(activeBuildId);
+    }
+  }, [activeBuildId, builds, selectedBuildId, setSelectedBuildId]);
 
   const selectedBuild = useMemo(
     () => builds.find((build) => build.id === selectedBuildId),
@@ -239,6 +254,7 @@ export const GeneticMatrix = () => {
               <MatrixTab
                 act={act}
                 builds={builds}
+                activeBuildId={activeBuildId}
                 profiles={profiles}
                 modules={modules}
                 abilities={abilities}
@@ -278,6 +294,7 @@ export const GeneticMatrix = () => {
 type MatrixTabProps = {
   act: (action: string, payload?: Record<string, unknown>) => void;
   builds: BuildEntry[];
+  activeBuildId: string | undefined | null;
   profiles: ProfileEntry[];
   modules: ModuleEntry[];
   abilities: ModuleEntry[];
@@ -299,6 +316,7 @@ const MatrixTab = ({
   abilities,
   cells,
   recipes,
+  activeBuildId,
   selectedBuild,
   selectedBuildId,
   onSelectBuild,
@@ -420,6 +438,13 @@ const MatrixTab = ({
   const handleDeleteBuild = useCallback(
     (buildId: string) => {
       act('delete_build', { build: buildId });
+    },
+    [act],
+  );
+
+  const handleActivateBuild = useCallback(
+    (buildId: string) => {
+      act('activate_build', { build: buildId });
     },
     [act],
   );
@@ -585,12 +610,14 @@ const MatrixTab = ({
       <Stack.Item>
         <BuildList
           builds={builds}
+          activeBuildId={activeBuildId ?? undefined}
           selectedBuildId={selectedBuildId}
           onSelect={onSelectBuild}
           onCreate={handleCreateBuild}
           onRename={handleRenameBuild}
           onClear={handleClearBuild}
           onDelete={handleDeleteBuild}
+          onActivate={handleActivateBuild}
           canAddBuild={canAddBuild}
           maxBuilds={maxBuilds}
         />
@@ -1111,24 +1138,28 @@ const CraftComposer = ({
 
 type BuildListProps = {
   builds: BuildEntry[];
+  activeBuildId?: string;
   selectedBuildId: string | undefined;
   onSelect: (id: string) => void;
   onCreate: () => void;
   onRename: (id: string) => void;
   onClear: (id: string) => void;
   onDelete: (id: string) => void;
+  onActivate: (id: string) => void;
   canAddBuild: boolean;
   maxBuilds: number;
 };
 
 const BuildList = ({
   builds,
+  activeBuildId,
   selectedBuildId,
   onSelect,
   onCreate,
   onRename,
   onClear,
   onDelete,
+  onActivate,
   canAddBuild,
   maxBuilds,
 }: BuildListProps) => (
@@ -1151,40 +1182,85 @@ const BuildList = ({
       <NoticeBox>No builds configured.</NoticeBox>
     ) : (
       <Stack vertical gap={0.5}>
-        {builds.map((build) => (
-          <Box
-            key={build.id}
-            className="candystripe"
-            p={1}
-            style={{
-              border: `1px solid ${
-                build.id === selectedBuildId ? '#7fc' : 'rgba(255,255,255,0.1)'
-              }`,
-              borderRadius: '6px',
-              cursor: 'pointer',
-            }}
-            onClick={() => onSelect(build.id)}
-          >
-            <Stack justify="space-between" align="center" gap={1}>
-              <Stack.Item grow>
-                <Box bold>{build.name}</Box>
-              </Stack.Item>
-              <Stack.Item>
-                <Stack gap={0.5}>
-                  <Stack.Item>
-                    <Button icon="edit" compact tooltip="Rename" onClick={() => onRename(build.id)} />
-                  </Stack.Item>
-                  <Stack.Item>
-                    <Button icon="eraser" compact tooltip="Clear" onClick={() => onClear(build.id)} />
-                  </Stack.Item>
-                  <Stack.Item>
-                    <Button icon="trash" compact tooltip="Delete" onClick={() => onDelete(build.id)} />
-                  </Stack.Item>
-                </Stack>
-              </Stack.Item>
-            </Stack>
-          </Box>
-        ))}
+        {builds.map((build) => {
+          const isSelected = build.id === selectedBuildId;
+          const isActive = build.id === activeBuildId;
+          return (
+            <Box
+              key={build.id}
+              className="candystripe"
+              p={1}
+              style={{
+                border: `1px solid ${
+                  isSelected ? '#7fc' : isActive ? '#f7a' : 'rgba(255,255,255,0.1)'
+                }`,
+                borderRadius: '6px',
+                cursor: 'pointer',
+                backgroundColor: isActive ? 'rgba(255, 170, 255, 0.1)' : undefined,
+              }}
+              onClick={() => onSelect(build.id)}
+            >
+              <Stack justify="space-between" align="center" gap={1}>
+                <Stack.Item grow>
+                  <Box bold>
+                    {build.name}
+                    {isActive && <Icon name="bolt" style={{ marginLeft: '4px' }} />}
+                  </Box>
+                </Stack.Item>
+                <Stack.Item>
+                  <Stack gap={0.5} align="center">
+                    <Stack.Item>
+                      <Button
+                        icon="bolt"
+                        compact
+                        selected={isActive}
+                        disabled={isActive}
+                        tooltip={isActive ? 'Active build' : 'Activate build'}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onActivate(build.id);
+                        }}
+                      />
+                    </Stack.Item>
+                    <Stack.Item>
+                      <Button
+                        icon="edit"
+                        compact
+                        tooltip="Rename"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onRename(build.id);
+                        }}
+                      />
+                    </Stack.Item>
+                    <Stack.Item>
+                      <Button
+                        icon="eraser"
+                        compact
+                        tooltip="Clear"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onClear(build.id);
+                        }}
+                      />
+                    </Stack.Item>
+                    <Stack.Item>
+                      <Button
+                        icon="trash"
+                        compact
+                        tooltip="Delete"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onDelete(build.id);
+                        }}
+                      />
+                    </Stack.Item>
+                  </Stack>
+                </Stack.Item>
+              </Stack>
+            </Box>
+          );
+        })}
       </Stack>
     )}
     <Box color="label" mt={1}>

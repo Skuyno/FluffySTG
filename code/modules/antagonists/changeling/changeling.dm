@@ -980,6 +980,7 @@
 	user.regenerate_icons()
 	user.name = user.get_visible_name()
 	current_profile = chosen_profile
+	sync_active_genetic_build_for_profile(chosen_profile)
 	// NOVA EDIT START
 	user.updateappearance(mutcolor_update = TRUE, eyeorgancolor_update = TRUE)
 	user.regenerate_icons()
