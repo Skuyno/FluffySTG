@@ -108,10 +108,8 @@
 	var/mob_size = MOB_SIZE_HUMAN
 	/// List of biotypes the mob belongs to. Used by diseases and reagents mainly.
 	var/mob_biotypes = MOB_ORGANIC
-	/// Cytology cell line table identifier harvested by bioengineering abilities.
-	var/cell_line
-	/// The type of respiration the mob is capable of doing. Used by adjustOxyLoss.
-	var/mob_respiration_type = RESPIRATION_OXYGEN
+        /// The type of respiration the mob is capable of doing. Used by adjustOxyLoss.
+        var/mob_respiration_type = RESPIRATION_OXYGEN
 	///more or less efficiency to metabolize helpful/harmful reagents and regulate body temperature..
 	var/metabolism_efficiency = 1
 	///does the mob have distinct limbs?(arms,legs, chest,head)

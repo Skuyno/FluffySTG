@@ -73,10 +73,9 @@
 	changeling.ensure_genetic_matrix_setup()
 	changeling.update_genetic_matrix_unlocks()
 	changeling.prune_genetic_matrix_assignments()
-	data["builds"] = changeling.get_genetic_matrix_builds_data()
-	data["profiles"] = changeling.get_genetic_matrix_profile_catalog()
-	data["modules"] = changeling.get_genetic_matrix_module_catalog()
-	data["abilities"] = changeling.get_genetic_matrix_ability_catalog()
+        data["builds"] = changeling.get_genetic_matrix_builds_data()
+        data["modules"] = changeling.get_genetic_matrix_module_catalog()
+        data["abilities"] = changeling.get_genetic_matrix_ability_catalog()
 	data["cells"] = incubator ? incubator.get_cells_data() : list()
 	data["recipes"] = changeling.get_genetic_matrix_recipe_data()
 	data["standardAbilities"] = changeling.get_standard_ability_catalog()
@@ -134,19 +133,6 @@
 			if(!build)
 				return FALSE
 			changeling.clear_genetic_matrix_build(build)
-			return TRUE
-		if("set_build_profile")
-			var/datum/changeling_bio_incubator/build/build = changeling.find_genetic_matrix_build(params["build"])
-			if(!build)
-				return FALSE
-			var/datum/changeling_profile/profile = changeling.find_genetic_matrix_profile(params["profile"])
-			changeling.assign_genetic_matrix_profile(build, profile)
-			return TRUE
-		if("clear_build_profile")
-			var/datum/changeling_bio_incubator/build/build = changeling.find_genetic_matrix_build(params["build"])
-			if(!build)
-				return FALSE
-			changeling.assign_genetic_matrix_profile(build, null)
 			return TRUE
 		if("set_build_module", "set_build_ability")
 			var/datum/changeling_bio_incubator/build/build = changeling.find_genetic_matrix_build(params["build"])
@@ -229,20 +215,6 @@
 	if(!incubator)
 		return output
 	return incubator.get_builds_data()
-
-/// Produce a sortable profile dataset for quick access on the matrix tab.
-/datum/antagonist/changeling/proc/get_genetic_matrix_profile_catalog()
-	var/list/catalog = list()
-	if(!stored_profiles)
-		return catalog
-	for(var/datum/changeling_profile/profile as anything in stored_profiles)
-		catalog += list(get_genetic_matrix_profile_data(profile))
-	sortTim(catalog, GLOBAL_PROC_REF(cmp_assoc_list_name))
-	return catalog
-
-/// Provide profile data for the storage tab.
-/datum/antagonist/changeling/proc/get_genetic_matrix_profile_storage()
-	return get_genetic_matrix_profile_catalog()
 
 /// Aggregate crafted module information available to the changeling.
 /datum/antagonist/changeling/proc/get_genetic_matrix_module_catalog()
@@ -369,10 +341,6 @@
 /datum/antagonist/changeling/proc/clear_genetic_matrix_build(datum/changeling_bio_incubator/build/build)
 	bio_incubator?.clear_build(build)
 
-/// Assign a DNA profile to a build.
-/datum/antagonist/changeling/proc/assign_genetic_matrix_profile(datum/changeling_bio_incubator/build/build, datum/changeling_profile/profile)
-	bio_incubator?.assign_profile(build, profile)
-
 /// Assign a module to a slot within a build. Passing null clears the slot.
 /datum/antagonist/changeling/proc/assign_genetic_matrix_module(datum/changeling_bio_incubator/build/build, module_identifier, slot)
 	return bio_incubator ? bio_incubator.assign_module(build, module_identifier, slot) : FALSE
@@ -410,12 +378,12 @@
 
 /// Determine whether the changeling has collected a specific cytology cell identifier.
 /datum/antagonist/changeling/proc/has_cytology_cell(cell_identifier)
-	if(isnull(cell_identifier) || !bio_incubator)
-		return FALSE
-	var/cell_id = bio_incubator.sanitize_module_id(cell_identifier)
-	if(!cell_id)
-		return FALSE
-	return cell_id in bio_incubator.cell_ids
+        if(isnull(cell_identifier) || !bio_incubator)
+                return FALSE
+        var/cell_id = changeling_normalize_cell_id(cell_identifier)
+        if(!cell_id)
+                return FALSE
+        return cell_id in bio_incubator.cell_ids
 
 /// Check if a recipe's requirements are satisfied by our inventory.
 /datum/antagonist/changeling/proc/can_access_genetic_recipe(list/recipe_data)
@@ -462,16 +430,18 @@
 				module_block["tags"] = incubator.sanitize_tag_list(module_block["tags"])
 				module_block["exclusiveTags"] = incubator.sanitize_tag_list(module_block["exclusiveTags"])
 		entry["module"] = module_block
-		var/list/cell_entries = list()
-		var/list/required_cells = recipe["requiredCells"]
-		if(islist(required_cells))
-			for(var/cell_id in required_cells)
-				var/text_id = incubator ? incubator.sanitize_module_id(cell_id) : "[cell_id]"
-				cell_entries += list(list(
-					"id" = text_id,
-					"name" = incubator ? incubator.get_nice_name_from_path(cell_id) : "[cell_id]",
-					"have" = has_cytology_cell(cell_id),
-				))
+                var/list/cell_entries = list()
+                var/list/required_cells = recipe["requiredCells"]
+                if(islist(required_cells))
+                        for(var/cell_id in required_cells)
+                                var/text_id = changeling_normalize_cell_id(cell_id)
+                                if(isnull(text_id))
+                                        text_id = incubator ? incubator.sanitize_module_id(cell_id) : "[cell_id]"
+                                cell_entries += list(list(
+                                        "id" = text_id,
+                                        "name" = changeling_get_cell_display_name(cell_id),
+                                        "have" = has_cytology_cell(cell_id),
+                                ))
 		entry["requiredCells"] = cell_entries
 		var/list/ability_entries = list()
 		var/list/required_abilities = recipe["requiredAbilities"]
@@ -564,43 +534,6 @@
 /datum/antagonist/changeling/proc/find_genetic_matrix_build(identifier)
 	return bio_incubator ? bio_incubator.find_build(identifier) : null
 
-/// Locate a stored profile using its reference string.
-/datum/antagonist/changeling/proc/find_genetic_matrix_profile(identifier)
-	if(isnull(identifier))
-		return null
-	for(var/datum/changeling_profile/profile as anything in stored_profiles)
-		if(REF(profile) == identifier)
-			return profile
-	return null
-
-/// Convert a stored profile to UI-friendly data.
-/datum/antagonist/changeling/proc/get_genetic_matrix_profile_data(datum/changeling_profile/profile)
-	var/list/quirk_names = list()
-	for(var/datum/quirk/quirk as anything in profile.quirks)
-		quirk_names += initial(quirk.name)
-	var/list/skillchip_names = list()
-	for(var/list/chip_metadata in profile.skillchips)
-		var/chip_type = chip_metadata["type"]
-		if(ispath(chip_type, /obj/item/skillchip))
-			var/obj/item/skillchip/skillchip_type = chip_type
-			skillchip_names += initial(skillchip_type.name)
-		else if(chip_type)
-			skillchip_names += "[chip_type]"
-	return list(
-		"id" = REF(profile),
-		"name" = profile.name,
-		"protected" = profile.protected,
-		"age" = profile.age,
-		"physique" = profile.physique,
-		"voice" = profile.voice,
-		"quirks" = quirk_names,
-		"quirk_count" = quirk_names.len,
-		"skillchips" = skillchip_names,
-		"skillchip_count" = skillchip_names.len,
-		"scar_count" = LAZYLEN(profile.stored_scars),
-		"id_icon" = profile.id_icon,
-	)
-
 /// Convert an ability type path to UI-friendly data for compatibility.
 /datum/antagonist/changeling/proc/get_genetic_matrix_module_data_from_path(datum/action/changeling/ability_path)
 	if(isnull(ability_path))
@@ -622,25 +555,3 @@
 /datum/antagonist/changeling/proc/get_genetic_matrix_ability_data(datum/action/changeling/ability_path)
 	return get_genetic_matrix_module_data_from_path(ability_path)
 
-/// Handle updates when a new DNA profile is added.
-/datum/antagonist/changeling/proc/on_genetic_matrix_profile_added(datum/changeling_profile/profile)
-	ensure_genetic_matrix_setup()
-	if(!bio_incubator)
-		return
-	for(var/datum/changeling_bio_incubator/build/build as anything in bio_incubator.builds)
-		if(!build.assigned_profile)
-			build.assigned_profile = profile
-			bio_incubator.notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
-			break
-
-/// Handle updates when a DNA profile is removed.
-/datum/antagonist/changeling/proc/on_genetic_matrix_profile_removed(datum/changeling_profile/profile)
-	if(!bio_incubator)
-		return
-	var/changed = FALSE
-	for(var/datum/changeling_bio_incubator/build/build as anything in bio_incubator.builds)
-		if(build.assigned_profile == profile)
-			build.assigned_profile = null
-			changed = TRUE
-	if(changed)
-		bio_incubator.notify_update(BIO_INCUBATOR_UPDATE_BUILDS)

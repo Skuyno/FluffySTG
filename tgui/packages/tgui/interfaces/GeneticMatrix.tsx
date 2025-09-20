@@ -33,28 +33,6 @@ const asBoolean = (value: BooleanLike | undefined): boolean => {
   return Boolean(value);
 };
 
-const formatValue = (value: unknown, fallback = 'Unknown') => {
-  if (value === undefined || value === null || value === '') {
-    return fallback;
-  }
-  return String(value);
-};
-
-export type ProfileEntry = {
-  id: string;
-  name: string;
-  protected: BooleanLike;
-  age: number | string | null;
-  physique: string | null;
-  voice: string | null;
-  quirks: string[];
-  quirk_count: number;
-  skillchips: string[];
-  skillchip_count: number;
-  scar_count: number;
-  id_icon: string | null;
-};
-
 export type ModuleEntry = {
   id: string;
   name: string;
@@ -77,7 +55,6 @@ export type ModuleEntry = {
 export type BuildEntry = {
   id: string;
   name: string;
-  profile: ProfileEntry | null;
   modules: (ModuleEntry | null)[];
 };
 
@@ -132,7 +109,6 @@ type GeneticMatrixData = {
   maxModuleSlots?: number;
   maxBuilds: number;
   builds: BuildEntry[];
-  profiles: ProfileEntry[];
   modules: ModuleEntry[];
   abilities: ModuleEntry[];
   cells: CytologyCellEntry[];
@@ -146,8 +122,6 @@ type GeneticMatrixData = {
 };
 
 type DragPayload =
-  | { type: 'profile'; id: string }
-  | { type: 'profile-slot'; id: string; buildId: string }
   | { type: 'module'; id: string }
   | { type: 'module-slot'; id: string; buildId: string; slot: number }
   | { type: 'ability'; id: string }
@@ -160,7 +134,6 @@ export const GeneticMatrix = () => {
   const { act, data } = useBackend<GeneticMatrixData>();
   const {
     builds = [],
-    profiles = [],
     modules = [],
     abilities = [],
     cells = [],
@@ -239,7 +212,6 @@ export const GeneticMatrix = () => {
               <MatrixTab
                 act={act}
                 builds={builds}
-                profiles={profiles}
                 modules={modules}
                 abilities={abilities}
                 cells={cells}
@@ -253,7 +225,7 @@ export const GeneticMatrix = () => {
               />
             )}
             {activeTab === 'cells' && (
-              <CellsTab profiles={profiles} cells={cells} recipes={recipes} />
+              <CellsTab cells={cells} recipes={recipes} />
             )}
             {activeTab === 'abilities' && (
               <AbilityStorageTab abilities={abilities} />
@@ -278,7 +250,6 @@ export const GeneticMatrix = () => {
 type MatrixTabProps = {
   act: (action: string, payload?: Record<string, unknown>) => void;
   builds: BuildEntry[];
-  profiles: ProfileEntry[];
   modules: ModuleEntry[];
   abilities: ModuleEntry[];
   cells: CytologyCellEntry[];
@@ -294,7 +265,6 @@ type MatrixTabProps = {
 const MatrixTab = ({
   act,
   builds,
-  profiles,
   modules,
   abilities,
   cells,
@@ -381,17 +351,6 @@ const MatrixTab = ({
     }
   }, [matchingRecipes, selectedRecipeId]);
 
-  const handleAssignProfile = useCallback(
-    (buildId: string, profileId: string | null) => {
-      if (!profileId) {
-        act('clear_build_profile', { build: buildId });
-        return;
-      }
-      act('set_build_profile', { build: buildId, profile: profileId });
-    },
-    [act],
-  );
-
   const handleAssignModule = useCallback(
     (buildId: string, slot: number, moduleId: string | null) => {
       if (!moduleId) {
@@ -427,23 +386,6 @@ const MatrixTab = ({
   const handleCreateBuild = useCallback(() => {
     act('create_build');
   }, [act]);
-
-  const handleProfileDrop = useCallback(
-    (payload: DragPayload, targetBuild: BuildEntry) => {
-      if (payload.type === 'profile') {
-        handleAssignProfile(targetBuild.id, payload.id);
-        return;
-      }
-      if (payload.type === 'profile-slot') {
-        if (payload.buildId === targetBuild.id) {
-          return;
-        }
-        handleAssignProfile(targetBuild.id, payload.id);
-        act('clear_build_profile', { build: payload.buildId });
-      }
-    },
-    [act, handleAssignProfile],
-  );
 
   const handleModuleDrop = useCallback(
     (payload: DragPayload, targetBuild: BuildEntry, slot: number) => {
@@ -488,16 +430,6 @@ const MatrixTab = ({
       handleAssignModule(selectedBuild.id, targetSlot, module.id);
     },
     [handleAssignModule, maxModuleSlots, selectedBuild],
-  );
-
-  const handleProfileDoubleClick = useCallback(
-    (profile: ProfileEntry) => {
-      if (!selectedBuild) {
-        return;
-      }
-      handleAssignProfile(selectedBuild.id, profile.id);
-    },
-    [handleAssignProfile, selectedBuild],
   );
 
   const handleAddCell = useCallback((id: string) => {
@@ -648,27 +580,11 @@ const MatrixTab = ({
                   beginDrag={beginDrag}
                   endDrag={endDrag}
                   parsePayload={parsePayload}
-                  onClearProfile={(buildId) => handleAssignProfile(buildId, null)}
                   onClearModule={(buildId, slot) =>
                     handleAssignModule(buildId, slot, null)
                   }
                   onClearBuild={handleClearBuild}
-                  onProfileDropped={handleProfileDrop}
                   onModuleDropped={handleModuleDrop}
-                />
-              </Stack.Item>
-              <Stack.Item grow>
-                <ProfileCatalog
-                  title="DNA Profiles"
-                  profiles={profiles}
-                  allowDrag
-                  onDragStart={(profile, event) =>
-                    beginDrag(event, { type: 'profile', id: profile.id })
-                  }
-                  onDragEnd={endDrag}
-                  onDoubleClick={handleProfileDoubleClick}
-                  highlightId={selectedBuild?.profile?.id}
-                  emptyMessage="We have not stored any DNA samples yet."
                 />
               </Stack.Item>
             </Stack>
@@ -1200,10 +1116,8 @@ type BuildEditorProps = {
   beginDrag: (event: DragEvent, payload: DragPayload) => void;
   endDrag: () => void;
   parsePayload: (event: DragEvent) => DragPayload | null;
-  onClearProfile: (buildId: string) => void;
   onClearModule: (buildId: string, slot: number) => void;
   onClearBuild: (buildId: string) => void;
-  onProfileDropped: (payload: DragPayload, build: BuildEntry) => void;
   onModuleDropped: (payload: DragPayload, build: BuildEntry, slot: number) => void;
 };
 
@@ -1214,10 +1128,8 @@ const BuildEditor = ({
   beginDrag,
   endDrag,
   parsePayload,
-  onClearProfile,
   onClearModule,
   onClearBuild,
-  onProfileDropped,
   onModuleDropped,
 }: BuildEditorProps) => {
   if (!build) {
@@ -1227,10 +1139,6 @@ const BuildEditor = ({
       </Section>
     );
   }
-
-  const profile = build.profile;
-  const profileActive =
-    dragPayload?.type === 'profile' || dragPayload?.type === 'profile-slot';
 
   const exclusiveCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -1256,98 +1164,7 @@ const BuildEditor = ({
       }
     >
       <Stack vertical gap={1}>
-        <Stack.Item>
-          <Stack align="center" gap={1}>
-            <Stack.Item grow>
-              <Box
-                p={1}
-                draggable={Boolean(profile)}
-                onDragStart={(event) => {
-                  if (!profile) {
-                    return;
-                  }
-                  beginDrag(event, {
-                    type: 'profile-slot',
-                    id: profile.id,
-                    buildId: build.id,
-                  });
-                }}
-                onDragEnd={endDrag}
-                onDragOver={(event) => {
-                  const payload = parsePayload(event);
-                  if (!payload) {
-                    return;
-                  }
-                  if (payload.type === 'profile' || payload.type === 'profile-slot') {
-                    event.preventDefault();
-                    event.dataTransfer.dropEffect = 'move';
-                  }
-                }}
-                onDrop={(event) => {
-                  const payload = parsePayload(event);
-                  if (!payload) {
-                    return;
-                  }
-                  if (payload.type === 'profile' || payload.type === 'profile-slot') {
-                    event.preventDefault();
-                    onProfileDropped(payload, build);
-                    endDrag();
-                  }
-                }}
-                style={{
-                  border: `1px dashed ${
-                    profileActive ? '#7fc' : 'rgba(255, 255, 255, 0.2)'
-                  }`,
-                  borderRadius: '6px',
-                  minHeight: '96px',
-                  backgroundColor: profileActive
-                    ? 'rgba(64, 160, 255, 0.08)'
-                    : 'rgba(255,255,255,0.03)',
-                }}
-              >
-                {profile ? (
-                  <ProfileSummary profile={profile} />
-                ) : (
-                  <Box color="label">
-                    Drag a DNA profile from the list to assign it to this build.
-                  </Box>
-                )}
-              </Box>
-            </Stack.Item>
-            <Stack.Item>
-              <Button
-                icon="times"
-                disabled={!profile}
-                tooltip="Remove the assigned profile"
-                onClick={() => onClearProfile(build.id)}
-                onDragOver={(event) => {
-                  const payload = parsePayload(event);
-                  if (
-                    payload &&
-                    payload.type === 'profile-slot' &&
-                    payload.buildId === build.id
-                  ) {
-                    event.preventDefault();
-                    event.dataTransfer.dropEffect = 'move';
-                  }
-                }}
-                onDrop={(event) => {
-                  const payload = parsePayload(event);
-                  if (
-                    payload &&
-                    payload.type === 'profile-slot' &&
-                    payload.buildId === build.id
-                  ) {
-                    event.preventDefault();
-                    onClearProfile(build.id);
-                    endDrag();
-                  }
-                }}
-              />
-            </Stack.Item>
-          </Stack>
-        </Stack.Item>
-        <Divider />
+      <Divider />
         <Stack.Item>
           <Stack vertical gap={1}>
             {Array.from({ length: maxModuleSlots }, (_, index) => {
@@ -1454,120 +1271,6 @@ const BuildEditor = ({
     </Section>
   );
 };
-
-type ProfileCatalogProps = {
-  title: string;
-  profiles: ProfileEntry[];
-  allowDrag?: boolean;
-  onDragStart?: (profile: ProfileEntry, event: DragEvent) => void;
-  onDragEnd?: () => void;
-  onDoubleClick?: (profile: ProfileEntry) => void;
-  highlightId?: string;
-  emptyMessage?: string;
-};
-
-type ProfileSummaryProps = {
-  profile: ProfileEntry;
-};
-
-const ProfileSummary = ({ profile }: ProfileSummaryProps) => {
-  const isProtected = asBoolean(profile.protected);
-  const basicDetails = [
-    profile.age !== null && profile.age !== undefined
-      ? `Age: ${formatValue(profile.age)}`
-      : null,
-    profile.physique ? `Physique: ${profile.physique}` : null,
-    profile.voice ? `Voice: ${profile.voice}` : null,
-  ].filter((entry): entry is string => Boolean(entry));
-
-  return (
-    <Stack vertical gap={0.25}>
-      <Stack.Item>
-        <Stack justify="space-between" align="center">
-          <Stack.Item>
-            <Box bold>{profile.name}</Box>
-          </Stack.Item>
-          {isProtected && (
-            <Stack.Item>
-              <Box color="average">
-                <Icon name="shield-alt" mr={0.5} /> Protected
-              </Box>
-            </Stack.Item>
-          )}
-        </Stack>
-      </Stack.Item>
-      {basicDetails.length > 0 && (
-        <Stack.Item color="label">{basicDetails.join(' • ')}</Stack.Item>
-      )}
-      {profile.quirks.length > 0 && (
-        <Stack.Item color="average">
-          Quirks: {profile.quirks.join(', ')}
-        </Stack.Item>
-      )}
-      {profile.skillchips.length > 0 && (
-        <Stack.Item color="average">
-          Skillchips: {profile.skillchips.join(', ')}
-        </Stack.Item>
-      )}
-      {profile.scar_count > 0 && (
-        <Stack.Item color="label">
-          Scars recorded: {profile.scar_count}
-        </Stack.Item>
-      )}
-    </Stack>
-  );
-};
-
-const ProfileCatalog = ({
-  title,
-  profiles,
-  allowDrag = false,
-  onDragStart,
-  onDragEnd,
-  onDoubleClick,
-  highlightId,
-  emptyMessage,
-}: ProfileCatalogProps) => (
-  <Section title={title} fill scrollable>
-    {profiles.length === 0 ? (
-      <NoticeBox>{emptyMessage ?? 'No DNA profiles available.'}</NoticeBox>
-    ) : (
-      <Stack vertical gap={1}>
-        {profiles.map((profile) => {
-          const isSelected = highlightId === profile.id;
-          return (
-            <Box
-              key={profile.id}
-              className="candystripe"
-              p={1}
-              draggable={allowDrag}
-              onDragStart={
-                allowDrag
-                  ? (event) => onDragStart?.(profile, event)
-                  : undefined
-              }
-              onDragEnd={allowDrag ? onDragEnd : undefined}
-              onDoubleClick={
-                onDoubleClick ? () => onDoubleClick(profile) : undefined
-              }
-              style={{
-                border: `1px solid ${
-                  isSelected ? '#7fc' : 'rgba(255, 255, 255, 0.1)'
-                }`,
-                borderRadius: '6px',
-                backgroundColor: isSelected
-                  ? 'rgba(64, 160, 255, 0.08)'
-                  : 'rgba(255,255,255,0.03)',
-              }}
-            >
-              <ProfileSummary profile={profile} />
-            </Box>
-          );
-        })}
-      </Stack>
-    )}
-  </Section>
-);
 
 type ModuleListProps = {
   title: string;
@@ -1718,12 +1421,11 @@ const formatCategory = (category?: string) => {
 };
 
 type CellsTabProps = {
-  profiles: ProfileEntry[];
   cells: CytologyCellEntry[];
   recipes: RecipeEntry[];
 };
 
-const CellsTab = ({ profiles, cells, recipes }: CellsTabProps) => {
+const CellsTab = ({ cells, recipes }: CellsTabProps) => {
   const [cellSearch, setCellSearch] = useState('');
 
   const filteredCells = useMemo(() => {
@@ -1739,14 +1441,6 @@ const CellsTab = ({ profiles, cells, recipes }: CellsTabProps) => {
 
   return (
     <Stack vertical fill gap={1}>
-      <Stack.Item>
-        <ProfileCatalog
-          title="DNA Profiles"
-          profiles={profiles}
-          allowDrag={false}
-          emptyMessage="No stored DNA profiles."
-        />
-      </Stack.Item>
       <Stack.Item>
         <Section title="Cytology Cells" fill scrollable>
           <Stack vertical gap={1}>

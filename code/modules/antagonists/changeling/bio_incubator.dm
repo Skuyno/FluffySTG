@@ -12,10 +12,10 @@
 
 /// Stores changeling genetic matrix inventory and build configuration.
 /datum/changeling_bio_incubator
-	/// Owning changeling datum.
-	var/datum/antagonist/changeling/changeling
-	/// Unique identifiers for collected cytology cell lines.
-	var/list/cell_ids = list()
+        /// Owning changeling datum.
+        var/datum/antagonist/changeling/changeling
+        /// Unique identifiers for collected cell signatures.
+        var/list/cell_ids = list()
 	/// Unique identifiers for known crafting recipes.
 	var/list/recipe_ids = list()
 	/// Assoc list of crafted module definitions indexed by identifier.
@@ -91,13 +91,11 @@
 	return output
 
 /datum/changeling_bio_incubator/proc/prune_assignments()
-	for(var/datum/changeling_bio_incubator/build/build as anything in builds)
-		build.ensure_slot_capacity()
-		if(build.assigned_profile && !(build.assigned_profile in changeling?.stored_profiles))
-			build.assigned_profile = null
-		for(var/i in 1 to build.module_ids.len)
-			var/module_id = build.module_ids[i]
-			if(!module_id)
+        for(var/datum/changeling_bio_incubator/build/build as anything in builds)
+                build.ensure_slot_capacity()
+                for(var/i in 1 to build.module_ids.len)
+                        var/module_id = build.module_ids[i]
+                        if(!module_id)
 				continue
 			if(!changeling?.has_genetic_matrix_module(module_id))
 				build.module_ids[i] = null
@@ -105,20 +103,9 @@
 			if(!module_slot_allowed(module_id, i))
 				build.module_ids[i] = null
 
-/datum/changeling_bio_incubator/proc/assign_profile(datum/changeling_bio_incubator/build/build, datum/changeling_profile/profile)
-	if(!build)
-		return FALSE
-	if(profile && !(profile in changeling?.stored_profiles))
-		return FALSE
-	if(build.assigned_profile == profile)
-		return TRUE
-	build.assigned_profile = profile
-	notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
-	return TRUE
-
 /datum/changeling_bio_incubator/proc/assign_module(datum/changeling_bio_incubator/build/build, module_identifier, slot)
-	if(!build)
-		return FALSE
+        if(!build)
+                return FALSE
 	build.ensure_slot_capacity()
 	if(slot < 1 || slot > get_max_slots())
 		return FALSE
@@ -276,11 +263,11 @@
 	return null
 
 /datum/changeling_bio_incubator/proc/add_cell(cell_identifier)
-	var/cell_id = sanitize_module_id(cell_identifier)
-	if(isnull(cell_id))
-		return FALSE
-	if(cell_id in cell_ids)
-		return FALSE
+        var/cell_id = changeling_normalize_cell_id(cell_identifier)
+        if(isnull(cell_id))
+                return FALSE
+        if(cell_id in cell_ids)
+                return FALSE
 	cell_ids += cell_id
 	notify_update(BIO_INCUBATOR_UPDATE_CELLS)
 	changeling?.update_genetic_matrix_unlocks()
@@ -304,24 +291,13 @@
 	return output
 
 /datum/changeling_bio_incubator/proc/build_cell_entry(cell_id)
-	var/list/entry = list(
-		"id" = cell_id,
-	)
-	var/path = text2path(cell_id)
-	if(ispath(path, /datum/micro_organism/cell_line))
-		var/datum/micro_organism/cell_line/cell_line = new path()
-		var/name_source = path
-		if(cell_line)
-			name_source = cell_line.resulting_atom || path
-			entry["desc"] = cell_line.desc
-			qdel(cell_line)
-		else
-			entry["desc"] = null
-		entry["name"] = get_nice_name_from_path(name_source)
-	else
-		entry["name"] = get_nice_name_from_path(cell_id)
-		entry["desc"] = null
-	return entry
+        var/list/entry = list(
+                "id" = cell_id,
+        )
+        var/list/metadata = changeling_get_cell_metadata(cell_id)
+        entry["name"] = changeling_get_cell_display_name(cell_id)
+        entry["desc"] = metadata?["desc"]
+        return entry
 
 /datum/changeling_bio_incubator/proc/get_nice_name_from_path(path_input)
 	return changeling_get_nice_name_from_path(path_input)
@@ -362,33 +338,28 @@
 
 /// Definition of a single build preset.
 /datum/changeling_bio_incubator/build
-	var/datum/changeling_bio_incubator/bio_incubator
-	var/name = "Matrix Build"
-	var/datum/changeling_profile/assigned_profile
-	var/list/module_ids = list()
+        var/datum/changeling_bio_incubator/bio_incubator
+        var/name = "Matrix Build"
+        var/list/module_ids = list()
 
 /datum/changeling_bio_incubator/build/New(datum/changeling_bio_incubator/bio_incubator)
 	. = ..()
 	src.bio_incubator = bio_incubator
 
 /datum/changeling_bio_incubator/build/Destroy()
-	assigned_profile = null
-	module_ids = null
-	bio_incubator = null
-	return ..()
+        module_ids = null
+        bio_incubator = null
+        return ..()
 
 /datum/changeling_bio_incubator/build/proc/ensure_slot_capacity()
 	while(module_ids.len < bio_incubator?.get_max_slots())
 		module_ids += null
 
 /datum/changeling_bio_incubator/build/proc/clear_configuration()
-	var/changed = FALSE
-	if(assigned_profile)
-		assigned_profile = null
-		changed = TRUE
-	ensure_slot_capacity()
-	for(var/i in 1 to module_ids.len)
-		if(module_ids[i])
+        var/changed = FALSE
+        ensure_slot_capacity()
+        for(var/i in 1 to module_ids.len)
+                if(module_ids[i])
 			module_ids[i] = null
 			changed = TRUE
 	return changed
@@ -406,17 +377,12 @@
 	return TRUE
 
 /datum/changeling_bio_incubator/build/proc/to_data()
-	var/list/data = list(
-		"id" = REF(src),
-		"name" = name,
-	)
-	var/datum/antagonist/changeling/changeling = bio_incubator?.changeling
-	if(changeling && assigned_profile && (assigned_profile in changeling.stored_profiles))
-		data["profile"] = changeling.get_genetic_matrix_profile_data(assigned_profile)
-	else
-		data["profile"] = null
-	ensure_slot_capacity()
-	var/list/module_data = list()
+        var/list/data = list(
+                "id" = REF(src),
+                "name" = name,
+        )
+        ensure_slot_capacity()
+        var/list/module_data = list()
 	for(var/i in 1 to module_ids.len)
 		var/module_id = module_ids[i]
 		if(!module_id)
