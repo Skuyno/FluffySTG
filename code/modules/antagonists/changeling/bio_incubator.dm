@@ -286,6 +286,15 @@
 	changeling?.update_genetic_matrix_unlocks()
 	return TRUE
 
+/proc/changeling_get_nice_name_from_path(path_input)
+	var/text_value = istext(path_input) ? path_input : "[path_input]"
+	var/list/split_path = splittext(text_value, "/")
+	if(!split_path.len)
+		return text_value
+	var/raw = split_path[split_path.len]
+	raw = replacetext(raw, "_", " " )
+	return capitalize(raw)
+
 /datum/changeling_bio_incubator/proc/get_cells_data()
 	var/list/output = list()
 	for(var/cell_id in cell_ids)
@@ -315,13 +324,7 @@
 	return entry
 
 /datum/changeling_bio_incubator/proc/get_nice_name_from_path(path_input)
-	var/text_value = istext(path_input) ? path_input : "[path_input]"
-	var/list/split_path = splittext(text_value, "/")
-	if(!split_path.len)
-		return text_value
-	var/raw = split_path[split_path.len]
-	raw = replacetext(raw, "_", " " )
-	return capitalize(raw)
+	return changeling_get_nice_name_from_path(path_input)
 
 /datum/changeling_bio_incubator/proc/add_recipe(recipe_identifier)
 	var/recipe_id = sanitize_module_id(recipe_identifier)
