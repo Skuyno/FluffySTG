@@ -557,7 +557,7 @@
 	for(var/datum/changeling_bio_incubator/build/build as anything in bio_incubator.builds)
 		if(!build.assigned_profile)
 			build.assigned_profile = profile
-			bio_incubator.notify_builds_changed()
+		bio_incubator.notify_builds_changed()
 			break
 
 /// Handle updates when a DNA profile is removed.
