@@ -1,7 +1,7 @@
 /datum/action/changeling/sting/harvest_cells
-        name = "Harvest Cells"
-        desc = "We silently pierce a victim to obtain adaptable cell signatures."
-        helptext = "Collects a compatible cell entry from living station species or barnyard animals without alerting witnesses."
+	name = "Harvest Cells"
+	desc = "We silently pierce a victim to obtain adaptable cell signatures."
+	helptext = "Collects a compatible cell entry from living station species or barnyard animals without alerting witnesses."
 	button_icon_state = "sting_extract"
 	chemical_cost = 10
 	dna_cost = CHANGELING_POWER_INNATE
@@ -115,24 +115,24 @@
 	to_chat(target, span_warning("You feel a fleeting prick beneath your skin."))
 
 /datum/action/changeling/sting/harvest_cells/proc/collect_cell_ids(atom/target)
-        var/list/ids = list()
-        if(!target)
-                return ids
-        if(isliving(target))
-                var/mob/living/living_target = target
-                for(var/cell_id as anything in get_cell_id_from_living(living_target))
-                        if(!(cell_id in ids))
-                                ids += cell_id
-        return ids
+	var/list/ids = list()
+	if(!target)
+		return ids
+	if(isliving(target))
+		var/mob/living/living_target = target
+		for(var/cell_id as anything in get_cell_id_from_living(living_target))
+			if(!(cell_id in ids))
+				ids += cell_id
+	return ids
 
 /datum/action/changeling/sting/harvest_cells/proc/get_cell_id_from_living(mob/living/target)
-        var/list/ids = list()
-        if(!target)
-                return ids
-        for(var/cell_id as anything in changeling_get_cell_ids_from_mob(target))
-                if(!(cell_id in ids))
-                        ids += cell_id
-        return ids
+	var/list/ids = list()
+	if(!target)
+		return ids
+	for(var/cell_id as anything in changeling_get_cell_ids_from_mob(target))
+		if(!(cell_id in ids))
+			ids += cell_id
+	return ids
 /datum/action/changeling/sting/harvest_cells/proc/can_use_harvest(mob/living/user)
 	if(!can_be_used_by(user))
 		return FALSE

@@ -73,9 +73,9 @@
 	changeling.ensure_genetic_matrix_setup()
 	changeling.update_genetic_matrix_unlocks()
 	changeling.prune_genetic_matrix_assignments()
-        data["builds"] = changeling.get_genetic_matrix_builds_data()
-        data["modules"] = changeling.get_genetic_matrix_module_catalog()
-        data["abilities"] = changeling.get_genetic_matrix_ability_catalog()
+	data["builds"] = changeling.get_genetic_matrix_builds_data()
+	data["modules"] = changeling.get_genetic_matrix_module_catalog()
+	data["abilities"] = changeling.get_genetic_matrix_ability_catalog()
 	data["cells"] = incubator ? incubator.get_cells_data() : list()
 	data["recipes"] = changeling.get_genetic_matrix_recipe_data()
 	data["standardAbilities"] = changeling.get_standard_ability_catalog()
@@ -378,12 +378,12 @@
 
 /// Determine whether the changeling has collected a specific cytology cell identifier.
 /datum/antagonist/changeling/proc/has_cytology_cell(cell_identifier)
-        if(isnull(cell_identifier) || !bio_incubator)
-                return FALSE
-        var/cell_id = changeling_normalize_cell_id(cell_identifier)
-        if(!cell_id)
-                return FALSE
-        return cell_id in bio_incubator.cell_ids
+	if(isnull(cell_identifier) || !bio_incubator)
+		return FALSE
+	var/cell_id = changeling_normalize_cell_id(cell_identifier)
+	if(!cell_id)
+		return FALSE
+	return cell_id in bio_incubator.cell_ids
 
 /// Check if a recipe's requirements are satisfied by our inventory.
 /datum/antagonist/changeling/proc/can_access_genetic_recipe(list/recipe_data)
@@ -430,18 +430,18 @@
 				module_block["tags"] = incubator.sanitize_tag_list(module_block["tags"])
 				module_block["exclusiveTags"] = incubator.sanitize_tag_list(module_block["exclusiveTags"])
 		entry["module"] = module_block
-                var/list/cell_entries = list()
-                var/list/required_cells = recipe["requiredCells"]
-                if(islist(required_cells))
-                        for(var/cell_id in required_cells)
-                                var/text_id = changeling_normalize_cell_id(cell_id)
-                                if(isnull(text_id))
-                                        text_id = incubator ? incubator.sanitize_module_id(cell_id) : "[cell_id]"
-                                cell_entries += list(list(
-                                        "id" = text_id,
-                                        "name" = changeling_get_cell_display_name(cell_id),
-                                        "have" = has_cytology_cell(cell_id),
-                                ))
+		var/list/cell_entries = list()
+		var/list/required_cells = recipe["requiredCells"]
+		if(islist(required_cells))
+			for(var/cell_id in required_cells)
+				var/text_id = changeling_normalize_cell_id(cell_id)
+				if(isnull(text_id))
+					text_id = incubator ? incubator.sanitize_module_id(cell_id) : "[cell_id]"
+				cell_entries += list(list(
+					"id" = text_id,
+					"name" = changeling_get_cell_display_name(cell_id),
+					"have" = has_cytology_cell(cell_id),
+				))
 		entry["requiredCells"] = cell_entries
 		var/list/ability_entries = list()
 		var/list/required_abilities = recipe["requiredAbilities"]

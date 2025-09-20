@@ -48,8 +48,8 @@
 
 	/// If true we will run away from attackers even at full health
 	var/cowardly = FALSE
-        /// What colour is our 'healing' outline?
-        var/regenerate_colour = COLOR_PALE_GREEN
+	/// What colour is our 'healing' outline?
+	var/regenerate_colour = COLOR_PALE_GREEN
 	/// Ability which lets carp teleport around
 	var/datum/action/cooldown/mob_cooldown/lesser_carp_rift/teleport
 	/// Information to apply when treating this carp as a vehicle
@@ -97,7 +97,7 @@
 	apply_colour()
 	add_traits(list(TRAIT_HEALS_FROM_CARP_RIFTS, TRAIT_SPACEWALK), INNATE_TRAIT)
 
-        AddElement(/datum/element/simple_flying)
+	AddElement(/datum/element/simple_flying)
 	if (!cowardly)
 		AddElement(/datum/element/ai_flee_while_injured)
 	setup_eating()
@@ -175,12 +175,12 @@
  * Holographic carp from the holodeck
  */
 /mob/living/basic/carp/holographic
-        icon_state = "base_friend"
-        icon_living = "holocarp"
-        gold_core_spawnable = NO_SPAWN
-        greyscale_config = NONE
-        basic_mob_flags = DEL_ON_DEATH
-        regenerate_colour = "#ffffff"
+	icon_state = "base_friend"
+	icon_living = "holocarp"
+	gold_core_spawnable = NO_SPAWN
+	greyscale_config = NONE
+	basic_mob_flags = DEL_ON_DEATH
+	regenerate_colour = "#ffffff"
 
 /mob/living/basic/carp/holographic/Initialize(mapload, mob/tamer)
 	. = ..()

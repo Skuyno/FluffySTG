@@ -47,7 +47,7 @@
 	growth_rate = VAT_GROWTH_RATE
 
 /datum/micro_organism/cell_line/chicken //basic cell line designed as a good source of protein and eggyolk.
-        desc = "Galliform skin cells."
+	desc = "Galliform skin cells."
 	required_reagents = list(
 		/datum/reagent/consumable/nutriment/protein,
 	)
