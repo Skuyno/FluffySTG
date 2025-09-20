@@ -46,7 +46,7 @@
 		BODY_ZONE_L_LEG = /obj/item/bodypart/leg/left/mutant/teshari,
 		BODY_ZONE_R_LEG = /obj/item/bodypart/leg/right/mutant/teshari,
 	)
-       cell_line = CELL_LINE_TABLE_TESHARI
+	cell_line = CELL_LINE_TABLE_TESHARI
 
 /datum/species/teshari/get_default_mutant_bodyparts()
 	return list(
