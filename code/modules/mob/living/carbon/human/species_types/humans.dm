@@ -2,12 +2,13 @@
 	name = "\improper Human"
 	id = SPECIES_HUMAN
 	inherent_traits = list(
-		TRAIT_USES_SKINTONES,
+	        TRAIT_USES_SKINTONES,
 	)
 	skinned_type = /obj/item/stack/sheet/animalhide/human
 	changesource_flags = MIRROR_BADMIN | WABBAJACK | MIRROR_MAGIC | MIRROR_PRIDE | ERT_SPAWN | RACE_SWAP | SLIME_EXTRACT
 	payday_modifier = 1.1
 	cytology_cell_ids = list(/datum/micro_organism/cell_line/human)
+	cytology_sample_table = CELL_LINE_TABLE_HUMAN
 
 /datum/species/human/prepare_human_for_preview(mob/living/carbon/human/human)
 	human.set_haircolor("#bb9966", update = FALSE) // brown
