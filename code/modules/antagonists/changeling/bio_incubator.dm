@@ -22,6 +22,8 @@
 	var/list/crafted_modules = list()
 	/// Stored build presets.
 	var/list/datum/changeling_bio_incubator/build/builds = list()
+	/// Currently active build preset.
+	var/datum/changeling_bio_incubator/build/active_build
 
 /datum/changeling_bio_incubator/New(datum/antagonist/changeling/changeling)
 	. = ..()
@@ -33,6 +35,7 @@
 	crafted_modules = null
 	QDEL_LIST(builds)
 	builds = null
+	active_build = null
 	changeling = null
 	return ..()
 
@@ -47,9 +50,14 @@
 
 /datum/changeling_bio_incubator/proc/ensure_default_build()
 	if(builds.len)
+		if(!active_build || !(active_build in builds))
+			active_build = builds[1]
 		return
 	var/index = builds.len + 1
 	add_build("Matrix Build [index]")
+	if(!active_build && builds.len)
+		active_build = builds[1]
+		notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
 
 /datum/changeling_bio_incubator/proc/add_build(name)
 	if(!can_add_build())
@@ -58,7 +66,9 @@
 	build.name = name
 	build.ensure_slot_capacity()
 	builds += build
-	notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
+	if(!active_build)
+		active_build = build
+		notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
 	return build
 
 /datum/changeling_bio_incubator/proc/remove_build(datum/changeling_bio_incubator/build/build)
@@ -66,8 +76,26 @@
 		return
 	if(build in builds)
 		builds -= build
+	if(active_build == build)
+		active_build = null
 	qdel(build)
+	if(!active_build && builds.len)
+		active_build = builds[1]
 	notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
+
+/datum/changeling_bio_incubator/proc/set_active_build(datum/changeling_bio_incubator/build/build)
+	if(!build)
+		return FALSE
+	if(!(build in builds))
+		return FALSE
+	if(active_build == build)
+		return TRUE
+	active_build = build
+	notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
+	return TRUE
+
+/datum/changeling_bio_incubator/proc/get_active_build()
+	return active_build
 
 /datum/changeling_bio_incubator/proc/clear_build(datum/changeling_bio_incubator/build/build)
 	if(!build)
@@ -90,7 +118,16 @@
 		output += list(build.to_data())
 	return output
 
+/datum/changeling_bio_incubator/proc/find_build_for_profile(datum/changeling_profile/profile)
+	if(!profile)
+		return null
+	for(var/datum/changeling_bio_incubator/build/build as anything in builds)
+		if(build.assigned_profile == profile)
+			return build
+	return null
+
 /datum/changeling_bio_incubator/proc/prune_assignments()
+	var/active_changed = FALSE
 	for(var/datum/changeling_bio_incubator/build/build as anything in builds)
 		build.ensure_slot_capacity()
 		if(build.assigned_profile && !(build.assigned_profile in changeling?.stored_profiles))
@@ -104,6 +141,17 @@
 				continue
 			if(!module_slot_allowed(module_id, i))
 				build.module_ids[i] = null
+				continue
+			if(build_has_exclusive_conflict(build, module_id, get_module_data(module_id), i))
+				build.module_ids[i] = null
+	if(active_build && !(active_build in builds))
+		active_build = null
+		active_changed = TRUE
+	if(!active_build && builds.len)
+		active_build = builds[1]
+		active_changed = TRUE
+	if(active_changed)
+		notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
 
 /datum/changeling_bio_incubator/proc/assign_profile(datum/changeling_bio_incubator/build/build, datum/changeling_profile/profile)
 	if(!build)
@@ -408,6 +456,7 @@
 		"name" = name,
 	)
 	var/datum/antagonist/changeling/changeling = bio_incubator?.changeling
+	data["active"] = bio_incubator?.active_build == src
 	if(changeling && assigned_profile && (assigned_profile in changeling.stored_profiles))
 		data["profile"] = changeling.get_genetic_matrix_profile_data(assigned_profile)
 	else

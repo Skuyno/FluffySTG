@@ -420,6 +420,14 @@ GLOBAL_LIST_INIT(human_invader_antagonists, list(
 /// Changeling abilities with DNA cost = this are not obtainable by changelings - either used for secret unlockable or abstract abilities
 #define CHANGELING_POWER_UNOBTAINABLE -2
 
+/// Genetic matrix module identifiers for convenience when checking upgrades
+#define CHANGELING_MODULE_PREDATORY_HOWL "matrix_predatory_howl"
+#define CHANGELING_MODULE_SYMBIOTIC_OVERGROWTH "matrix_symbiotic_overgrowth"
+#define CHANGELING_MODULE_FEATHERED_VEIL "matrix_feathered_veil"
+#define CHANGELING_MODULE_PREDATOR_SINEW "matrix_predator_sinew"
+#define CHANGELING_MODULE_VOID_CARAPACE "matrix_void_carapace"
+#define CHANGELING_MODULE_ADRENAL_SPIKE "matrix_adrenal_spike"
+
 /// For changelings, this is how many recent say lines are retained when absorbing a mob
 #define LING_ABSORB_RECENT_SPEECH 8
 // Various abductor equipment modes.
