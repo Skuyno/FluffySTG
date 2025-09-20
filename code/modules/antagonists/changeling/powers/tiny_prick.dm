@@ -1,7 +1,7 @@
 /datum/action/changeling/sting//parent path, not meant for users afaik
-        name = "Tiny Prick"
-        desc = "Stabby stabby"
-        var/allow_nonliving_targets = FALSE
+	name = "Tiny Prick"
+	desc = "Stabby stabby"
+	var/allow_nonliving_targets = FALSE
 
 /datum/action/changeling/sting/Trigger(mob/clicker, trigger_flags)
 	var/mob/user = owner
@@ -60,15 +60,15 @@
 	return 1
 
 /datum/action/changeling/sting/sting_feedback(mob/user, mob/target)
-        if(!target)
-                return
-        to_chat(user, span_notice("We stealthily sting [target.name]."))
-        if(IS_CHANGELING(target))
-                to_chat(target, span_warning("You feel a tiny prick."))
-        return TRUE
+	if(!target)
+		return
+	to_chat(user, span_notice("We stealthily sting [target.name]."))
+	if(IS_CHANGELING(target))
+		to_chat(target, span_warning("You feel a tiny prick."))
+	return TRUE
 
 /datum/action/changeling/sting/proc/try_to_sting_nonliving(mob/living/user, atom/target)
-        return FALSE
+	return FALSE
 
 /datum/action/changeling/sting/transformation
 	name = "Transformation Sting"

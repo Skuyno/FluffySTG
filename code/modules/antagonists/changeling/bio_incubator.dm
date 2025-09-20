@@ -156,7 +156,7 @@
 	return "[module_identifier]"
 
 /datum/changeling_bio_incubator/proc/sanitize_slot_type(slot_type)
-	var/text_value = lowertext(trimtext(isnull(slot_type) ? "" : "[slot_type]"))
+	var/text_value = LOWER_TEXT(trimtext(isnull(slot_type) ? "" : "[slot_type]"))
 	if(text_value == BIO_INCUBATOR_SLOT_KEY || text_value == "key" || text_value == "key_active")
 		return BIO_INCUBATOR_SLOT_KEY
 	return BIO_INCUBATOR_SLOT_FLEX
@@ -164,7 +164,7 @@
 /datum/changeling_bio_incubator/proc/sanitize_category(category)
 	if(isnull(category))
 		return null
-	var/text_value = lowertext(trimtext("[category]"))
+	var/text_value = LOWER_TEXT(trimtext("[category]"))
 	return length(text_value) ? text_value : null
 
 /datum/changeling_bio_incubator/proc/sanitize_tag_list(list/tags)
@@ -172,7 +172,7 @@
 	if(!islist(tags))
 		return output
 	for(var/tag in tags)
-		var/text_value = lowertext(trimtext(isnull(tag) ? "" : "[tag]"))
+		var/text_value = LOWER_TEXT(trimtext(isnull(tag) ? "" : "[tag]"))
 		if(!length(text_value))
 			continue
 		if(!(text_value in output))

@@ -31,7 +31,7 @@
 		BODY_ZONE_L_LEG = /obj/item/bodypart/leg/left/mutant/vox,
 		BODY_ZONE_R_LEG = /obj/item/bodypart/leg/right/mutant/vox,
 	)
-       cell_line = CELL_LINE_TABLE_VOX
+	cell_line = CELL_LINE_TABLE_VOX
 	custom_worn_icons = list(
 		LOADOUT_ITEM_HEAD = VOX_HEAD_ICON,
 		LOADOUT_ITEM_MASK = VOX_MASK_ICON,
