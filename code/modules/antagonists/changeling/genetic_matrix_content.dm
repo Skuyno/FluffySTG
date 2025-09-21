@@ -2,138 +2,110 @@
 #define GENETIC_MATRIX_CATEGORY_PASSIVE "passive"
 #define GENETIC_MATRIX_CATEGORY_UPGRADE "upgrade"
 
-GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, list(
-	"matrix_predatory_howl" = list(
-		"id" = "matrix_predatory_howl",
-		"name" = "Predatory Howl",
-		"desc" = "Refocuses our technophagic shriek into a devastating execution note.",
-		"module" = list(
-			"id" = "matrix_predatory_howl",
-			"name" = "Predatory Howl",
-			"desc" = "Upgrades Technophagic Shriek with a razor-focused killing tone and heightened structure damage.",
-			"helptext" = "Stacks with resonant shriek bonuses; incompatible with other key actives.",
-			"category" = GENETIC_MATRIX_CATEGORY_KEY,
-			"slotType" = BIO_INCUBATOR_SLOT_KEY,
-			"tags" = list("sonic", "offense"),
-			"exclusiveTags" = list("key_active"),
-			"button_icon_state" = "dissonant_shriek",
-		),
-                "requiredCells" = list(
-                        CHANGELING_CELL_ID_VOX,
-                        CHANGELING_CELL_ID_TAJARAN,
-                ),
-		"requiredAbilities" = list(
-			/datum/action/changeling/dissonant_shriek,
-		),
-	),
-	"matrix_symbiotic_overgrowth" = list(
-		"id" = "matrix_symbiotic_overgrowth",
-		"name" = "Symbiotic Overgrowth",
-		"desc" = "Cultivates regenerative tissues that keep working even while dormant.",
-		"module" = list(
-			"id" = "matrix_symbiotic_overgrowth",
-			"name" = "Symbiotic Overgrowth",
-			"desc" = "Grants a slow baseline regeneration and improves the potency of the Regenerate ability.",
-			"category" = GENETIC_MATRIX_CATEGORY_PASSIVE,
-			"slotType" = BIO_INCUBATOR_SLOT_FLEX,
-			"tags" = list("healing", "sustain"),
-			"exclusiveTags" = list("healing"),
-			"button_icon_state" = "regenerate",
-		),
-                "requiredCells" = list(
-                        CHANGELING_CELL_ID_HUMAN,
-                        CHANGELING_CELL_ID_GOAT,
-                ),
-		"requiredAbilities" = list(
-			/datum/action/changeling/regenerate,
-		),
-	),
-	"matrix_feathered_veil" = list(
-		"id" = "matrix_feathered_veil",
-		"name" = "Feathered Veil",
-		"desc" = "Blend avian camouflage with predatory cunning for near-perfect stillness.",
-		"module" = list(
-			"id" = "matrix_feathered_veil",
-			"name" = "Feathered Veil",
-			"desc" = "Bolsters Digital Camouflage with brief bursts of total visual suppression while moving.",
-			"category" = GENETIC_MATRIX_CATEGORY_PASSIVE,
-			"slotType" = BIO_INCUBATOR_SLOT_FLEX,
-			"tags" = list("stealth", "mobility"),
-			"exclusiveTags" = list("stealth"),
-			"button_icon_state" = "digital_camo",
-		),
-                "requiredCells" = list(
-                        CHANGELING_CELL_ID_TESHARI,
-                        CHANGELING_CELL_ID_CHICKEN,
-                ),
-		"requiredAbilities" = list(
-			/datum/action/changeling/digitalcamo,
-		),
-	),
-	"matrix_predator_sinew" = list(
-		"id" = "matrix_predator_sinew",
-		"name" = "Predator's Sinew",
-		"desc" = "Splice apex muscle fibers to tame our Strained Muscles technique.",
-		"module" = list(
-			"id" = "matrix_predator_sinew",
-			"name" = "Predator's Sinew",
-			"desc" = "Reduces stamina backlash from Strained Muscles and adds a short sprint on activation.",
-			"category" = GENETIC_MATRIX_CATEGORY_UPGRADE,
-			"slotType" = BIO_INCUBATOR_SLOT_FLEX,
-			"tags" = list("mobility", "strength"),
-			"exclusiveTags" = list("mobility"),
-			"button_icon_state" = "strained_muscles",
-		),
-                "requiredCells" = list(
-                        CHANGELING_CELL_ID_TAJARAN,
-                        CHANGELING_CELL_ID_LIZARD,
-                ),
-		"requiredAbilities" = list(
-			/datum/action/changeling/strained_muscles,
-		),
-	),
-	"matrix_void_carapace" = list(
-		"id" = "matrix_void_carapace",
-		"name" = "Void Carapace",
-		"desc" = "Crystallize void-borne armor across our frame without permanent penalties.",
-		"module" = list(
-			"id" = "matrix_void_carapace",
-			"name" = "Void Carapace",
-			"desc" = "Improves Void Adaption by shortening its chem slowdown and granting brief hazard immunity bursts.",
-			"category" = GENETIC_MATRIX_CATEGORY_PASSIVE,
-			"slotType" = BIO_INCUBATOR_SLOT_FLEX,
-			"tags" = list("environment", "defense"),
-			"exclusiveTags" = list("adaptation"),
-			"button_icon_state" = null,
-		),
-                "requiredCells" = list(
-                        CHANGELING_CELL_ID_VOX,
-                        CHANGELING_CELL_ID_COLOSSUS,
-                ),
-		"requiredAbilities" = list(
-			/datum/action/changeling/void_adaption,
-		),
-	),
-	"matrix_adrenal_spike" = list(
-		"id" = "matrix_adrenal_spike",
-		"name" = "Adrenal Spike",
-		"desc" = "Bottle barnyard endurance into a reusable combat stimulant.",
-		"module" = list(
-			"id" = "matrix_adrenal_spike",
-			"name" = "Adrenal Spike",
-			"desc" = "Upgrades Gene Stim with bonus stamina recovery and a reactive countershock when stunned.",
-			"category" = GENETIC_MATRIX_CATEGORY_UPGRADE,
-			"slotType" = BIO_INCUBATOR_SLOT_FLEX,
-			"tags" = list("stamina", "burst"),
-			"exclusiveTags" = list("stamina"),
-			"button_icon_state" = "adrenaline",
-		),
-                "requiredCells" = list(
-                        CHANGELING_CELL_ID_COW,
-                        CHANGELING_CELL_ID_HUMAN,
-                ),
-		"requiredAbilities" = list(
-			/datum/action/changeling/adrenaline,
-		),
-	),
-))
+#define CHANGELING_MATRIX_MULTIPLICATIVE_EFFECT_KEYS list(\
+        "stamina_use_mult",\
+        "stamina_regen_time_mult",\
+        "fleshmend_heal_mult",\
+        "biodegrade_timer_mult",\
+        "feathered_veil_cooldown_mult",\
+        "resonant_shriek_confusion_mult",\
+        "dissonant_shriek_structure_mult"\
+)
+
+GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, setup_changeling_genetic_matrix_recipes())
+
+/// Movespeed modifier used for genetic matrix passive bonuses.
+/datum/movespeed_modifier/changeling/genetic_matrix
+        id = "changeling_genetic_matrix"
+        variable = TRUE
+
+/// Base type used to define a genetic matrix recipe entry.
+/datum/changeling_genetic_matrix_recipe
+        /// Unique identifier for the recipe and crafted module.
+        var/id = ""
+        /// Display name for the recipe entry.
+        var/name = ""
+        /// Short description of the recipe entry.
+        var/description = ""
+        /// Metadata describing the crafted module.
+        var/list/module = list()
+        /// Cells required to craft the recipe.
+        var/list/required_cells = list()
+        /// Abilities required to unlock the recipe.
+        var/list/required_abilities = list()
+        /// Additional root-level data to append to the recipe payload.
+        var/list/extra_fields
+
+/datum/changeling_genetic_matrix_recipe/proc/build_module_data()
+        var/list/block = LAZYCOPY(module)
+        if(!islist(block))
+                block = list()
+        if(!block["id"])
+                block["id"] = id
+        if(!block["name"])
+                block["name"] = name
+        if(!block["desc"])
+                block["desc"] = description
+        if(islist(block["effects"]))
+                block["effects"] = block["effects"].Copy()
+        return block
+
+/datum/changeling_genetic_matrix_recipe/proc/build_recipe()
+        if(!istext(id) || !length(id))
+                stack_trace("Changeling genetic matrix recipe missing id on [type]")
+                return null
+        var/list/data = list(
+                "id" = id,
+                "name" = name,
+                "desc" = description,
+                "module" = build_module_data(),
+                "requiredCells" = required_cells?.Copy() || list(),
+                "requiredAbilities" = required_abilities?.Copy() || list(),
+        )
+        if(islist(extra_fields))
+                for(var/key in extra_fields)
+                        data[key] = extra_fields[key]
+        return data
+
+/// Assemble the genetic matrix recipe catalog from all defined recipes.
+/proc/setup_changeling_genetic_matrix_recipes()
+        var/list/output = list()
+        for(var/recipe_type as anything in subtypesof(/datum/changeling_genetic_matrix_recipe))
+                if(recipe_type == /datum/changeling_genetic_matrix_recipe)
+                        continue
+                var/datum/changeling_genetic_matrix_recipe/recipe = new recipe_type
+                var/list/data = recipe.build_recipe()
+                if(!islist(data))
+                        qdel(recipe)
+                        continue
+                var/recipe_id = data["id"]
+                if(output[recipe_id])
+                        stack_trace("Duplicate changeling genetic matrix recipe id [recipe_id]")
+                        qdel(recipe)
+                        continue
+                output[recipe_id] = data
+                qdel(recipe)
+        return output
+
+/// Produce a baseline dictionary for matrix effects with sensible defaults.
+/proc/changeling_get_default_matrix_effects()
+        return list(
+                "move_speed_slowdown" = 0,
+                "stamina_use_mult" = 1,
+                "stamina_regen_time_mult" = 1,
+                "max_stamina_add" = 0,
+                "chem_recharge_rate_add" = 0,
+                "sting_range_add" = 0,
+                "fleshmend_duration_add" = 0,
+                "fleshmend_heal_mult" = 1,
+                "harvest_cells_chem_discount" = 0,
+                "harvest_cells_bonus_range" = 0,
+                "biodegrade_timer_mult" = 1,
+                "biodegrade_chem_discount" = 0,
+                "feathered_veil_burst_duration_add" = 0,
+                "feathered_veil_cooldown_mult" = 1,
+                "feathered_veil_alpha_add" = 0,
+                "resonant_shriek_range_add" = 0,
+                "resonant_shriek_confusion_mult" = 1,
+                "dissonant_shriek_structure_mult" = 1,
+        )
