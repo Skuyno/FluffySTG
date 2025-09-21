@@ -1,86 +1,86 @@
 /datum/action/changeling/sting/harvest_cells
-        name = "Harvest Cells"
-        desc = "We silently pierce a victim to obtain adaptable cell signatures."
-        helptext = "Collects a compatible cell entry from living station species or barnyard animals without alerting witnesses."
-        button_icon_state = "sting_extract"
-        chemical_cost = 10
-        dna_cost = CHANGELING_POWER_INNATE
-        allow_nonliving_targets = TRUE
+	name = "Harvest Cells"
+	desc = "We silently pierce a victim to obtain adaptable cell signatures."
+	helptext = "Collects a compatible cell entry from living station species or barnyard animals without alerting witnesses."
+	button_icon_state = "sting_extract"
+	chemical_cost = 10
+	dna_cost = CHANGELING_POWER_INNATE
+	allow_nonliving_targets = TRUE
 
 /datum/action/changeling/sting/harvest_cells/proc/get_effective_cost(datum/antagonist/changeling/changeling)
-        if(!changeling)
-                return chemical_cost
-        var/discount = round(changeling.get_genetic_matrix_effect("harvest_cells_chem_discount", 0))
-        return max(0, chemical_cost - discount)
+	if(!changeling)
+		return chemical_cost
+	var/discount = round(changeling.get_genetic_matrix_effect("harvest_cells_chem_discount", 0))
+	return max(0, chemical_cost - discount)
 
 /datum/action/changeling/sting/harvest_cells/proc/get_effective_range(datum/antagonist/changeling/changeling)
-        var/base_range = changeling?.sting_range || 0
-        var/bonus = round(changeling?.get_genetic_matrix_effect("harvest_cells_bonus_range", 0))
-        return max(0, base_range + bonus)
+	var/base_range = changeling?.sting_range || 0
+	var/bonus = round(changeling?.get_genetic_matrix_effect("harvest_cells_bonus_range", 0))
+	return max(0, base_range + bonus)
 
 /datum/action/changeling/sting/harvest_cells/can_sting(mob/living/user, mob/living/target)
-        if(!can_use_harvest(user))
-                return FALSE
-        if(!target)
-                return FALSE
-        if(!isturf(user.loc))
-                return FALSE
-        var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
-        if(target.mob_biotypes & MOB_ROBOTIC)
-                user.balloon_alert(user, "no organic cells!")
-                return FALSE
-        if(!reachable_target(user, target, get_effective_range(changeling)))
-                return FALSE
-        var/list/cell_ids = collect_cell_ids(target)
-        if(!cell_ids.len)
-                user.balloon_alert(user, "no viable cells!")
-                return FALSE
-        return TRUE
+	if(!can_use_harvest(user))
+		return FALSE
+	if(!target)
+		return FALSE
+	if(!isturf(user.loc))
+		return FALSE
+	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
+	if(target.mob_biotypes & MOB_ROBOTIC)
+		user.balloon_alert(user, "no organic cells!")
+		return FALSE
+	if(!reachable_target(user, target, get_effective_range(changeling)))
+		return FALSE
+	var/list/cell_ids = collect_cell_ids(target)
+	if(!cell_ids.len)
+		user.balloon_alert(user, "no viable cells!")
+		return FALSE
+	return TRUE
 
 /datum/action/changeling/sting/harvest_cells/try_to_sting_nonliving(mob/living/user, atom/target)
-        if(!can_harvest_nonliving(user, target))
-                return FALSE
-        if(disabled_by_fire && user.fire_stacks && user.on_fire)
-                user.balloon_alert(user, "on fire!")
-                return FALSE
-        var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
-        if(!perform_harvest(user, target))
-                return FALSE
-        changeling?.adjust_chemicals(-get_effective_cost(changeling))
-        user.changeNext_move(CLICK_CD_MELEE)
-        return TRUE
+	if(!can_harvest_nonliving(user, target))
+		return FALSE
+	if(disabled_by_fire && user.fire_stacks && user.on_fire)
+		user.balloon_alert(user, "on fire!")
+		return FALSE
+	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
+	if(!perform_harvest(user, target))
+		return FALSE
+	changeling?.adjust_chemicals(-get_effective_cost(changeling))
+	user.changeNext_move(CLICK_CD_MELEE)
+	return TRUE
 
 /datum/action/changeling/sting/harvest_cells/try_to_sting(mob/living/user, mob/living/target)
-        var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
-        var/old_cost = chemical_cost
-        chemical_cost = get_effective_cost(changeling)
-        var/result = ..()
-        chemical_cost = old_cost
-        return result
+	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
+	var/old_cost = chemical_cost
+	chemical_cost = get_effective_cost(changeling)
+	var/result = ..()
+	chemical_cost = old_cost
+	return result
 
 /datum/action/changeling/sting/harvest_cells/sting_action(mob/living/user, mob/living/target)
-        if(!perform_harvest(user, target))
-                return FALSE
-        ..()
-        return TRUE
+	if(!perform_harvest(user, target))
+		return FALSE
+	..()
+	return TRUE
 
 /datum/action/changeling/sting/harvest_cells/sting_feedback(mob/living/user, mob/living/target)
 	return TRUE
 
 /datum/action/changeling/sting/harvest_cells/proc/can_harvest_nonliving(mob/living/user, atom/target)
-        if(!target)
-                return FALSE
-        if(!can_use_harvest(user))
-                return FALSE
-        if(!isturf(user.loc))
-                return FALSE
-        var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
-        if(!reachable_target(user, target, get_effective_range(changeling)))
-                return FALSE
-        var/list/cell_ids = collect_cell_ids(target)
-        if(!cell_ids.len)
-                user.balloon_alert(user, "no viable cells!")
-                return FALSE
+	if(!target)
+		return FALSE
+	if(!can_use_harvest(user))
+		return FALSE
+	if(!isturf(user.loc))
+		return FALSE
+	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
+	if(!reachable_target(user, target, get_effective_range(changeling)))
+		return FALSE
+	var/list/cell_ids = collect_cell_ids(target)
+	if(!cell_ids.len)
+		user.balloon_alert(user, "no viable cells!")
+		return FALSE
 	return TRUE
 
 /datum/action/changeling/sting/harvest_cells/proc/reachable_target(mob/living/user, atom/target, range)
@@ -161,10 +161,10 @@
 			ids += cell_id
 	return ids
 /datum/action/changeling/sting/harvest_cells/proc/can_use_harvest(mob/living/user)
-        if(!can_be_used_by(user))
-                return FALSE
-        var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
-        if(!changeling)
+	if(!can_be_used_by(user))
+		return FALSE
+	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
+	if(!changeling)
 		return FALSE
 	if(!changeling.chosen_sting)
 		to_chat(user, span_warning("We must prepare our sting before harvesting."))
@@ -172,10 +172,10 @@
 	if(changeling.chosen_sting != src)
 		to_chat(user, span_warning("We have primed a different sting."))
 		return FALSE
-        var/effective_cost = get_effective_cost(changeling)
-        if(changeling.chem_charges < effective_cost)
-                user.balloon_alert(user, "needs [effective_cost] chemicals!")
-                return FALSE
+	var/effective_cost = get_effective_cost(changeling)
+	if(changeling.chem_charges < effective_cost)
+		user.balloon_alert(user, "needs [effective_cost] chemicals!")
+		return FALSE
 	if(changeling.absorbed_count < req_dna)
 		user.balloon_alert(user, "needs [req_dna] dna sample\s!")
 		return FALSE
