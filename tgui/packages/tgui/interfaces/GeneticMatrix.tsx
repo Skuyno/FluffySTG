@@ -191,7 +191,7 @@ export const GeneticMatrix = () => {
                 selected={activeTab === 'cells'}
                 onClick={() => setActiveTab('cells')}
               >
-                Cells Storage
+                Recipes
               </Tabs.Tab>
               <Tabs.Tab
                 selected={activeTab === 'abilities'}
@@ -224,9 +224,7 @@ export const GeneticMatrix = () => {
                 maxBuilds={maxBuilds}
               />
             )}
-            {activeTab === 'cells' && (
-              <CellsTab cells={cells} recipes={recipes} />
-            )}
+            {activeTab === 'cells' && <RecipesTab recipes={recipes} />}
             {activeTab === 'abilities' && (
               <AbilityStorageTab abilities={abilities} />
             )}
@@ -1420,61 +1418,44 @@ const formatCategory = (category?: string) => {
   return category;
 };
 
-type CellsTabProps = {
-  cells: CytologyCellEntry[];
+type RecipesTabProps = {
   recipes: RecipeEntry[];
 };
 
-const CellsTab = ({ cells, recipes }: CellsTabProps) => {
-  const [cellSearch, setCellSearch] = useState('');
+const RecipesTab = ({ recipes }: RecipesTabProps) => {
+  const [recipeSearch, setRecipeSearch] = useState('');
 
-  const filteredCells = useMemo(() => {
-    const query = cellSearch.toLowerCase();
+  const filteredRecipes = useMemo(() => {
+    const query = recipeSearch.toLowerCase();
     if (!query) {
-      return cells;
+      return recipes;
     }
-    return cells.filter((cell) =>
-      cell.name.toLowerCase().includes(query) ||
-      (cell.desc ? cell.desc.toLowerCase().includes(query) : false),
-    );
-  }, [cells, cellSearch]);
+    return recipes.filter((recipe) => {
+      const name = (recipe.module?.name ?? recipe.name).toLowerCase();
+      const desc = recipe.module?.desc ?? recipe.desc ?? '';
+      return (
+        name.includes(query) ||
+        (desc ? desc.toLowerCase().includes(query) : false)
+      );
+    });
+  }, [recipes, recipeSearch]);
 
   return (
-    <Stack vertical fill gap={1}>
-      <Stack.Item>
-        <Section title="Cytology Cells" fill scrollable>
-          <Stack vertical gap={1}>
-            <Stack.Item>
-              <Input
-                value={cellSearch}
-                onInput={(_, value) => setCellSearch(value)}
-                placeholder="Search cytology cells..."
-              />
-            </Stack.Item>
-            <Stack.Item>
-              {filteredCells.length === 0 ? (
-                <NoticeBox>No cells catalogued.</NoticeBox>
-              ) : (
-                <Stack vertical gap={1}>
-                  {filteredCells.map((cell) => (
-                    <Box key={cell.id} className="candystripe" p={1}>
-                      <Box bold>{cell.name}</Box>
-                      {cell.desc && <Box color="label">{cell.desc}</Box>}
-                    </Box>
-                  ))}
-                </Stack>
-              )}
-            </Stack.Item>
-          </Stack>
-        </Section>
-      </Stack.Item>
-      <Stack.Item grow>
-        <Section title="Known Recipes" fill scrollable>
-          {recipes.length === 0 ? (
+    <Section title="Known Recipes" fill scrollable>
+      <Stack vertical gap={1}>
+        <Stack.Item>
+          <Input
+            value={recipeSearch}
+            onInput={(_, value) => setRecipeSearch(value)}
+            placeholder="Search recipes..."
+          />
+        </Stack.Item>
+        <Stack.Item>
+          {filteredRecipes.length === 0 ? (
             <NoticeBox>No genetic recipes known.</NoticeBox>
           ) : (
             <Stack vertical gap={1}>
-              {recipes.map((recipe) => (
+              {filteredRecipes.map((recipe) => (
                 <Box key={recipe.id} className="candystripe" p={1}>
                   <Stack justify="space-between" align="center">
                     <Stack.Item>
@@ -1504,15 +1485,17 @@ const CellsTab = ({ cells, recipes }: CellsTabProps) => {
                     Cells: {recipe.requiredCells.map((req) => req.name).join(', ') || 'None'}
                   </Box>
                   <Box color="label">
-                    Abilities: {recipe.requiredAbilities.map((req) => req.name).join(', ') || 'None'}
+                    Abilities: {recipe.requiredAbilities
+                      .map((req) => req.name)
+                      .join(', ') || 'None'}
                   </Box>
                 </Box>
               ))}
             </Stack>
           )}
-        </Section>
-      </Stack.Item>
-    </Stack>
+        </Stack.Item>
+      </Stack>
+    </Section>
   );
 };
 

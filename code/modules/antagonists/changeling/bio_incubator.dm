@@ -57,7 +57,7 @@
 	var/datum/changeling_bio_incubator/build/build = new(src)
 	build.name = name
 	build.ensure_slot_capacity()
-	builds += build
+	builds += list(build)
 	notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
 	return build
 
