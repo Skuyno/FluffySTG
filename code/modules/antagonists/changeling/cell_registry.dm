@@ -133,20 +133,56 @@ GLOBAL_LIST_INIT(changeling_cell_registry, list(
 	return capitalize(text_value)
 
 /proc/changeling_registry_entry_matches_name(list/entry, normalized_name)
-	if(!islist(entry) || !length(normalized_name))
-		return FALSE
-	var/entry_name = changeling_normalize_match_text(entry[CHANGELING_CELL_REGISTRY_NAME])
-	if(length(entry_name) && findtext(normalized_name, entry_name))
-		return TRUE
-	var/list/keywords = entry[CHANGELING_CELL_REGISTRY_KEYWORDS]
-	if(islist(keywords))
-		for(var/keyword in keywords)
-			var/normalized_keyword = changeling_normalize_match_text(keyword)
-			if(!length(normalized_keyword))
-				continue
-			if(findtext(normalized_name, normalized_keyword))
-				return TRUE
-	return FALSE
+        if(!islist(entry) || !length(normalized_name))
+                return FALSE
+        var/entry_name = changeling_normalize_match_text(entry[CHANGELING_CELL_REGISTRY_NAME])
+        if(length(entry_name) && changeling_text_contains_word(normalized_name, entry_name))
+                return TRUE
+        var/list/keywords = entry[CHANGELING_CELL_REGISTRY_KEYWORDS]
+        if(islist(keywords))
+                for(var/keyword in keywords)
+                        var/normalized_keyword = changeling_normalize_match_text(keyword)
+                        if(!length(normalized_keyword))
+                                continue
+                        if(changeling_text_contains_word(normalized_name, normalized_keyword))
+                                return TRUE
+        return FALSE
+
+/proc/changeling_text_contains_word(normalized_text, candidate)
+        if(!length(normalized_text) || !length(candidate))
+                return FALSE
+        var/search_start = 1
+        var/candidate_length = length(candidate)
+        while(TRUE)
+                var/found_index = findtext(normalized_text, candidate, search_start)
+                if(!found_index)
+                        return FALSE
+                if(changeling_has_word_boundaries(normalized_text, found_index, candidate_length))
+                        return TRUE
+                search_start = found_index + candidate_length
+
+/proc/changeling_has_word_boundaries(normalized_text, start_index, word_length)
+        var/before_index = start_index - 1
+        if(before_index >= 1)
+                var/preceding_character = copytext(normalized_text, before_index, before_index + 1)
+                if(changeling_is_word_character(preceding_character))
+                        return FALSE
+        var/after_index = start_index + word_length
+        if(after_index <= length(normalized_text))
+                var/following_character = copytext(normalized_text, after_index, after_index + 1)
+                if(changeling_is_word_character(following_character))
+                        return FALSE
+        return TRUE
+
+/proc/changeling_is_word_character(character)
+        if(!length(character))
+                return FALSE
+        var/ascii_value = text2ascii(character)
+        if(ascii_value >= 97 && ascii_value <= 122) // a-z
+                return TRUE
+        if(ascii_value >= 48 && ascii_value <= 57) // 0-9
+                return TRUE
+        return FALSE
 
 /proc/changeling_registry_entry_matches_species(list/entry, species_id)
 	var/list/species_ids = entry[CHANGELING_CELL_REGISTRY_SPECIES]
@@ -211,18 +247,22 @@ GLOBAL_LIST_INIT(changeling_cell_registry, list(
 	return results
 
 /proc/changeling_get_cell_ids_from_atom(atom/target)
-	var/list/results = list()
-	if(!target)
-		return results
-	var/list/registry = changeling_get_cell_registry()
-	for(var/cell_id as anything in changeling_get_cell_ids_from_name(target.name))
-		if(!(cell_id in results))
-			results += cell_id
-	for(var/cell_id in registry)
-		var/list/entry = registry[cell_id]
-		if(!islist(entry))
-			continue
-		if(changeling_registry_entry_matches_type(entry, target))
+        var/list/results = list()
+        if(!target)
+                return results
+        if(ispath(target))
+                return results
+        if(!isobj(target))
+                return results
+        var/list/registry = changeling_get_cell_registry()
+        for(var/cell_id as anything in changeling_get_cell_ids_from_name(target.name))
+                if(!(cell_id in results))
+                        results += cell_id
+        for(var/cell_id in registry)
+                var/list/entry = registry[cell_id]
+                if(!islist(entry))
+                        continue
+                if(changeling_registry_entry_matches_type(entry, target))
 			if(!(cell_id in results))
 				results += cell_id
 	return results
