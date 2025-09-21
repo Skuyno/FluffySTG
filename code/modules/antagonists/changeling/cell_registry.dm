@@ -440,11 +440,13 @@ GLOBAL_LIST_INIT(changeling_cell_registry, list(
 		var/list/entry = registry[cell_id]
 		if(!islist(entry))
 			continue
+		var/list/entry_species = entry[CHANGELING_CELL_REGISTRY_SPECIES]
+		var/entry_has_species = islist(entry_species) && entry_species.len
 		if(changeling_registry_entry_matches_species(entry, species_id))
 			if(!(cell_id in results))
 				results += cell_id
 			continue
-		if(changeling_registry_entry_matches_type(entry, target))
+		if((!entry_has_species || isnull(species_id)) && changeling_registry_entry_matches_type(entry, target))
 			if(!(cell_id in results))
 				results += cell_id
 			continue
