@@ -50,12 +50,14 @@ export type ModuleEntry = {
   tags?: string[];
   exclusiveTags?: string[];
   crafted?: BooleanLike;
+  active?: BooleanLike;
 };
 
 export type BuildEntry = {
   id: string;
   name: string;
   modules: (ModuleEntry | null)[];
+  activeModuleIds?: (string | null)[];
 };
 
 export type CytologyCellEntry = {
@@ -107,7 +109,6 @@ export type StandardAbilityEntry = {
 
 type GeneticMatrixData = {
   maxModuleSlots?: number;
-  maxBuilds: number;
   builds: BuildEntry[];
   modules: ModuleEntry[];
   abilities: ModuleEntry[];
@@ -118,7 +119,7 @@ type GeneticMatrixData = {
   absorbs: number;
   dnaSamples: number;
   canReadapt: BooleanLike;
-  canAddBuild: BooleanLike;
+  isReconfiguring?: BooleanLike;
 };
 
 type DragPayload =
@@ -143,37 +144,14 @@ export const GeneticMatrix = () => {
     absorbs = 0,
     dnaSamples = 0,
     canReadapt,
-    canAddBuild,
     maxModuleSlots = 0,
-    maxBuilds = 0,
+    isReconfiguring,
   } = data;
 
   const [activeTab, setActiveTab] = useLocalState<
     'matrix' | 'cells' | 'abilities' | 'skills'
   >('genetic-matrix/tab', 'matrix');
-  const [selectedBuildId, setSelectedBuildId] = useLocalState<string | undefined>(
-    'genetic-matrix/selected-build',
-    undefined,
-  );
-
-  useEffect(() => {
-    if (!builds.length) {
-      if (selectedBuildId !== undefined) {
-        setSelectedBuildId(undefined);
-      }
-      return;
-    }
-
-    const stillExists = builds.some((build) => build.id === selectedBuildId);
-    if (!selectedBuildId || !stillExists) {
-      setSelectedBuildId(builds[0].id);
-    }
-  }, [builds, selectedBuildId, setSelectedBuildId]);
-
-  const selectedBuild = useMemo(
-    () => builds.find((build) => build.id === selectedBuildId),
-    [builds, selectedBuildId],
-  );
+  const reconfiguring = asBoolean(isReconfiguring);
 
   return (
     <Window width={1060} height={720}>
@@ -216,12 +194,8 @@ export const GeneticMatrix = () => {
                 abilities={abilities}
                 cells={cells}
                 recipes={recipes}
-                selectedBuild={selectedBuild}
-                selectedBuildId={selectedBuildId}
-                onSelectBuild={setSelectedBuildId}
                 maxModuleSlots={maxModuleSlots}
-                canAddBuild={asBoolean(canAddBuild)}
-                maxBuilds={maxBuilds}
+                reconfiguring={reconfiguring}
               />
             )}
             {activeTab === 'cells' && <RecipesTab recipes={recipes} />}
@@ -252,12 +226,8 @@ type MatrixTabProps = {
   abilities: ModuleEntry[];
   cells: CytologyCellEntry[];
   recipes: RecipeEntry[];
-  selectedBuild: BuildEntry | undefined;
-  selectedBuildId: string | undefined;
-  onSelectBuild: (id: string) => void;
   maxModuleSlots: number;
-  canAddBuild: boolean;
-  maxBuilds: number;
+  reconfiguring: boolean;
 };
 
 const MatrixTab = ({
@@ -267,12 +237,8 @@ const MatrixTab = ({
   abilities,
   cells,
   recipes,
-  selectedBuild,
-  selectedBuildId,
-  onSelectBuild,
   maxModuleSlots,
-  canAddBuild,
-  maxBuilds,
+  reconfiguring,
 }: MatrixTabProps) => {
   const [dragPayload, setDragPayload] = useState<DragPayload | null>(null);
 
@@ -308,6 +274,8 @@ const MatrixTab = ({
     },
     [dragPayload],
   );
+
+  const selectedBuild = builds[0];
 
   const [selectedCells, setSelectedCells] = useState<string[]>([]);
   const [selectedAbilities, setSelectedAbilities] = useState<string[]>([]);
@@ -366,24 +334,6 @@ const MatrixTab = ({
     },
     [act],
   );
-
-  const handleRenameBuild = useCallback(
-    (buildId: string) => {
-      act('rename_build', { build: buildId });
-    },
-    [act],
-  );
-
-  const handleDeleteBuild = useCallback(
-    (buildId: string) => {
-      act('delete_build', { build: buildId });
-    },
-    [act],
-  );
-
-  const handleCreateBuild = useCallback(() => {
-    act('create_build');
-  }, [act]);
 
   const handleModuleDrop = useCallback(
     (payload: DragPayload, targetBuild: BuildEntry, slot: number) => {
@@ -498,6 +448,38 @@ const MatrixTab = ({
     );
   }, [selectedBuild]);
 
+  const hasPendingChanges = useMemo(() => {
+    if (!selectedBuild) {
+      return false;
+    }
+    const modulesList = selectedBuild.modules ?? [];
+    const activeIds = selectedBuild.activeModuleIds ?? [];
+    const slotCount = Math.max(maxModuleSlots, modulesList.length, activeIds.length);
+    for (let index = 0; index < slotCount; index += 1) {
+      const assignedId = modulesList[index]?.id ?? null;
+      const activeId = activeIds[index] ?? null;
+      if (assignedId !== activeId) {
+        return true;
+      }
+    }
+    return false;
+  }, [maxModuleSlots, selectedBuild]);
+
+  const commitDisabledReason = !selectedBuild
+    ? 'We lack a genetic configuration to edit.'
+    : reconfiguring
+      ? 'We are already reconfiguring our genome.'
+      : !hasPendingChanges
+        ? 'No changes to save.'
+        : undefined;
+
+  const handleCommitBuild = useCallback(() => {
+    if (!selectedBuild) {
+      return;
+    }
+    act('commit_build', { build: selectedBuild.id });
+  }, [act, selectedBuild]);
+
   const canCraft =
     !!selectedRecipe &&
     asBoolean(selectedRecipe.unlocked) &&
@@ -513,17 +495,42 @@ const MatrixTab = ({
   return (
     <Stack vertical fill gap={1}>
       <Stack.Item>
-        <BuildList
-          builds={builds}
-          selectedBuildId={selectedBuildId}
-          onSelect={onSelectBuild}
-          onCreate={handleCreateBuild}
-          onRename={handleRenameBuild}
-          onClear={handleClearBuild}
-          onDelete={handleDeleteBuild}
-          canAddBuild={canAddBuild}
-          maxBuilds={maxBuilds}
-        />
+        <Section
+          title="Genome Configuration"
+          buttons={
+            <Button
+              icon="save"
+              disabled={!selectedBuild || reconfiguring || !hasPendingChanges}
+              tooltip={commitDisabledReason}
+              onClick={handleCommitBuild}
+            >
+              {reconfiguring ? 'Reconfiguring…' : 'Save Configuration'}
+            </Button>
+          }
+        >
+          <Stack vertical gap={0.5}>
+            <Stack.Item>
+              <Box color="label">
+                Arrange our genetic modules below, then save to reshape our passive
+                adaptations.
+              </Box>
+            </Stack.Item>
+            {reconfiguring && (
+              <Stack.Item>
+                <NoticeBox type="info">
+                  Our genome is in flux. Hold still while the reconfiguration finishes.
+                </NoticeBox>
+              </Stack.Item>
+            )}
+            {!reconfiguring && hasPendingChanges && (
+              <Stack.Item>
+                <NoticeBox type="warning">
+                  Pending changes detected. Save to finalize our new configuration.
+                </NoticeBox>
+              </Stack.Item>
+            )}
+          </Stack>
+        </Section>
       </Stack.Item>
       <Stack.Item grow>
         <Stack fill gap={1}>
@@ -1023,90 +1030,6 @@ const CraftComposer = ({
 };
 
 
-type BuildListProps = {
-  builds: BuildEntry[];
-  selectedBuildId: string | undefined;
-  onSelect: (id: string) => void;
-  onCreate: () => void;
-  onRename: (id: string) => void;
-  onClear: (id: string) => void;
-  onDelete: (id: string) => void;
-  canAddBuild: boolean;
-  maxBuilds: number;
-};
-
-const BuildList = ({
-  builds,
-  selectedBuildId,
-  onSelect,
-  onCreate,
-  onRename,
-  onClear,
-  onDelete,
-  canAddBuild,
-  maxBuilds,
-}: BuildListProps) => (
-  <Section
-    title="Builds"
-    buttons={
-      <Button
-        icon="plus"
-        disabled={!canAddBuild}
-        tooltip={canAddBuild ? undefined : 'Bio-incubator build slots full.'}
-        onClick={onCreate}
-      >
-        New Build
-      </Button>
-    }
-    fill
-    scrollable
-  >
-    {builds.length === 0 ? (
-      <NoticeBox>No builds configured.</NoticeBox>
-    ) : (
-      <Stack vertical gap={0.5}>
-        {builds.map((build) => (
-          <Box
-            key={build.id}
-            className="candystripe"
-            p={1}
-            style={{
-              border: `1px solid ${
-                build.id === selectedBuildId ? '#7fc' : 'rgba(255,255,255,0.1)'
-              }`,
-              borderRadius: '6px',
-              cursor: 'pointer',
-            }}
-            onClick={() => onSelect(build.id)}
-          >
-            <Stack justify="space-between" align="center" gap={1}>
-              <Stack.Item grow>
-                <Box bold>{build.name}</Box>
-              </Stack.Item>
-              <Stack.Item>
-                <Stack gap={0.5}>
-                  <Stack.Item>
-                    <Button icon="edit" compact tooltip="Rename" onClick={() => onRename(build.id)} />
-                  </Stack.Item>
-                  <Stack.Item>
-                    <Button icon="eraser" compact tooltip="Clear" onClick={() => onClear(build.id)} />
-                  </Stack.Item>
-                  <Stack.Item>
-                    <Button icon="trash" compact tooltip="Delete" onClick={() => onDelete(build.id)} />
-                  </Stack.Item>
-                </Stack>
-              </Stack.Item>
-            </Stack>
-          </Box>
-        ))}
-      </Stack>
-    )}
-    <Box color="label" mt={1}>
-      Slots used: {builds.length}/{maxBuilds}
-    </Box>
-  </Section>
-);
-
 type BuildEditorProps = {
   build: BuildEntry | undefined;
   maxModuleSlots: number;
@@ -1132,8 +1055,8 @@ const BuildEditor = ({
 }: BuildEditorProps) => {
   if (!build) {
     return (
-      <Section title="Build Editor">
-        <NoticeBox>Select or create a build to begin editing your genetic matrix.</NoticeBox>
+      <Section title="Matrix Editor">
+        <NoticeBox>No genetic configuration is available.</NoticeBox>
       </Section>
     );
   }
@@ -1152,17 +1075,19 @@ const BuildEditor = ({
     return counts;
   }, [build.modules]);
 
+  const activeModuleIds = build.activeModuleIds ?? [];
+
   return (
     <Section
-      title={`Build Editor — ${build.name}`}
+      title={`Matrix Editor — ${build.name}`}
       buttons={
         <Button icon="eraser" tooltip="Clear all assignments" onClick={() => onClearBuild(build.id)}>
-          Clear Build
+          Clear Matrix
         </Button>
       }
     >
       <Stack vertical gap={1}>
-      <Divider />
+        <Divider />
         <Stack.Item>
           <Stack vertical gap={1}>
             {Array.from({ length: maxModuleSlots }, (_, index) => {
@@ -1173,6 +1098,21 @@ const BuildEditor = ({
                 (dragPayload.type === 'module' ||
                   (dragPayload.type === 'module-slot' &&
                     (dragPayload.buildId !== build.id || dragPayload.slot !== slot)));
+              const activeModuleId = activeModuleIds[slot - 1] ?? null;
+              const pendingChange = Boolean(
+                moduleEntry && moduleEntry.active !== undefined && !asBoolean(moduleEntry.active),
+              );
+              const pendingRemoval = !moduleEntry && Boolean(activeModuleId);
+              const borderColor = highlight
+                ? '#7fc'
+                : pendingChange || pendingRemoval
+                  ? '#f88'
+                  : 'rgba(255, 255, 255, 0.2)';
+              const backgroundColor = highlight
+                ? 'rgba(64, 160, 255, 0.08)'
+                : pendingChange || pendingRemoval
+                  ? 'rgba(255, 120, 120, 0.08)'
+                  : 'rgba(255,255,255,0.03)';
               const conflictTags =
                 moduleEntry?.exclusiveTags?.filter(
                   (tag) => (exclusiveCounts.get(tag.toLowerCase()) ?? 0) > 1,
@@ -1228,14 +1168,10 @@ const BuildEditor = ({
                         }
                       }}
                       style={{
-                        border: `1px dashed ${
-                          highlight ? '#7fc' : 'rgba(255, 255, 255, 0.2)'
-                        }`,
+                        border: `1px dashed ${borderColor}`,
                         borderRadius: '6px',
                         minHeight: '72px',
-                        backgroundColor: highlight
-                          ? 'rgba(64, 160, 255, 0.08)'
-                          : 'rgba(255,255,255,0.03)',
+                        backgroundColor: backgroundColor,
                       }}
                     >
                       {moduleEntry ? (
@@ -1244,6 +1180,8 @@ const BuildEditor = ({
                           showSource={false}
                           conflictTags={conflictTags}
                         />
+                      ) : pendingRemoval ? (
+                        <Box color="bad">Active module will be removed after saving.</Box>
                       ) : (
                         <Box color="label">Drop a module here.</Box>
                       )}
@@ -1339,6 +1277,10 @@ type ModuleSummaryProps = {
 const ModuleSummary = ({ module, showSource = true, conflictTags = [] }: ModuleSummaryProps) => {
   const sourceLabel = showSource ? formatSource(module.source) : '';
   const sourceColor = module.source?.toLowerCase() === 'innate' ? 'good' : 'average';
+  const statusDefined = module.active !== undefined;
+  const isActive = statusDefined ? asBoolean(module.active) : false;
+  const statusLabel = statusDefined ? (isActive ? 'Equipped' : 'Pending Save') : '';
+  const statusColor = isActive ? 'good' : 'average';
   return (
     <Stack vertical gap={0.5}>
       <Stack.Item>
@@ -1346,9 +1288,20 @@ const ModuleSummary = ({ module, showSource = true, conflictTags = [] }: ModuleS
           <Stack.Item>
             <Box bold>{module.name}</Box>
           </Stack.Item>
-          {sourceLabel && (
+          {(statusDefined || sourceLabel) && (
             <Stack.Item>
-              <Box color={sourceColor}>{sourceLabel}</Box>
+              <Stack gap={0.5} align="center">
+                {statusDefined && (
+                  <Stack.Item>
+                    <Box color={statusColor}>{statusLabel}</Box>
+                  </Stack.Item>
+                )}
+                {sourceLabel && (
+                  <Stack.Item>
+                    <Box color={sourceColor}>{sourceLabel}</Box>
+                  </Stack.Item>
+                )}
+              </Stack>
             </Stack.Item>
           )}
         </Stack>

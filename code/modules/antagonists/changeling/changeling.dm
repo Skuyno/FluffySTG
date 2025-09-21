@@ -72,8 +72,10 @@
 	var/datum/genetic_matrix/genetic_matrix
 	/// Action that opens the genetic matrix UI.
 	var/datum/action/changeling/genetic_matrix/genetic_matrix_action
-	/// Storage managing cytology cells, recipes, modules, and builds.
-	var/datum/changeling_bio_incubator/bio_incubator
+        /// Storage managing cytology cells, recipes, modules, and builds.
+        var/datum/changeling_bio_incubator/bio_incubator
+        /// Whether the changeling is currently rewriting their genetic matrix.
+        var/genetic_matrix_reconfiguring = FALSE
 
 	/// UI displaying how many chems we have
 	var/atom/movable/screen/ling/chems/lingchemdisplay
@@ -242,25 +244,76 @@
 	emporium_action.Grant(owner.current)
 
 /datum/antagonist/changeling/proc/create_bio_incubator()
-	QDEL_NULL(bio_incubator)
-	bio_incubator = new(src)
-	bio_incubator.ensure_default_build()
-	update_genetic_matrix_unlocks()
-	if(genetic_matrix)
-		genetic_matrix.register_with_incubator()
-	return bio_incubator
+        QDEL_NULL(bio_incubator)
+        bio_incubator = new(src)
+        bio_incubator.ensure_default_build()
+        update_genetic_matrix_unlocks()
+        if(genetic_matrix)
+                genetic_matrix.register_with_incubator()
+        genetic_matrix_reconfiguring = FALSE
+        return bio_incubator
 
 /datum/antagonist/changeling/proc/create_genetic_matrix()
-	QDEL_NULL(genetic_matrix_action)
-	QDEL_NULL(genetic_matrix)
-	if(!bio_incubator)
-		create_bio_incubator()
-	genetic_matrix = new(src)
-	genetic_matrix_action = new(genetic_matrix)
-	ensure_genetic_matrix_setup()
-	update_genetic_matrix_unlocks()
-	if(owner && owner.current)
-		genetic_matrix_action.Grant(owner.current)
+        QDEL_NULL(genetic_matrix_action)
+        QDEL_NULL(genetic_matrix)
+        if(!bio_incubator)
+                create_bio_incubator()
+        genetic_matrix = new(src)
+        genetic_matrix_action = new(genetic_matrix)
+        ensure_genetic_matrix_setup()
+        update_genetic_matrix_unlocks()
+        if(owner && owner.current)
+                genetic_matrix_action.Grant(owner.current)
+
+/datum/antagonist/changeling/proc/is_genetic_matrix_reconfiguring()
+        return genetic_matrix_reconfiguring
+
+/datum/antagonist/changeling/proc/commit_genetic_matrix_build(datum/changeling_bio_incubator/build/build, mob/user)
+        if(!build || !owner?.current)
+                return FALSE
+        if(!bio_incubator)
+                create_bio_incubator()
+        if(!bio_incubator)
+                return FALSE
+        var/mob/living/living_owner = owner.current
+        if(genetic_matrix_reconfiguring)
+                living_owner.balloon_alert(living_owner, "already reconfiguring!")
+                return FALSE
+        var/list/current_active = bio_incubator.get_active_module_ids()
+        var/has_changes = FALSE
+        var/max_slots = bio_incubator.get_max_slots()
+        build.ensure_slot_capacity()
+        for(var/i in 1 to max_slots)
+                var/current_id = i <= current_active.len ? current_active[i] : null
+                var/new_id = i <= build.module_ids.len ? build.module_ids[i] : null
+                if(new_id)
+                        new_id = bio_incubator.sanitize_module_id(new_id)
+                if(current_id != new_id)
+                        has_changes = TRUE
+                        break
+        if(!has_changes)
+                living_owner.balloon_alert(living_owner, "no changes to apply")
+                return FALSE
+        genetic_matrix_reconfiguring = TRUE
+        if(genetic_matrix)
+                SStgui.update_uis(genetic_matrix)
+        to_chat(living_owner, span_notice("We focus inward, preparing to rewrite our genome."))
+        if(!do_after(living_owner, 15 SECONDS, living_owner))
+                genetic_matrix_reconfiguring = FALSE
+                if(genetic_matrix)
+                        SStgui.update_uis(genetic_matrix)
+                living_owner.balloon_alert(living_owner, "interrupted!")
+                return FALSE
+        bio_incubator.apply_build_configuration(build)
+        genetic_matrix_reconfiguring = FALSE
+        if(genetic_matrix)
+                SStgui.update_uis(genetic_matrix)
+        to_chat(living_owner, span_notice("Our passive adaptations settle into place."))
+        on_genetic_matrix_reconfigured()
+        return TRUE
+
+/datum/antagonist/changeling/proc/on_genetic_matrix_reconfigured()
+        update_genetic_matrix_unlocks()
 
 /*
  * Instantiate all the default actions of a ling (transform, dna sting, absorb, etc)
