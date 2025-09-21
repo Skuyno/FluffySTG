@@ -236,8 +236,8 @@
 		to_chat(owner.current, span_userdanger("You grow weak and lose your powers! You are no longer a changeling and are stuck in your current form!"))
 
 /*
- * Instantiate the cellular emporium for the changeling.
- */
+* Instantiate the cellular emporium for the changeling.
+*/
 /datum/antagonist/changeling/proc/create_emporium()
 	cellular_emporium = new(src)
 	emporium_action = new(cellular_emporium)
@@ -316,9 +316,9 @@
 	update_genetic_matrix_unlocks()
 
 /*
- * Instantiate all the default actions of a ling (transform, dna sting, absorb, etc)
- * Any Changeling action with dna_cost = CHANGELING_POWER_INNATE will be added here automatically
- */
+* Instantiate all the default actions of a ling (transform, dna sting, absorb, etc)
+* Any Changeling action with dna_cost = CHANGELING_POWER_INNATE will be added here automatically
+*/
 /datum/antagonist/changeling/proc/create_innate_actions()
 	for(var/datum/action/changeling/path as anything in all_powers)
 		if(initial(path.dna_cost) != CHANGELING_POWER_INNATE)
@@ -330,9 +330,9 @@
 	update_genetic_matrix_unlocks()
 
 /*
- * Signal proc for [COMSIG_MOB_LOGIN].
- * Gives us back our action buttons if we lose them on log-in.
- */
+* Signal proc for [COMSIG_MOB_LOGIN].
+* Gives us back our action buttons if we lose them on log-in.
+*/
 /datum/antagonist/changeling/proc/on_login(datum/source)
 	SIGNAL_HANDLER
 
@@ -345,9 +345,9 @@
 	regain_powers()
 
 /**
- * Signal proc for [COMSIG_LIVING_LIFE].
- * Handles regenerating chemicals on life ticks.
- */
+* Signal proc for [COMSIG_LIVING_LIFE].
+* Handles regenerating chemicals on life ticks.
+*/
 /datum/antagonist/changeling/proc/on_life(datum/source, seconds_per_tick, times_fired)
 	SIGNAL_HANDLER
 
@@ -366,8 +366,8 @@
 			adjust_chemicals((chem_recharge_rate - chem_recharge_slowdown) * delta_time)
 
 /**
- * Signal proc for [COMSIG_LIVING_POST_FULLY_HEAL]
- */
+* Signal proc for [COMSIG_LIVING_POST_FULLY_HEAL]
+*/
 /datum/antagonist/changeling/proc/on_fullhealed(mob/living/source, heal_flags)
 	SIGNAL_HANDLER
 
@@ -379,9 +379,9 @@
 	make_brain_decoy(source)
 
 /**
- * Signal proc for [COMSIG_MOB_MIDDLECLICKON] and [COMSIG_MOB_ALTCLICKON].
- * Allows the changeling to sting people with a click.
- */
+* Signal proc for [COMSIG_MOB_MIDDLECLICKON] and [COMSIG_MOB_ALTCLICKON].
+* Allows the changeling to sting people with a click.
+*/
 /datum/antagonist/changeling/proc/on_click_sting(mob/living/ling, atom/clicked)
 	SIGNAL_HANDLER
 
@@ -412,9 +412,9 @@
 	items += "Absorbed DNA: [absorbed_count]"
 
 /*
- * Adjust the chem charges of the ling by [amount]
- * and clamp it between 0 and override_cap (if supplied) or total_chem_storage (if no override supplied)
- */
+* Adjust the chem charges of the ling by [amount]
+* and clamp it between 0 and override_cap (if supplied) or total_chem_storage (if no override supplied)
+*/
 /datum/antagonist/changeling/proc/adjust_chemicals(amount, override_cap)
 	if(!isnum(amount))
 		return
@@ -424,10 +424,10 @@
 	lingchemdisplay?.maptext = FORMAT_CHEM_CHARGES_TEXT(chem_charges)
 
 /*
- * Remove changeling powers from the current Changeling's purchased_powers list.
- *
- * if [include_innate] = TRUE, will also remove all powers from the Changeling's innate_powers list.
- */
+* Remove changeling powers from the current Changeling's purchased_powers list.
+*
+* if [include_innate] = TRUE, will also remove all powers from the Changeling's innate_powers list.
+*/
 /datum/antagonist/changeling/proc/remove_changeling_powers(include_innate = FALSE)
 	if(!isliving(owner.current))
 		return
@@ -447,8 +447,8 @@
 	update_genetic_matrix_unlocks()
 
 /*
- * For resetting all of the changeling's action buttons. (IE, re-granting them all.)
- */
+* For resetting all of the changeling's action buttons. (IE, re-granting them all.)
+*/
 /datum/antagonist/changeling/proc/regain_powers()
 	emporium_action.Grant(owner.current)
 	if(genetic_matrix_action)
@@ -462,10 +462,10 @@
 			power.on_purchase(owner.current)
 
 /*
- * The act of purchasing a certain power for a changeling.
- *
- * [sting_path] - the power that's being purchased / evolved.
- */
+* The act of purchasing a certain power for a changeling.
+*
+* [sting_path] - the power that's being purchased / evolved.
+*/
 /datum/antagonist/changeling/proc/purchase_power(datum/action/changeling/sting_path)
 	if(!ispath(sting_path, /datum/action/changeling))
 		CRASH("Changeling purchase_power attempted to purchase an invalid typepath! (got: [sting_path])")
@@ -501,14 +501,14 @@
 	return success
 
 /**
- * Gives a passed changeling power datum to the player
- *
- * Is passed a path to a changeling power, and applies it to the user.
- * If successful, we return TRUE, otherwise not.
- *
- * Arguments:
- * * power_path - The path of the power we will be giving to our attached player.
- */
+* Gives a passed changeling power datum to the player
+*
+* Is passed a path to a changeling power, and applies it to the user.
+* If successful, we return TRUE, otherwise not.
+*
+* Arguments:
+* * power_path - The path of the power we will be giving to our attached player.
+*/
 
 /datum/antagonist/changeling/proc/give_power(power_path)
 	var/datum/action/changeling/new_action = new power_path()
@@ -526,8 +526,8 @@
 	return TRUE
 
 /*
- * Changeling's ability to re-adapt all of their learned powers.
- */
+* Changeling's ability to re-adapt all of their learned powers.
+*/
 /datum/antagonist/changeling/proc/readapt()
 	if(!ishuman(owner.current) || ismonkey(owner.current))
 		to_chat(owner.current, span_warning("We can't remove our evolutions in this form!"))
@@ -549,16 +549,16 @@
 	return TRUE
 
 /*
- * Get the corresponding changeling profile for the passed name.
- */
+* Get the corresponding changeling profile for the passed name.
+*/
 /datum/antagonist/changeling/proc/get_dna(searched_dna_name)
 	for(var/datum/changeling_profile/found_profile as anything in stored_profiles)
 		if(searched_dna_name == found_profile.name)
 			return found_profile
 
 /*
- * Checks if we have a changeling profile with the passed DNA.
- */
+* Checks if we have a changeling profile with the passed DNA.
+*/
 /datum/antagonist/changeling/proc/has_profile_with_dna(datum/dna/searched_dna)
 	for(var/datum/changeling_profile/found_profile as anything in stored_profiles)
 		if(searched_dna.is_same_as(found_profile.dna))
@@ -566,9 +566,9 @@
 	return FALSE
 
 /*
- * Checks if this changeling can absorb the DNA of [target].
- * if [verbose] = TRUE, give feedback as to why they cannot absorb the DNA.
- */
+* Checks if this changeling can absorb the DNA of [target].
+* if [verbose] = TRUE, give feedback as to why they cannot absorb the DNA.
+*/
 /datum/antagonist/changeling/proc/can_absorb_dna(mob/living/carbon/human/target, verbose = TRUE)
 	if(!target)
 		return FALSE
@@ -612,11 +612,11 @@
 	return TRUE
 
 /*
- * Create a new changeling profile datum based off of [target].
- *
- * target - the human we're basing the new profile off of.
- * protect - if TRUE, set the new profile to protected, preventing it from being removed (without force).
- */
+* Create a new changeling profile datum based off of [target].
+*
+* target - the human we're basing the new profile off of.
+* protect - if TRUE, set the new profile to protected, preventing it from being removed (without force).
+*/
 /datum/antagonist/changeling/proc/create_profile(mob/living/carbon/human/target, protect = 0)
 	var/datum/changeling_profile/new_profile = new()
 
@@ -709,11 +709,11 @@
 	return new_profile
 
 /*
- * Add a new profile to our changeling's profile list.
- * Pops the first profile in the list if we're above our limit of profiles.
- *
- * new_profile - the profile being added.
- */
+* Add a new profile to our changeling's profile list.
+* Pops the first profile in the list if we're above our limit of profiles.
+*
+* new_profile - the profile being added.
+*/
 /datum/antagonist/changeling/proc/add_profile(datum/changeling_profile/new_profile)
 	if(stored_profiles.len > dna_max)
 		if(!push_out_profile())
@@ -727,23 +727,23 @@
 	absorbed_count++
 
 /*
- * Create a new profile from the given [profile_target]
- * and add it to our profile list via add_profile.
- *
- * profile_target - the human we're making a profile based off of
- * protect - if TRUE, mark the new profile as protected. If protected, it cannot be removed / popped from the profile list (without force).
- */
+* Create a new profile from the given [profile_target]
+* and add it to our profile list via add_profile.
+*
+* profile_target - the human we're making a profile based off of
+* protect - if TRUE, mark the new profile as protected. If protected, it cannot be removed / popped from the profile list (without force).
+*/
 /datum/antagonist/changeling/proc/add_new_profile(mob/living/carbon/human/profile_target, protect = FALSE)
 	var/datum/changeling_profile/new_profile = create_profile(profile_target, protect)
 	add_profile(new_profile)
 	return new_profile
 
 /*
- * Remove a given profile from the profile list.
- *  *
- * profile_target - the human we want to remove from our profile list (looks for a profile with a matching name)
- * force - if TRUE, removes the profile even if it's protected.
- */
+* Remove a given profile from the profile list.
+*  *
+* profile_target - the human we want to remove from our profile list (looks for a profile with a matching name)
+* force - if TRUE, removes the profile even if it's protected.
+*/
 /datum/antagonist/changeling/proc/remove_profile(mob/living/carbon/human/profile_target, force = FALSE)
 	for(var/datum/changeling_profile/found_profile as anything in stored_profiles)
 		if(profile_target.real_name == found_profile.name)
@@ -753,11 +753,11 @@
 			qdel(found_profile)
 
 /*
- * Removes the highest changeling profile from the list
- * that isn't protected and returns TRUE if successful.
- *
- * Returns TRUE if a profile was removed, FALSE otherwise.
- */
+* Removes the highest changeling profile from the list
+* that isn't protected and returns TRUE if successful.
+*
+* Returns TRUE if a profile was removed, FALSE otherwise.
+*/
 /datum/antagonist/changeling/proc/push_out_profile()
 	var/datum/changeling_profile/profile_to_remove
 	for(var/datum/changeling_profile/found_profile as anything in stored_profiles)
@@ -772,8 +772,8 @@
 	return FALSE
 
 /*
- * Create a profile based on the changeling's initial appearance.
- */
+* Create a profile based on the changeling's initial appearance.
+*/
 /datum/antagonist/changeling/proc/create_initial_profile()
 	if(!ishuman(owner.current))
 		return
@@ -853,8 +853,8 @@
 		.["Transform to initial appearance."] = CALLBACK(src, PROC_REF(admin_restore_appearance))
 
 /*
- * Restores the appearance of the changeling to the original DNA.
- */
+* Restores the appearance of the changeling to the original DNA.
+*/
 /datum/antagonist/changeling/proc/admin_restore_appearance(mob/admin)
 	if(!stored_profiles.len || !iscarbon(owner.current))
 		to_chat(admin, span_danger("Resetting DNA failed!"))
@@ -867,8 +867,8 @@
 	carbon_owner.domutcheck()
 
 /*
- * Transform the currentc hangeing [user] into the [chosen_profile].
- */
+* Transform the currentc hangeing [user] into the [chosen_profile].
+*/
 /datum/antagonist/changeling/proc/transform(mob/living/carbon/human/user, datum/changeling_profile/chosen_profile)
 	var/static/list/slot2slot = list(
 		"head" = ITEM_SLOT_HEAD,
@@ -1105,9 +1105,9 @@
 	return ..()
 
 /*
- * Copy every aspect of this file into a new instance of a profile.
- * Must be suppied with an instance.
- */
+* Copy every aspect of this file into a new instance of a profile.
+* Must be suppied with an instance.
+*/
 /datum/changeling_profile/proc/copy_profile(datum/changeling_profile/new_profile)
 	new_profile.name = name
 	new_profile.protected = protected
