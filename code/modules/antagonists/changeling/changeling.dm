@@ -533,12 +533,14 @@
 		nearby.adjustStaminaLoss(10)
 
 /datum/antagonist/changeling/proc/clear_matrix_passive_effects()
-	if(matrix_passive_effects_bound_mob)
-		var/mob/living/living_owner = matrix_passive_effects_bound_mob
-		living_owner.remove_movespeed_modifier(/datum/movespeed_modifier/changeling/genetic_matrix)
-		var/datum/physiology/phys = living_owner.physiology
-		if(phys && matrix_current_stamina_use_mult != 1)
-			phys.stamina_mod /= matrix_current_stamina_use_mult
+        if(matrix_passive_effects_bound_mob)
+                var/mob/living/living_owner = matrix_passive_effects_bound_mob
+                living_owner.remove_movespeed_modifier(/datum/movespeed_modifier/changeling/genetic_matrix)
+                if(istype(living_owner, /mob/living/carbon/human))
+                        var/mob/living/carbon/human/human_owner = living_owner
+                        var/datum/physiology/phys = human_owner.physiology
+                        if(phys && matrix_current_stamina_use_mult != 1)
+                                phys.stamina_mod /= matrix_current_stamina_use_mult
 		if(matrix_current_stamina_regen_mult != 1)
 			living_owner.stamina_regen_time /= matrix_current_stamina_regen_mult
 		if(matrix_current_max_stamina_bonus)
@@ -616,9 +618,11 @@
 	living_owner.remove_movespeed_modifier(/datum/movespeed_modifier/changeling/genetic_matrix)
 	if(move_slowdown)
 		living_owner.add_or_update_variable_movespeed_modifier(/datum/movespeed_modifier/changeling/genetic_matrix, TRUE, multiplicative_slowdown = move_slowdown)
-	var/datum/physiology/phys = living_owner.physiology
-	if(phys && stamina_mult != 1)
-			phys.stamina_mod *= stamina_mult
+        if(istype(living_owner, /mob/living/carbon/human))
+                var/mob/living/carbon/human/human_owner = living_owner
+                var/datum/physiology/phys = human_owner.physiology
+                if(phys && stamina_mult != 1)
+                        phys.stamina_mod *= stamina_mult
 	if(regen_mult != 1)
 		living_owner.stamina_regen_time *= regen_mult
 	if(max_bonus)

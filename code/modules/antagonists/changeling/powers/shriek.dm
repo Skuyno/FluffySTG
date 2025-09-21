@@ -69,7 +69,7 @@
                 for(var/mob/living/victim in get_hearers_in_view(lethal_range, user))
                         if(victim == user || IS_CHANGELING(victim))
                                 continue
-                        var/damage = victim.apply_damage(round(25 * structure_mult), BRUTE, BODY_ZONE_HEAD, forced = TRUE, wound_bonus = 15, sharpness = SHARP_PENETRATE)
+                        var/damage = victim.apply_damage(round(25 * structure_mult), BRUTE, BODY_ZONE_HEAD, forced = TRUE, wound_bonus = 15, sharpness = SHARP_POINTY)
                         if(damage > 0)
                                 victim.visible_message(
                                         span_danger("[victim] reels as [user]'s killing tone tears through [victim.p_their()] skull!"),
