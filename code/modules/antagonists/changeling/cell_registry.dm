@@ -31,6 +31,14 @@
 #define CHANGELING_CELL_ID_COW "cow"
 #define CHANGELING_CELL_ID_GOAT "goat"
 #define CHANGELING_CELL_ID_COLOSSUS "colossus"
+#define CHANGELING_CELL_ID_SPACE_CARP "space_carp"
+#define CHANGELING_CELL_ID_GIANT_SPIDER "giant_spider"
+#define CHANGELING_CELL_ID_MORPH "morph"
+#define CHANGELING_CELL_ID_REVENANT "revenant"
+#define CHANGELING_CELL_ID_SLAUGHTER_DEMON "slaughter_demon"
+#define CHANGELING_CELL_ID_GLOCKROACH "glockroach"
+#define CHANGELING_CELL_ID_SPACE_DRAGON "space_dragon"
+#define CHANGELING_CELL_ID_HERETIC_ROBE "heretic_robe"
 
 GLOBAL_LIST_INIT(changeling_cell_registry, list(
         CHANGELING_CELL_ID_HUMAN = list(
@@ -182,6 +190,49 @@ GLOBAL_LIST_INIT(changeling_cell_registry, list(
                 CHANGELING_CELL_REGISTRY_NAME = "Colossus",
                 CHANGELING_CELL_REGISTRY_DESC = "Crystalline lattice fragments from a lavaland colossus.",
                 CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/simple_animal/hostile/megafauna/colossus),
+        ),
+        CHANGELING_CELL_ID_SPACE_CARP = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Space Carp",
+                CHANGELING_CELL_REGISTRY_DESC = "Hydrodynamic muscle bundles and predatory instincts from roaming space carp.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/space_carp),
+        ),
+        CHANGELING_CELL_ID_GIANT_SPIDER = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Giant Spider",
+                CHANGELING_CELL_REGISTRY_DESC = "Venom glands and tensile spinnerets salvaged from giant spiders loosed on stations.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/spider/giant),
+        ),
+        CHANGELING_CELL_ID_MORPH = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Morph",
+                CHANGELING_CELL_REGISTRY_DESC = "Adaptive protoplasm and mimicry nodules taken from shapeshifting morphs.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/morph),
+        ),
+        CHANGELING_CELL_ID_REVENANT = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Revenant",
+                CHANGELING_CELL_REGISTRY_DESC = "Spectral ectoplasm and phase anchors condensed from vengeful revenants.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/revenant),
+        ),
+        CHANGELING_CELL_ID_SLAUGHTER_DEMON = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Slaughter Demon",
+                CHANGELING_CELL_REGISTRY_DESC = "Warp-charged sinew and sanguine armor ripped from slaughter demons.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/demon/slaughter),
+        ),
+        CHANGELING_CELL_ID_GLOCKROACH = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Glockroach",
+                CHANGELING_CELL_REGISTRY_DESC = "Ballistic chitin and rapid-fire ganglia extracted from glockroaches.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/cockroach/glockroach),
+        ),
+        CHANGELING_CELL_ID_SPACE_DRAGON = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Space Dragon",
+                CHANGELING_CELL_REGISTRY_DESC = "Radiant scales and plasma furnaces taken from legendary space dragons.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/space_dragon),
+        ),
+        CHANGELING_CELL_ID_HERETIC_ROBE = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Heretic Robe",
+                CHANGELING_CELL_REGISTRY_DESC = "Eldritch fibers steeped in Mansus resonance from a heretic's vestments.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(
+                        /obj/item/clothing/suit/hooded/cultrobes/eldritch,
+                        /obj/item/clothing/head/hooded/cult_hoodie/eldritch,
+                ),
         ),
 ))
 
