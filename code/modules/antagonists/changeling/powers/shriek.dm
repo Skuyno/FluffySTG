@@ -50,9 +50,28 @@
 		user.balloon_alert(user, "can't shriek in pipes!")
 		return FALSE
 	empulse(get_turf(user), 2, 5, 1)
-	for(var/obj/machinery/light/L in range(5, usr))
+	for(var/obj/machinery/light/L in range(5, user))
 		L.on = TRUE
 		L.break_light_tube()
 		stoplag()
+
+	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
+	if(changeling_data?.matrix_predatory_howl_active)
+		for(var/mob/living/victim in get_hearers_in_view(2, user))
+			if(victim == user || IS_CHANGELING(victim))
+				continue
+			var/damage = victim.apply_damage(25, BRUTE, BODY_ZONE_HEAD, forced = TRUE, wound_bonus = 15, sharpness = SHARP_PENETRATE)
+			if(damage > 0)
+				victim.visible_message(
+					span_danger("[victim] reels as [user]'s killing tone tears through [victim.p_their()] skull!"),
+					span_userdanger("A razor-edged resonance rips through your skull!"),
+					span_hear("You hear a skull-splitting shriek!"),
+				)
+		for(var/obj/O in range(2, user))
+			if(!O.uses_integrity)
+				continue
+			if(!istype(O, /obj/machinery) && !istype(O, /obj/structure))
+				continue
+			O.take_damage(40, BRUTE, MELEE, TRUE, get_dir(O, user))
 
 	return TRUE

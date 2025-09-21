@@ -22,4 +22,36 @@
 
 	to_chat(user, span_changeling("The staggering rush of a stimulant honed precisely to our biology is INVIGORATING. We will not be subdued."))
 
+	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
+	changeling_data?.apply_matrix_adrenal_overdrive(user)
+	changeling_data?.schedule_adrenal_spike_shockwave(user)
+
 	return TRUE
+
+/datum/status_effect/changeling_adrenal_overdrive
+	id = "changeling_adrenal_overdrive"
+	status_type = STATUS_EFFECT_REFRESH
+	duration = 5 SECONDS
+	tick_interval = 0.5 SECONDS
+	alert_type = null
+
+	/// Cached changeling datum sustaining the overdrive.
+	var/datum/antagonist/changeling/changeling_source
+
+/datum/status_effect/changeling_adrenal_overdrive/on_creation(mob/living/new_owner, datum/antagonist/changeling/changeling_data)
+	changeling_source = changeling_data
+	return ..()
+
+/datum/status_effect/changeling_adrenal_overdrive/refresh(mob/living/new_owner, datum/antagonist/changeling/changeling_data)
+	if(changeling_data)
+		changeling_source = changeling_data
+	return ..()
+
+/datum/status_effect/changeling_adrenal_overdrive/on_apply()
+	return owner != null
+
+/datum/status_effect/changeling_adrenal_overdrive/tick(seconds_between_ticks)
+	if(owner.stat == DEAD)
+		qdel(src)
+		return
+	owner.adjustStaminaLoss(-15)

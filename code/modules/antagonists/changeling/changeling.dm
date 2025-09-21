@@ -76,6 +76,24 @@
 	var/datum/changeling_bio_incubator/bio_incubator
 	/// Whether the changeling is currently rewriting their genetic matrix.
 	var/genetic_matrix_reconfiguring = FALSE
+	/// Cached identifiers for currently active genetic matrix modules.
+	var/list/current_matrix_module_ids = list()
+	/// Whether the predatory howl matrix module is active.
+	var/matrix_predatory_howl_active = FALSE
+	/// Whether the symbiotic overgrowth matrix module is active.
+	var/matrix_symbiotic_overgrowth_active = FALSE
+	/// Whether the feathered veil matrix module is active.
+	var/matrix_feathered_veil_active = FALSE
+	/// Whether the predator sinew matrix module is active.
+	var/matrix_predator_sinew_active = FALSE
+	/// Whether the void carapace matrix module is active.
+	var/matrix_void_carapace_active = FALSE
+	/// Whether the adrenal spike matrix module is active.
+	var/matrix_adrenal_spike_active = FALSE
+	/// Mob currently registered for predator's sinew hit hooks.
+	var/mob/living/matrix_predator_sinew_bound_mob
+	/// Timer tracking a pending adrenal spike shockwave.
+	var/matrix_adrenal_spike_shockwave_timer
 
 	/// UI displaying how many chems we have
 	var/atom/movable/screen/ling/chems/lingchemdisplay
@@ -172,6 +190,7 @@
 		RegisterSignal(living_mob, COMSIG_MOB_HUD_CREATED, PROC_REF(on_hud_created))
 
 	make_brain_decoy(living_mob)
+	apply_genetic_matrix_effects()
 
 /datum/antagonist/changeling/proc/make_brain_decoy(mob/living/ling)
 	var/obj/item/organ/brain/our_ling_brain = ling.get_organ_slot(ORGAN_SLOT_BRAIN)
@@ -216,6 +235,8 @@
 	handle_clown_mutation(living_mob, removing = FALSE)
 	UnregisterSignal(living_mob, list(COMSIG_MOB_LOGIN, COMSIG_LIVING_LIFE, COMSIG_LIVING_POST_FULLY_HEAL, COMSIG_MOB_GET_STATUS_TAB_ITEMS, COMSIG_MOB_MIDDLECLICKON, COMSIG_MOB_ALTCLICKON))
 	REMOVE_TRAIT(living_mob, TRAIT_FAKE_SOULLESS, CHANGELING_TRAIT)
+	remove_matrix_feathered_veil_status()
+	unbind_predator_sinew_signals()
 
 	if(living_mob.hud_used)
 		var/datum/hud/hud_used = living_mob.hud_used
@@ -251,6 +272,7 @@
 	if(genetic_matrix)
 		genetic_matrix.register_with_incubator()
 	genetic_matrix_reconfiguring = FALSE
+	apply_genetic_matrix_effects()
 	return bio_incubator
 
 /datum/antagonist/changeling/proc/create_genetic_matrix()
@@ -264,6 +286,7 @@
 	update_genetic_matrix_unlocks()
 	if(owner && owner.current)
 		genetic_matrix_action.Grant(owner.current)
+	apply_genetic_matrix_effects()
 
 /datum/antagonist/changeling/proc/is_genetic_matrix_reconfiguring()
 	return genetic_matrix_reconfiguring
@@ -310,11 +333,186 @@
 		SStgui.update_uis(genetic_matrix)
 	to_chat(living_owner, span_notice("Our passive adaptations settle into place."))
 	on_genetic_matrix_reconfigured()
+	apply_genetic_matrix_effects()
 	return TRUE
 
 /datum/antagonist/changeling/proc/on_genetic_matrix_reconfigured()
 	update_genetic_matrix_unlocks()
+	apply_genetic_matrix_effects()
 
+/datum/antagonist/changeling/proc/apply_genetic_matrix_effects()
+	var/list/active_ids = list()
+	if(bio_incubator)
+		var/list/incubator_ids = bio_incubator.get_active_module_ids()
+		for(var/module_id in incubator_ids)
+			if(isnull(module_id))
+				continue
+			var/id_text = bio_incubator.sanitize_module_id(module_id)
+			if(isnull(id_text))
+				id_text = "[module_id]"
+			if(!(id_text in active_ids))
+				active_ids += id_text
+	current_matrix_module_ids = active_ids
+	update_matrix_predatory_howl("matrix_predatory_howl" in active_ids)
+	update_matrix_symbiotic_overgrowth("matrix_symbiotic_overgrowth" in active_ids)
+	update_matrix_feathered_veil_effect("matrix_feathered_veil" in active_ids)
+	update_matrix_predator_sinew_effect("matrix_predator_sinew" in active_ids)
+	update_matrix_void_carapace_effect("matrix_void_carapace" in active_ids)
+	update_matrix_adrenal_spike_effect("matrix_adrenal_spike" in active_ids)
+
+/datum/antagonist/changeling/proc/is_genetic_matrix_module_active(module_identifier)
+	if(isnull(module_identifier))
+		return FALSE
+	var/id_text
+	if(istext(module_identifier))
+		id_text = module_identifier
+	else if(bio_incubator)
+		id_text = bio_incubator.sanitize_module_id(module_identifier)
+	if(isnull(id_text))
+		id_text = "[module_identifier]"
+	return id_text in current_matrix_module_ids
+
+/datum/antagonist/changeling/proc/get_changeling_power_instance(power_path)
+	if(!ispath(power_path, /datum/action/changeling))
+		return null
+	if(purchased_powers[power_path])
+		return purchased_powers[power_path]
+	for(var/datum/action/changeling/power as anything in innate_powers)
+		if(power.type == power_path)
+			return power
+	return null
+
+/datum/antagonist/changeling/proc/update_matrix_predatory_howl(is_active)
+	matrix_predatory_howl_active = !!is_active
+
+/datum/antagonist/changeling/proc/update_matrix_symbiotic_overgrowth(is_active)
+	matrix_symbiotic_overgrowth_active = !!is_active
+
+/datum/antagonist/changeling/proc/update_matrix_feathered_veil_effect(is_active)
+	matrix_feathered_veil_active = !!is_active
+	if(is_active)
+		ensure_matrix_feathered_veil_status()
+	else
+		remove_matrix_feathered_veil_status()
+
+/datum/antagonist/changeling/proc/ensure_matrix_feathered_veil_status()
+	if(!matrix_feathered_veil_active)
+		remove_matrix_feathered_veil_status()
+		return
+	var/mob/living/living_owner = owner?.current
+	if(!living_owner)
+		return
+	var/datum/action/changeling/digitalcamo/camo = get_changeling_power_instance(/datum/action/changeling/digitalcamo)
+	if(!camo || !camo.active)
+		remove_matrix_feathered_veil_status()
+		return
+	var/datum/status_effect/changeling_feathered_veil/existing = living_owner.has_status_effect(/datum/status_effect/changeling_feathered_veil)
+	if(existing)
+		existing.update_sources(src, camo)
+	else
+		living_owner.apply_status_effect(/datum/status_effect/changeling_feathered_veil, src, camo)
+
+/datum/antagonist/changeling/proc/remove_matrix_feathered_veil_status()
+	var/mob/living/living_owner = owner?.current
+	living_owner?.remove_status_effect(/datum/status_effect/changeling_feathered_veil)
+
+/datum/antagonist/changeling/proc/update_matrix_predator_sinew_effect(is_active)
+	matrix_predator_sinew_active = !!is_active
+	if(!matrix_predator_sinew_active)
+		unbind_predator_sinew_signals()
+		return
+	bind_predator_sinew_signals(owner?.current)
+
+/datum/antagonist/changeling/proc/bind_predator_sinew_signals(mob/living/new_host)
+	if(matrix_predator_sinew_bound_mob == new_host)
+		return
+	unbind_predator_sinew_signals()
+	if(!matrix_predator_sinew_active || !isliving(new_host))
+		return
+	RegisterSignal(new_host, COMSIG_MOB_ITEM_ATTACK, PROC_REF(on_predator_sinew_item_attack))
+	RegisterSignal(new_host, COMSIG_LIVING_UNARMED_ATTACK, PROC_REF(on_predator_sinew_unarmed_attack))
+	matrix_predator_sinew_bound_mob = new_host
+
+/datum/antagonist/changeling/proc/unbind_predator_sinew_signals()
+	if(!matrix_predator_sinew_bound_mob)
+		return
+	UnregisterSignal(matrix_predator_sinew_bound_mob, list(COMSIG_MOB_ITEM_ATTACK, COMSIG_LIVING_UNARMED_ATTACK))
+	matrix_predator_sinew_bound_mob = null
+
+/datum/antagonist/changeling/proc/on_predator_sinew_item_attack(mob/living/source, mob/living/target, mob/living/user, list/modifiers, list/attack_modifiers)
+	SIGNAL_HANDLER
+	handle_predator_sinew_knockdown(target)
+
+/datum/antagonist/changeling/proc/on_predator_sinew_unarmed_attack(mob/living/source, atom/target, proximity_flag, list/modifiers)
+	SIGNAL_HANDLER
+	if(isliving(target))
+		handle_predator_sinew_knockdown(target)
+
+/datum/antagonist/changeling/proc/handle_predator_sinew_knockdown(mob/living/target)
+	if(!matrix_predator_sinew_active)
+		return
+	var/mob/living/carbon/user = owner?.current
+	if(!istype(user) || user != matrix_predator_sinew_bound_mob)
+		return
+	var/datum/action/changeling/strained_muscles/muscles = get_changeling_power_instance(/datum/action/changeling/strained_muscles)
+	if(!muscles?.active)
+		return
+	if(user.move_intent != MOVE_INTENT_RUN || !user.combat_mode)
+		return
+	if(!istype(target) || target == user || target.stat == DEAD)
+		return
+	var/stamina_cost = 12
+	if(user.staminaloss + stamina_cost >= user.max_stamina)
+		return
+	user.adjustStaminaLoss(stamina_cost)
+	target.Knockdown(1 SECONDS)
+	target.visible_message(
+		span_danger("[target] is hammered off balance by [user]'s driving strike!"),
+		span_userdanger("A brutal shoulder slam knocks you sprawling!"),
+		span_hear("You hear a heavy impact and a body hitting the ground."),
+	)
+
+/datum/antagonist/changeling/proc/update_matrix_void_carapace_effect(is_active)
+	matrix_void_carapace_active = !!is_active
+	var/datum/action/changeling/void_adaption/adaption = get_changeling_power_instance(/datum/action/changeling/void_adaption)
+	adaption?.sync_module_state(src)
+
+/datum/antagonist/changeling/proc/update_matrix_adrenal_spike_effect(is_active)
+	matrix_adrenal_spike_active = !!is_active
+	if(!matrix_adrenal_spike_active)
+		if(matrix_adrenal_spike_shockwave_timer)
+			deltimer(matrix_adrenal_spike_shockwave_timer)
+			matrix_adrenal_spike_shockwave_timer = null
+		owner?.current?.remove_status_effect(/datum/status_effect/changeling_adrenal_overdrive)
+
+/datum/antagonist/changeling/proc/apply_matrix_adrenal_overdrive(mob/living/carbon/user)
+	if(!matrix_adrenal_spike_active || !istype(user))
+		return
+	user.apply_status_effect(/datum/status_effect/changeling_adrenal_overdrive, src)
+
+/datum/antagonist/changeling/proc/schedule_adrenal_spike_shockwave(mob/living/carbon/user)
+	if(!matrix_adrenal_spike_active || !istype(user))
+		return
+	if(matrix_adrenal_spike_shockwave_timer)
+		deltimer(matrix_adrenal_spike_shockwave_timer)
+	matrix_adrenal_spike_shockwave_timer = addtimer(CALLBACK(src, PROC_REF(adrenal_spike_shockwave), user), 2 SECONDS, TIMER_UNIQUE | TIMER_OVERRIDE)
+
+/datum/antagonist/changeling/proc/adrenal_spike_shockwave(mob/living/carbon/user)
+	matrix_adrenal_spike_shockwave_timer = null
+	if(!matrix_adrenal_spike_active || !istype(user) || user.stat == DEAD)
+		return
+	var/turf/user_turf = get_turf(user)
+	if(user_turf)
+		playsound(user_turf, 'sound/effects/bang.ogg', 50, TRUE)
+	user.visible_message(
+		span_warning("[user] releases a concussive chemical shockwave!"),
+		span_changeling("We vent a surge of volatile chemicals in a stunning wave."),
+	)
+	for(var/mob/living/nearby in oview(2, user))
+		if(nearby == user || nearby.stat == DEAD)
+			continue
+		nearby.Knockdown(1.5 SECONDS)
+		nearby.adjustStaminaLoss(10)
 /*
  * Instantiate all the default actions of a ling (transform, dna sting, absorb, etc)
  * Any Changeling action with dna_cost = CHANGELING_POWER_INNATE will be added here automatically
@@ -343,6 +541,7 @@
 		return
 
 	regain_powers()
+	apply_genetic_matrix_effects()
 
 /**
  * Signal proc for [COMSIG_LIVING_LIFE].
@@ -359,11 +558,24 @@
 		adjust_chemicals((chem_recharge_rate - chem_recharge_slowdown) * delta_time, total_chem_storage * 0.5)
 
 	// If we're not dead and not on fire - we go up to the full chem cap at normal speed. If on fire we only regenerate at 1/4th the normal speed
+	else if(living_owner?.fire_stacks && living_owner?.on_fire)
+		adjust_chemicals((chem_recharge_rate - 0.75) * delta_time)
 	else
-		if(living_owner.fire_stacks && living_owner.on_fire)
-			adjust_chemicals((chem_recharge_rate - 0.75) * delta_time)
-		else
-			adjust_chemicals((chem_recharge_rate - chem_recharge_slowdown) * delta_time)
+		adjust_chemicals((chem_recharge_rate - chem_recharge_slowdown) * delta_time)
+
+	if(matrix_symbiotic_overgrowth_active && living_owner?.stat != DEAD)
+		var/seconds = seconds_per_tick
+		var/needs_update = FALSE
+		if(living_owner && !living_owner.on_fire)
+			needs_update |= living_owner.adjustBruteLoss(-1.2 * seconds, updating_health = FALSE, forced = TRUE)
+			needs_update |= living_owner.adjustFireLoss(-0.8 * seconds, updating_health = FALSE, forced = TRUE)
+		needs_update |= living_owner.adjustToxLoss(-0.5 * seconds, forced = TRUE)
+		needs_update |= living_owner.adjustOxyLoss(-(1.5 * seconds), updating_health = FALSE, forced = TRUE)
+		var/stam_delta = living_owner.adjustStaminaLoss(-2 * seconds, updating_stamina = FALSE)
+		if(stam_delta)
+			needs_update = TRUE
+		if(needs_update)
+			living_owner.updatehealth()
 
 /**
  * Signal proc for [COMSIG_LIVING_POST_FULLY_HEAL]
@@ -445,6 +657,7 @@
 	chem_recharge_slowdown = initial(chem_recharge_slowdown)
 	prune_genetic_matrix_assignments()
 	update_genetic_matrix_unlocks()
+	apply_genetic_matrix_effects()
 
 /*
  * For resetting all of the changeling's action buttons. (IE, re-granting them all.)

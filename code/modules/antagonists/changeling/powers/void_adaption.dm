@@ -11,19 +11,27 @@
 	var/static/list/gain_traits = list(TRAIT_NO_BREATHLESS_DAMAGE, TRAIT_RESISTCOLD, TRAIT_RESISTLOWPRESSURE, TRAIT_SNOWSTORM_IMMUNE)
 	/// How much we slow chemical regeneration while active, in chems per second
 	var/recharge_slowdown = 0.25
+	/// Baseline slowdown applied without void carapace.
+	var/base_recharge_slowdown = 0.25
+	/// Slowdown applied when the void carapace matrix module is active.
+	var/module_recharge_slowdown = 0.12
 	/// Are we currently protecting our user?
 	var/currently_active = FALSE
+	/// Cached changeling datum for module syncing.
+	var/datum/antagonist/changeling/linked_changeling
 
 /datum/action/changeling/void_adaption/on_purchase(mob/user, is_respec)
 	. = ..()
 	user.add_traits(gain_traits, REF(src))
 	RegisterSignal(user, COMSIG_LIVING_LIFE, PROC_REF(check_environment))
+	sync_module_state(IS_CHANGELING(user))
 
 /datum/action/changeling/void_adaption/Remove(mob/remove_from)
 	remove_from.remove_traits(gain_traits, REF(src))
 	UnregisterSignal(remove_from, COMSIG_LIVING_LIFE)
 	if (currently_active)
 		on_removed_adaption(remove_from, "Our cells relax, despite the danger!")
+	linked_changeling = null
 	return ..()
 
 /// Checks if we would be providing any useful benefit at present
@@ -55,7 +63,10 @@
 	if (!should_be_active)
 		on_removed_adaption(void_adapted, "Our cells relax in safer air.")
 		return
-	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(void_adapted)
+	var/datum/antagonist/changeling/changeling_data = linked_changeling
+	if(!changeling_data || changeling_data.owner?.current != void_adapted)
+		changeling_data = IS_CHANGELING(void_adapted)
+		linked_changeling = changeling_data
 	to_chat(void_adapted, span_changeling("Our cells harden themselves against the [pick(active_reasons)]."))
 	changeling_data?.chem_recharge_slowdown -= recharge_slowdown
 	currently_active = TRUE
@@ -66,3 +77,23 @@
 	to_chat(former, span_changeling(message))
 	changeling_data?.chem_recharge_slowdown += recharge_slowdown
 	currently_active = FALSE
+
+/datum/action/changeling/void_adaption/proc/sync_module_state(datum/antagonist/changeling/changeling_data)
+	if(changeling_data)
+		linked_changeling = changeling_data
+	else if(owner)
+		linked_changeling = IS_CHANGELING(owner)
+	var/target_slowdown = base_recharge_slowdown
+	if(linked_changeling?.matrix_void_carapace_active)
+		target_slowdown = module_recharge_slowdown
+	if(recharge_slowdown == target_slowdown)
+		return
+	if(currently_active && linked_changeling)
+		linked_changeling.chem_recharge_slowdown += recharge_slowdown
+		recharge_slowdown = target_slowdown
+		linked_changeling.chem_recharge_slowdown -= recharge_slowdown
+	else
+		recharge_slowdown = target_slowdown
+	if(owner && linked_changeling?.matrix_void_carapace_active)
+		check_environment(owner)
+
