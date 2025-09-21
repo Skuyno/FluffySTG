@@ -35,9 +35,12 @@
 	return ..()
 
 /datum/action/changeling/strained_muscles/proc/muscle_loop(mob/living/carbon/user)
+	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
 	while(active)
 		if(QDELETED(src) || QDELETED(user))
 			return
+		if(!changeling_data)
+			changeling_data = IS_CHANGELING(user)
 
 		user.add_movespeed_modifier(/datum/movespeed_modifier/strained_muscles)
 		if(user.stat != CONSCIOUS || user.staminaloss >= 90)
@@ -49,7 +52,10 @@
 
 		stacks++
 
-		user.adjustStaminaLoss(stacks * 1.3) //At first the changeling may regenerate stamina fast enough to nullify fatigue, but it will stack
+		var/stamina_penalty = stacks * 1.3
+		if(changeling_data?.matrix_predator_sinew_active)
+			stamina_penalty *= 0.55
+		user.adjustStaminaLoss(stamina_penalty) //At first the changeling may regenerate stamina fast enough to nullify fatigue, but it will stack
 
 		if(stacks == 11) //Warning message that the stacks are getting too high
 			to_chat(user, span_warning("Our legs are really starting to hurt..."))

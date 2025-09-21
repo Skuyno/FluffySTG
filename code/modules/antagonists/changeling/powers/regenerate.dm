@@ -16,7 +16,19 @@
 	to_chat(user, span_notice("You feel an itching, both inside and outside as your tissues knit and reknit."))
 	var/mob/living/carbon/carbon_user = user
 	var/got_limbs_back = length(carbon_user.get_missing_limbs()) >= 1
+	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
 	carbon_user.fully_heal(HEAL_BODY)
+	if(changeling_data?.matrix_symbiotic_overgrowth_active)
+		var/needs_update = FALSE
+		needs_update |= carbon_user.adjustBruteLoss(-25, updating_health = FALSE, forced = TRUE)
+		needs_update |= carbon_user.adjustFireLoss(-25, updating_health = FALSE, forced = TRUE)
+		needs_update |= carbon_user.adjustToxLoss(-20, forced = TRUE)
+		needs_update |= carbon_user.adjustOxyLoss(-20, updating_health = FALSE, forced = TRUE)
+		var/stam_delta = carbon_user.adjustStaminaLoss(-40, updating_stamina = FALSE)
+		if(stam_delta)
+			needs_update = TRUE
+		if(needs_update)
+			carbon_user.updatehealth()
 	// Occurs after fully heal so the ling themselves can hear the sound effects (if deaf prior)
 	if(got_limbs_back)
 		playsound(user, 'sound/effects/magic/demon_consume.ogg', 50, TRUE)
