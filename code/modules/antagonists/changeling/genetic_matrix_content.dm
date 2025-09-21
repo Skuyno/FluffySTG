@@ -86,7 +86,7 @@ GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, list(
 		),
                 "requiredCells" = list(
                         CHANGELING_CELL_ID_TAJARAN,
-                        CHANGELING_CELL_ID_RARE_PREDATOR,
+                        CHANGELING_CELL_ID_LIZARD,
                 ),
 		"requiredAbilities" = list(
 			/datum/action/changeling/strained_muscles,

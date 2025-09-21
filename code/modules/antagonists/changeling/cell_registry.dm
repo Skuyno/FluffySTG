@@ -12,7 +12,7 @@
 #define CHANGELING_CELL_ID_VULPKANIN "vulpkanin"
 #define CHANGELING_CELL_ID_AKULA "akula"
 #define CHANGELING_CELL_ID_SKRELL "skrell"
-#define CHANGELING_CELL_ID_FLY "fly"
+#define CHANGELING_CELL_ID_INSECT "insectoid"
 #define CHANGELING_CELL_ID_MOTH "moth"
 #define CHANGELING_CELL_ID_PLASMAMAN "plasmaman"
 #define CHANGELING_CELL_ID_ETHEREAL "ethereal"
@@ -79,8 +79,8 @@ GLOBAL_LIST_INIT(changeling_cell_registry, list(
                 CHANGELING_CELL_REGISTRY_DESC = "Neural conduction gel and amphibious cartilage sourced from psionic skrell.",
                 CHANGELING_CELL_REGISTRY_SPECIES = list(SPECIES_SKRELL),
         ),
-        CHANGELING_CELL_ID_FLY = list(
-                CHANGELING_CELL_REGISTRY_NAME = "Flyperson",
+        CHANGELING_CELL_ID_INSECT = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Insectoid",
                 CHANGELING_CELL_REGISTRY_DESC = "Proboscis musculature and hyperactive enzymes salvaged from flypeople and towering insectoids.",
                 CHANGELING_CELL_REGISTRY_SPECIES = list(SPECIES_FLYPERSON, SPECIES_INSECT, SPECIES_INSECTOID),
         ),
