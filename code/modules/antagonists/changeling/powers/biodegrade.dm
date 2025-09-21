@@ -1,22 +1,52 @@
 /datum/action/changeling/biodegrade
-	name = "Biodegrade"
-	desc = "Dissolves restraints or other objects preventing free movement. Costs 30 chemicals."
-	helptext = "This is obvious to nearby people, and can destroy standard restraints and closets."
-	button_icon_state = "biodegrade"
-	chemical_cost = 30 //High cost to prevent spam
-	dna_cost = 2
-	req_human = TRUE
-	disabled_by_fire = FALSE
+        name = "Biodegrade"
+        desc = "Dissolves restraints or other objects preventing free movement. Costs 30 chemicals."
+        helptext = "This is obvious to nearby people, and can destroy standard restraints and closets."
+        button_icon_state = "biodegrade"
+        chemical_cost = 30 //High cost to prevent spam
+        dna_cost = 2
+        req_human = TRUE
+        disabled_by_fire = FALSE
+
+/datum/action/changeling/biodegrade/proc/get_effective_cost(datum/antagonist/changeling/changeling)
+        if(!changeling)
+                return chemical_cost
+        var/discount = round(changeling.get_genetic_matrix_effect("biodegrade_chem_discount", 0))
+        return max(0, chemical_cost - discount)
+
+/datum/action/changeling/biodegrade/proc/get_effective_delay(datum/antagonist/changeling/changeling, delay)
+        var/multiplier = changeling?.get_genetic_matrix_effect("biodegrade_timer_mult", 1) || 1
+        if(multiplier < 0)
+                multiplier = 0
+        var/result = round(delay * multiplier)
+        return max(1, result)
+
+/datum/action/changeling/biodegrade/can_sting(mob/living/user, mob/living/target)
+        var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
+        var/old_cost = chemical_cost
+        chemical_cost = get_effective_cost(changeling)
+        var/result = ..()
+        chemical_cost = old_cost
+        return result
+
+/datum/action/changeling/biodegrade/try_to_sting(mob/living/user, mob/living/target)
+        var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
+        var/old_cost = chemical_cost
+        chemical_cost = get_effective_cost(changeling)
+        var/result = ..()
+        chemical_cost = old_cost
+        return result
 
 /datum/action/changeling/biodegrade/sting_action(mob/living/carbon/human/user)
-	if(user.handcuffed)
+        var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
+        if(user.handcuffed)
 		var/obj/O = user.get_item_by_slot(ITEM_SLOT_HANDCUFFED)
 		if(!istype(O))
 			return FALSE
 		user.visible_message(span_warning("[user] vomits a glob of acid on [user.p_their()] [O]!"), \
 			span_warning("We vomit acidic ooze onto our restraints!"))
 
-		addtimer(CALLBACK(src, PROC_REF(dissolve_handcuffs), user, O), 3 SECONDS)
+                addtimer(CALLBACK(src, PROC_REF(dissolve_handcuffs), user, O), get_effective_delay(changeling, 3 SECONDS))
 		log_combat(user, user.handcuffed, "melted handcuffs", addition = "(biodegrade)")
 		..()
 		return TRUE
@@ -28,7 +58,7 @@
 		user.visible_message(span_warning("[user] vomits a glob of acid on [user.p_their()] [O]!"), \
 			span_warning("We vomit acidic ooze onto our restraints!"))
 
-		addtimer(CALLBACK(src, PROC_REF(dissolve_legcuffs), user, O), 3 SECONDS)
+                addtimer(CALLBACK(src, PROC_REF(dissolve_legcuffs), user, O), get_effective_delay(changeling, 3 SECONDS))
 		log_combat(user, user.legcuffed, "melted legcuffs", addition = "(biodegrade)")
 		..()
 		return TRUE
@@ -39,7 +69,7 @@
 			return FALSE
 		user.visible_message(span_warning("[user] vomits a glob of acid across the front of [user.p_their()] [S]!"), \
 			span_warning("We vomit acidic ooze onto our [user.wear_suit.name]!"))
-		addtimer(CALLBACK(src, PROC_REF(dissolve_straightjacket), user, S), 3 SECONDS)
+                addtimer(CALLBACK(src, PROC_REF(dissolve_straightjacket), user, S), get_effective_delay(changeling, 3 SECONDS))
 		log_combat(user, user.wear_suit, "melted [user.wear_suit]", addition = "(biodegrade)")
 		..()
 		return TRUE
@@ -50,7 +80,7 @@
 			return FALSE
 		C.visible_message(span_warning("[C]'s hinges suddenly begin to melt and run!"))
 		to_chat(user, span_warning("We vomit acidic goop onto the interior of [C]!"))
-		addtimer(CALLBACK(src, PROC_REF(open_closet), user, C), 7 SECONDS)
+                addtimer(CALLBACK(src, PROC_REF(open_closet), user, C), get_effective_delay(changeling, 7 SECONDS))
 		log_combat(user, user.loc, "melted locker", addition = "(biodegrade)")
 		..()
 		return TRUE
@@ -61,7 +91,7 @@
 			return FALSE
 		C.visible_message(span_warning("[src] shifts and starts to fall apart!"))
 		to_chat(user, span_warning("We secrete acidic enzymes from our skin and begin melting our cocoon..."))
-		addtimer(CALLBACK(src, PROC_REF(dissolve_cocoon), user, C), 25) //Very short because it's just webs
+                addtimer(CALLBACK(src, PROC_REF(dissolve_cocoon), user, C), get_effective_delay(changeling, 25)) //Very short because it's just webs
 		log_combat(user, user.loc, "melted cocoon", addition = "(biodegrade)")
 		..()
 		return TRUE
