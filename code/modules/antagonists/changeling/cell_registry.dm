@@ -247,22 +247,22 @@ GLOBAL_LIST_INIT(changeling_cell_registry, list(
 	return results
 
 /proc/changeling_get_cell_ids_from_atom(atom/target)
-        var/list/results = list()
-        if(!target)
-                return results
-        if(ispath(target))
-                return results
-        if(!isobj(target))
-                return results
-        var/list/registry = changeling_get_cell_registry()
-        for(var/cell_id as anything in changeling_get_cell_ids_from_name(target.name))
-                if(!(cell_id in results))
-                        results += cell_id
-        for(var/cell_id in registry)
-                var/list/entry = registry[cell_id]
-                if(!islist(entry))
-                        continue
-                if(changeling_registry_entry_matches_type(entry, target))
+	var/list/results = list()
+	if(!target)
+		return results
+	if(ispath(target))
+		return results
+	if(!isobj(target))
+		return results
+	var/list/registry = changeling_get_cell_registry()
+	for(var/cell_id as anything in changeling_get_cell_ids_from_name(target.name))
+		if(!(cell_id in results))
+			results += cell_id
+	for(var/cell_id in registry)
+		var/list/entry = registry[cell_id]
+		if(!islist(entry))
+			continue
+		if(changeling_registry_entry_matches_type(entry, target))
 			if(!(cell_id in results))
 				results += cell_id
 	return results
