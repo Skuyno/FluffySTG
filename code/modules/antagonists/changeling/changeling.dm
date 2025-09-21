@@ -92,24 +92,24 @@
 	var/matrix_adrenal_spike_active = FALSE
 	/// Mob currently registered for predator's sinew hit hooks.
 	var/mob/living/matrix_predator_sinew_bound_mob
-        /// Timer tracking a pending adrenal spike shockwave.
-        var/matrix_adrenal_spike_shockwave_timer
-        /// Aggregated matrix effects currently applied to this changeling.
-        var/list/genetic_matrix_effect_cache = list()
-        /// Mob currently benefiting from passive matrix effect adjustments.
-        var/mob/living/matrix_passive_effects_bound_mob
-        /// Cached slowdown applied by passive matrix effects.
-        var/matrix_current_movespeed_slowdown = 0
-        /// Cached stamina usage multiplier from passive effects.
-        var/matrix_current_stamina_use_mult = 1
-        /// Cached stamina regeneration multiplier from passive effects.
-        var/matrix_current_stamina_regen_mult = 1
-        /// Cached max stamina bonus applied by passive effects.
-        var/matrix_current_max_stamina_bonus = 0
-        /// Cached chemical recharge modifier from passive effects.
-        var/matrix_current_chem_rate_bonus = 0
-        /// Cached sting range bonus from passive effects.
-        var/matrix_current_sting_range_bonus = 0
+	/// Timer tracking a pending adrenal spike shockwave.
+	var/matrix_adrenal_spike_shockwave_timer
+	/// Aggregated matrix effects currently applied to this changeling.
+	var/list/genetic_matrix_effect_cache = list()
+	/// Mob currently benefiting from passive matrix effect adjustments.
+	var/mob/living/matrix_passive_effects_bound_mob
+	/// Cached slowdown applied by passive matrix effects.
+	var/matrix_current_movespeed_slowdown = 0
+	/// Cached stamina usage multiplier from passive effects.
+	var/matrix_current_stamina_use_mult = 1
+	/// Cached stamina regeneration multiplier from passive effects.
+	var/matrix_current_stamina_regen_mult = 1
+	/// Cached max stamina bonus applied by passive effects.
+	var/matrix_current_max_stamina_bonus = 0
+	/// Cached chemical recharge modifier from passive effects.
+	var/matrix_current_chem_rate_bonus = 0
+	/// Cached sting range bonus from passive effects.
+	var/matrix_current_sting_range_bonus = 0
 
 	/// UI displaying how many chems we have
 	var/atom/movable/screen/ling/chems/lingchemdisplay
@@ -158,11 +158,11 @@
 		break
 
 /datum/antagonist/changeling/Destroy()
-        clear_matrix_passive_effects()
-        QDEL_NULL(emporium_action)
-        QDEL_NULL(cellular_emporium)
-        QDEL_NULL(genetic_matrix_action)
-        QDEL_NULL(genetic_matrix)
+	clear_matrix_passive_effects()
+	QDEL_NULL(emporium_action)
+	QDEL_NULL(cellular_emporium)
+	QDEL_NULL(genetic_matrix_action)
+	QDEL_NULL(genetic_matrix)
 	QDEL_NULL(bio_incubator)
 	current_profile = null
 	return ..()
@@ -373,10 +373,10 @@
 	update_matrix_predatory_howl("matrix_predatory_howl" in active_ids)
 	update_matrix_symbiotic_overgrowth("matrix_symbiotic_overgrowth" in active_ids)
 	update_matrix_feathered_veil_effect("matrix_feathered_veil" in active_ids)
-        update_matrix_predator_sinew_effect("matrix_predator_sinew" in active_ids)
-        update_matrix_void_carapace_effect("matrix_void_carapace" in active_ids)
-        update_matrix_adrenal_spike_effect("matrix_adrenal_spike" in active_ids)
-        update_matrix_passive_effects(active_ids)
+	update_matrix_predator_sinew_effect("matrix_predator_sinew" in active_ids)
+	update_matrix_void_carapace_effect("matrix_void_carapace" in active_ids)
+	update_matrix_adrenal_spike_effect("matrix_adrenal_spike" in active_ids)
+	update_matrix_passive_effects(active_ids)
 
 /datum/antagonist/changeling/proc/is_genetic_matrix_module_active(module_identifier)
 	if(isnull(module_identifier))
@@ -516,122 +516,122 @@
 	matrix_adrenal_spike_shockwave_timer = addtimer(CALLBACK(src, PROC_REF(adrenal_spike_shockwave), user), 2 SECONDS, TIMER_UNIQUE | TIMER_OVERRIDE)
 
 /datum/antagonist/changeling/proc/adrenal_spike_shockwave(mob/living/carbon/user)
-        matrix_adrenal_spike_shockwave_timer = null
-        if(!matrix_adrenal_spike_active || !istype(user) || user.stat == DEAD)
-                return
-        var/turf/user_turf = get_turf(user)
-        if(user_turf)
-                playsound(user_turf, 'sound/effects/bang.ogg', 50, TRUE)
-        user.visible_message(
-                span_warning("[user] releases a concussive chemical shockwave!"),
-                span_changeling("We vent a surge of volatile chemicals in a stunning wave."),
-        )
-        for(var/mob/living/nearby in oview(2, user))
-                if(nearby == user || nearby.stat == DEAD)
-                        continue
-                nearby.Knockdown(1.5 SECONDS)
-                nearby.adjustStaminaLoss(10)
+	matrix_adrenal_spike_shockwave_timer = null
+	if(!matrix_adrenal_spike_active || !istype(user) || user.stat == DEAD)
+		return
+	var/turf/user_turf = get_turf(user)
+	if(user_turf)
+		playsound(user_turf, 'sound/effects/bang.ogg', 50, TRUE)
+	user.visible_message(
+		span_warning("[user] releases a concussive chemical shockwave!"),
+		span_changeling("We vent a surge of volatile chemicals in a stunning wave."),
+	)
+	for(var/mob/living/nearby in oview(2, user))
+		if(nearby == user || nearby.stat == DEAD)
+			continue
+		nearby.Knockdown(1.5 SECONDS)
+		nearby.adjustStaminaLoss(10)
 
 /datum/antagonist/changeling/proc/clear_matrix_passive_effects()
-        if(matrix_passive_effects_bound_mob)
-                var/mob/living/living_owner = matrix_passive_effects_bound_mob
-                living_owner.remove_movespeed_modifier(/datum/movespeed_modifier/changeling/genetic_matrix)
-                var/datum/physiology/phys = living_owner.physiology
-                if(phys && matrix_current_stamina_use_mult != 1)
-                        phys.stamina_mod /= matrix_current_stamina_use_mult
-                if(matrix_current_stamina_regen_mult != 1)
-                        living_owner.stamina_regen_time /= matrix_current_stamina_regen_mult
-                if(matrix_current_max_stamina_bonus)
-                        living_owner.max_stamina -= matrix_current_max_stamina_bonus
-                        living_owner.staminaloss = clamp(living_owner.staminaloss, 0, living_owner.max_stamina)
-        if(matrix_current_chem_rate_bonus)
-                chem_recharge_rate -= matrix_current_chem_rate_bonus
-        if(matrix_current_sting_range_bonus)
-                sting_range -= matrix_current_sting_range_bonus
-        matrix_passive_effects_bound_mob = null
-        matrix_current_movespeed_slowdown = 0
-        matrix_current_stamina_use_mult = 1
-        matrix_current_stamina_regen_mult = 1
-        matrix_current_max_stamina_bonus = 0
-        matrix_current_chem_rate_bonus = 0
-        matrix_current_sting_range_bonus = 0
-        genetic_matrix_effect_cache = changeling_get_default_matrix_effects()
+	if(matrix_passive_effects_bound_mob)
+		var/mob/living/living_owner = matrix_passive_effects_bound_mob
+		living_owner.remove_movespeed_modifier(/datum/movespeed_modifier/changeling/genetic_matrix)
+		var/datum/physiology/phys = living_owner.physiology
+		if(phys && matrix_current_stamina_use_mult != 1)
+			phys.stamina_mod /= matrix_current_stamina_use_mult
+		if(matrix_current_stamina_regen_mult != 1)
+			living_owner.stamina_regen_time /= matrix_current_stamina_regen_mult
+		if(matrix_current_max_stamina_bonus)
+			living_owner.max_stamina -= matrix_current_max_stamina_bonus
+			living_owner.staminaloss = clamp(living_owner.staminaloss, 0, living_owner.max_stamina)
+	if(matrix_current_chem_rate_bonus)
+		chem_recharge_rate -= matrix_current_chem_rate_bonus
+	if(matrix_current_sting_range_bonus)
+		sting_range -= matrix_current_sting_range_bonus
+	matrix_passive_effects_bound_mob = null
+	matrix_current_movespeed_slowdown = 0
+	matrix_current_stamina_use_mult = 1
+	matrix_current_stamina_regen_mult = 1
+	matrix_current_max_stamina_bonus = 0
+	matrix_current_chem_rate_bonus = 0
+	matrix_current_sting_range_bonus = 0
+	genetic_matrix_effect_cache = changeling_get_default_matrix_effects()
 
 /datum/antagonist/changeling/proc/update_matrix_passive_effects(list/active_ids)
-        var/list/effect_totals = changeling_get_default_matrix_effects()
-        if(islist(active_ids))
-                for(var/module_id in active_ids)
-                        var/list/recipe = GLOB.changeling_genetic_matrix_recipes[module_id]
-                        if(!islist(recipe))
-                                continue
-                        var/list/module_data = recipe["module"]
-                        if(!islist(module_data))
-                                continue
-                        var/list/module_effects = module_data["effects"]
-                        if(!islist(module_effects))
-                                continue
-                        for(var/effect_key in module_effects)
-                                var/effect_value = module_effects[effect_key]
-                                if(isnull(effect_value))
-                                        continue
-                                if(isnum(effect_value))
-                                        if(effect_key in CHANGELING_MATRIX_MULTIPLICATIVE_EFFECT_KEYS)
-                                                effect_totals[effect_key] *= effect_value
-                                        else
-                                                effect_totals[effect_key] += effect_value
-                                else
-                                        effect_totals[effect_key] = effect_value
-        apply_matrix_passive_effect_totals(effect_totals)
+	var/list/effect_totals = changeling_get_default_matrix_effects()
+	if(islist(active_ids))
+		for(var/module_id in active_ids)
+			var/list/recipe = GLOB.changeling_genetic_matrix_recipes[module_id]
+			if(!islist(recipe))
+				continue
+			var/list/module_data = recipe["module"]
+			if(!islist(module_data))
+				continue
+			var/list/module_effects = module_data["effects"]
+			if(!islist(module_effects))
+				continue
+			for(var/effect_key in module_effects)
+				var/effect_value = module_effects[effect_key]
+				if(isnull(effect_value))
+					continue
+				if(isnum(effect_value))
+					if(effect_key in CHANGELING_MATRIX_MULTIPLICATIVE_EFFECT_KEYS)
+						effect_totals[effect_key] *= effect_value
+					else
+						effect_totals[effect_key] += effect_value
+				else
+					effect_totals[effect_key] = effect_value
+	apply_matrix_passive_effect_totals(effect_totals)
 
 /datum/antagonist/changeling/proc/apply_matrix_passive_effect_totals(list/totals)
-        clear_matrix_passive_effects()
-        if(!islist(totals))
-                totals = changeling_get_default_matrix_effects()
-        var/mob/living/living_owner = owner?.current
-        var/move_slowdown = totals["move_speed_slowdown"]
-        var/stamina_mult = totals["stamina_use_mult"]
-        var/regen_mult = totals["stamina_regen_time_mult"]
-        var/max_bonus = round(totals["max_stamina_add"])
-        var/chem_bonus = totals["chem_recharge_rate_add"]
-        var/sting_bonus = round(totals["sting_range_add"])
+	clear_matrix_passive_effects()
+	if(!islist(totals))
+		totals = changeling_get_default_matrix_effects()
+	var/mob/living/living_owner = owner?.current
+	var/move_slowdown = totals["move_speed_slowdown"]
+	var/stamina_mult = totals["stamina_use_mult"]
+	var/regen_mult = totals["stamina_regen_time_mult"]
+	var/max_bonus = round(totals["max_stamina_add"])
+	var/chem_bonus = totals["chem_recharge_rate_add"]
+	var/sting_bonus = round(totals["sting_range_add"])
 
-        matrix_current_movespeed_slowdown = move_slowdown
-        matrix_current_stamina_use_mult = stamina_mult
-        matrix_current_stamina_regen_mult = regen_mult
-        matrix_current_max_stamina_bonus = max_bonus
-        matrix_current_chem_rate_bonus = chem_bonus
-        matrix_current_sting_range_bonus = sting_bonus
+	matrix_current_movespeed_slowdown = move_slowdown
+	matrix_current_stamina_use_mult = stamina_mult
+	matrix_current_stamina_regen_mult = regen_mult
+	matrix_current_max_stamina_bonus = max_bonus
+	matrix_current_chem_rate_bonus = chem_bonus
+	matrix_current_sting_range_bonus = sting_bonus
 
-        if(chem_bonus)
-                chem_recharge_rate += chem_bonus
-        if(sting_bonus)
-                sting_range += sting_bonus
+	if(chem_bonus)
+		chem_recharge_rate += chem_bonus
+	if(sting_bonus)
+		sting_range += sting_bonus
 
-        genetic_matrix_effect_cache = totals.Copy()
+	genetic_matrix_effect_cache = totals.Copy()
 
-        if(!isliving(living_owner))
-                return
+	if(!isliving(living_owner))
+		return
 
-        matrix_passive_effects_bound_mob = living_owner
-        living_owner.remove_movespeed_modifier(/datum/movespeed_modifier/changeling/genetic_matrix)
-        if(move_slowdown)
-                living_owner.add_or_update_variable_movespeed_modifier(/datum/movespeed_modifier/changeling/genetic_matrix, TRUE, multiplicative_slowdown = move_slowdown)
-        var/datum/physiology/phys = living_owner.physiology
-        if(phys && stamina_mult != 1)
-                        phys.stamina_mod *= stamina_mult
-        if(regen_mult != 1)
-                living_owner.stamina_regen_time *= regen_mult
-        if(max_bonus)
-                living_owner.max_stamina += max_bonus
-                living_owner.staminaloss = clamp(living_owner.staminaloss, 0, living_owner.max_stamina)
+	matrix_passive_effects_bound_mob = living_owner
+	living_owner.remove_movespeed_modifier(/datum/movespeed_modifier/changeling/genetic_matrix)
+	if(move_slowdown)
+		living_owner.add_or_update_variable_movespeed_modifier(/datum/movespeed_modifier/changeling/genetic_matrix, TRUE, multiplicative_slowdown = move_slowdown)
+	var/datum/physiology/phys = living_owner.physiology
+	if(phys && stamina_mult != 1)
+			phys.stamina_mod *= stamina_mult
+	if(regen_mult != 1)
+		living_owner.stamina_regen_time *= regen_mult
+	if(max_bonus)
+		living_owner.max_stamina += max_bonus
+		living_owner.staminaloss = clamp(living_owner.staminaloss, 0, living_owner.max_stamina)
 
 /datum/antagonist/changeling/proc/get_genetic_matrix_effect(effect_key, default_value)
-        if(!islist(genetic_matrix_effect_cache))
-                return default_value
-        var/result = genetic_matrix_effect_cache[effect_key]
-        if(isnull(result))
-                return default_value
-        return result
+	if(!islist(genetic_matrix_effect_cache))
+		return default_value
+	var/result = genetic_matrix_effect_cache[effect_key]
+	if(isnull(result))
+		return default_value
+	return result
 /*
  * Instantiate all the default actions of a ling (transform, dna sting, absorb, etc)
  * Any Changeling action with dna_cost = CHANGELING_POWER_INNATE will be added here automatically
