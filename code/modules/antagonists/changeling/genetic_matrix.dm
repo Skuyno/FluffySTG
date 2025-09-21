@@ -82,9 +82,9 @@
 	data["geneticPoints"] = changeling.genetic_points
 	data["absorbs"] = changeling.true_absorbs
 	data["dnaSamples"] = changeling.absorbed_count
-	data["canReadapt"] = changeling.can_respec
-	data["canAddBuild"] = incubator ? incubator.can_add_build() : FALSE
-	return data
+        data["canReadapt"] = changeling.can_respec
+        data["isReconfiguring"] = changeling.is_genetic_matrix_reconfiguring()
+        return data
 
 /datum/genetic_matrix/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	. = ..()
@@ -95,44 +95,11 @@
 	var/mob/user = ui.user
 	var/datum/changeling_bio_incubator/incubator = changeling.bio_incubator
 	switch(action)
-		if("create_build")
-			if(!incubator || !incubator.can_add_build())
-				return FALSE
-			var/default_name = "Matrix Build [incubator.builds.len + 1]"
-			var/new_name = tgui_input_text(user, "Name the new build.", "Create Genetic Matrix Build", default_name, 32)
-			if(isnull(new_name))
-				return FALSE
-			new_name = sanitize_text(new_name)
-			if(!length(new_name))
-				new_name = default_name
-			changeling.add_genetic_matrix_build(new_name)
-			return TRUE
-		if("delete_build")
-			var/datum/changeling_bio_incubator/build/build = changeling.find_genetic_matrix_build(params["build"])
-			if(!build)
-				return FALSE
-			if(tgui_alert(user, "Delete build \"[build.name]\"?", "Remove Build", list("Delete", "Cancel")) != "Delete")
-				return FALSE
-			changeling.remove_genetic_matrix_build(build)
-			return TRUE
-		if("rename_build")
-			var/datum/changeling_bio_incubator/build/build = changeling.find_genetic_matrix_build(params["build"])
-			if(!build)
-				return FALSE
-			var/new_name = tgui_input_text(user, "Enter a new name for this build.", "Rename Build", build.name, 32)
-			if(isnull(new_name))
-				return FALSE
-			new_name = sanitize_text(new_name)
-			if(!length(new_name))
-				return FALSE
-			build.name = new_name
-			build.bio_incubator?.notify_update()
-			return TRUE
-		if("clear_build")
-			var/datum/changeling_bio_incubator/build/build = changeling.find_genetic_matrix_build(params["build"])
-			if(!build)
-				return FALSE
-			changeling.clear_genetic_matrix_build(build)
+                if("clear_build")
+                        var/datum/changeling_bio_incubator/build/build = changeling.find_genetic_matrix_build(params["build"])
+                        if(!build)
+                                return FALSE
+                        changeling.clear_genetic_matrix_build(build)
 			return TRUE
 		if("set_build_module", "set_build_ability")
 			var/datum/changeling_bio_incubator/build/build = changeling.find_genetic_matrix_build(params["build"])
@@ -145,11 +112,11 @@
 			var/module_identifier = params["module"]
 			if(isnull(module_identifier))
 				module_identifier = params["ability"]
-			if(!module_identifier)
-				changeling.assign_genetic_matrix_module(build, null, slot)
-				return TRUE
-			return changeling.assign_genetic_matrix_module(build, module_identifier, slot)
-		if("clear_build_module", "clear_build_ability")
+                        if(!module_identifier)
+                                changeling.assign_genetic_matrix_module(build, null, slot)
+                                return TRUE
+                        return changeling.assign_genetic_matrix_module(build, module_identifier, slot)
+                if("clear_build_module", "clear_build_ability")
 			var/datum/changeling_bio_incubator/build/build = changeling.find_genetic_matrix_build(params["build"])
 			if(!build)
 				return FALSE
@@ -165,16 +132,21 @@
 				return FALSE
 			return changeling.craft_genetic_matrix_module(recipe_id)
 		if("purchase_standard")
-			var/ability_id = params["ability"]
-			if(!ability_id)
-				return FALSE
-			var/datum/action/changeling/ability_path = text2path(ability_id)
-			if(!ispath(ability_path, /datum/action/changeling))
-				return FALSE
-			return changeling.purchase_power(ability_path)
-		if("readapt_standard")
-			return changeling.readapt()
-	return FALSE
+                        var/ability_id = params["ability"]
+                        if(!ability_id)
+                                return FALSE
+                        var/datum/action/changeling/ability_path = text2path(ability_id)
+                        if(!ispath(ability_path, /datum/action/changeling))
+                                return FALSE
+                        return changeling.purchase_power(ability_path)
+                if("readapt_standard")
+                        return changeling.readapt()
+                if("commit_build")
+                        var/datum/changeling_bio_incubator/build/build = changeling.find_genetic_matrix_build(params["build"])
+                        if(!build)
+                                return FALSE
+                        return changeling.commit_genetic_matrix_build(build, user)
+        return FALSE
 
 /datum/action/changeling/genetic_matrix
 	name = "Genetic Matrix"
