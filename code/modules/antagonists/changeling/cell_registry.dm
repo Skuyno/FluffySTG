@@ -42,8 +42,8 @@
 
 GLOBAL_LIST_INIT(changeling_cell_registry, list(
         CHANGELING_CELL_ID_HUMAN = list(
-                CHANGELING_CELL_REGISTRY_NAME = "Human Crew",
-                CHANGELING_CELL_REGISTRY_DESC = "Baseline humanoid biomatter drawn from Nanotrasen-aligned crew.",
+                CHANGELING_CELL_REGISTRY_NAME = "Human",
+                CHANGELING_CELL_REGISTRY_DESC = "Baseline humanoid biomatter drawn from a crew.",
                 CHANGELING_CELL_REGISTRY_SPECIES = list(SPECIES_HUMAN, SPECIES_HUMANOID),
                 CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/carbon/human),
         ),
