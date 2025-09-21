@@ -137,6 +137,8 @@
 	var/list/ids = list()
 	if(!target)
 		return ids
+	if(!isobj(target))
+		return ids
 	for(var/cell_id as anything in changeling_get_cell_ids_from_atom(target))
 		if(!(cell_id in ids))
 			ids += cell_id
