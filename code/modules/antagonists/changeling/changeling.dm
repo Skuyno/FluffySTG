@@ -94,6 +94,8 @@
 	var/matrix_aether_drake_active = FALSE
 	/// Whether the graviton ripsaw matrix module is active.
 	var/matrix_graviton_ripsaw_active = FALSE
+	/// Cooldown tracker for graviton ripsaw's tether launch.
+	COOLDOWN_DECLARE(matrix_graviton_ripsaw_grapple_cooldown)
 	/// Whether the hemolytic bloom matrix module is active.
 	var/matrix_hemolytic_bloom_active = FALSE
 	/// Whether the echo cascade matrix module is active.
@@ -670,6 +672,63 @@
 
 /datum/antagonist/changeling/proc/update_matrix_graviton_ripsaw_effect(is_active)
 	matrix_graviton_ripsaw_active = !!is_active
+	if(!matrix_graviton_ripsaw_active)
+		COOLDOWN_RESET(src, matrix_graviton_ripsaw_grapple_cooldown)
+
+#define GRAVITON_RIPSAW_GRAPPLE_RANGE 7
+#define GRAVITON_RIPSAW_GRAPPLE_COOLDOWN (3 SECONDS)
+
+/datum/antagonist/changeling/proc/try_matrix_graviton_ripsaw_grapple(atom/grapple_target, mob/living/user)
+	if(!matrix_graviton_ripsaw_active || owner?.current != user)
+		return NONE
+	if(!istype(user))
+		return ITEM_INTERACT_BLOCKING
+	if(user.throwing)
+		user.balloon_alert(user, "mid-flight!")
+		return ITEM_INTERACT_BLOCKING
+	if(user.buckled || user.anchored)
+		user.balloon_alert(user, "stuck!")
+		return ITEM_INTERACT_BLOCKING
+	if(!COOLDOWN_FINISHED(src, matrix_graviton_ripsaw_grapple_cooldown))
+		user.balloon_alert(user, "tendons recovering!")
+		return ITEM_INTERACT_BLOCKING
+	var/turf/user_turf = get_turf(user)
+	var/turf/target_turf = get_turf(grapple_target)
+	if(!user_turf || !target_turf)
+		return ITEM_INTERACT_BLOCKING
+	var/dist = get_dist(user_turf, target_turf)
+	if(dist <= 0)
+		user.balloon_alert(user, "need anchor!")
+		return ITEM_INTERACT_BLOCKING
+	if(dist == -1 || dist > GRAVITON_RIPSAW_GRAPPLE_RANGE)
+		user.balloon_alert(user, "out of reach!")
+		return ITEM_INTERACT_BLOCKING
+	var/list/path = get_line(user_turf, target_turf)
+	var/turf/destination = user_turf
+	var/steps = 0
+	for(var/i = 2, i <= length(path), i++)
+		var/turf/step = path[i]
+		if(!istype(step))
+			break
+		steps++
+		if(steps > GRAVITON_RIPSAW_GRAPPLE_RANGE)
+			break
+		if(step.is_blocked_turf(TRUE, source_atom = user))
+			break
+		destination = step
+	if(destination == user_turf)
+		user.balloon_alert(user, "no clear path!")
+		return ITEM_INTERACT_BLOCKING
+	var/distance_to_destination = max(1, get_dist(user_turf, destination))
+	COOLDOWN_START(src, matrix_graviton_ripsaw_grapple_cooldown, GRAVITON_RIPSAW_GRAPPLE_COOLDOWN)
+	user.setDir(get_dir(user_turf, destination))
+	user.Beam(destination, icon = 'icons/obj/weapons/changeling_items.dmi', icon_state = "tentacle", time = 0.5 SECONDS, emissive = FALSE)
+	playsound(user, 'sound/effects/splat.ogg', 40, TRUE)
+	user.throw_at(destination, distance_to_destination, 1, user, spin = FALSE, gentle = TRUE)
+	return ITEM_INTERACT_SUCCESS
+
+#undef GRAVITON_RIPSAW_GRAPPLE_RANGE
+#undef GRAVITON_RIPSAW_GRAPPLE_COOLDOWN
 
 /datum/antagonist/changeling/proc/update_matrix_hemolytic_bloom_effect(is_active)
 	matrix_hemolytic_bloom_active = !!is_active
@@ -928,28 +987,12 @@
 /datum/antagonist/changeling/proc/handle_graviton_ripsaw_hit(atom/target, mob/living/user)
 	if(!matrix_graviton_ripsaw_active || !istype(user))
 		return
-	if(isliving(target))
-		var/mob/living/living_target = target
-		if(living_target.stat != DEAD)
-			living_target.apply_status_effect(/datum/status_effect/changeling_gravitic_pull, user)
-	else if(istype(target, /atom))
-		handle_graviton_ripsaw_anchor_hit(target, user)
-
-/datum/antagonist/changeling/proc/handle_graviton_ripsaw_anchor_hit(atom/anchor, mob/living/user)
-	if(!matrix_graviton_ripsaw_active || user.has_gravity())
+	if(!isliving(target))
 		return
-	var/turf/anchor_turf = get_turf(anchor)
-	var/turf/user_turf = get_turf(user)
-	if(!anchor_turf || !user_turf)
+	var/mob/living/living_target = target
+	if(living_target == user || living_target.stat == DEAD)
 		return
-	var/dir = get_dir(user_turf, anchor_turf)
-	if(!dir)
-		dir = user.dir
-	var/turf/destination = get_step(anchor_turf, dir)
-	if(!destination)
-		destination = get_step(user_turf, dir)
-	if(destination)
-		user.throw_at(destination, 4, 1, user, gentle = TRUE)
+	living_target.apply_status_effect(/datum/status_effect/changeling_gravitic_pull, user)
 
 /datum/antagonist/changeling/proc/handle_hemolytic_bloom_hit(atom/target, mob/living/user)
 	if(!matrix_hemolytic_bloom_active || !isliving(target) || !istype(user))
