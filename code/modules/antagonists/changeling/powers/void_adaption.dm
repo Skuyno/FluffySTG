@@ -16,7 +16,7 @@
 	/// Baseline slowdown applied without void carapace.
 	var/base_recharge_slowdown = 0.25
 	/// Slowdown applied when the void carapace matrix module is active.
-	var/module_recharge_slowdown = 0.12
+        var/module_recharge_slowdown = 0.05
 	/// Are we currently protecting our user?
 	var/currently_active = FALSE
 	/// Cached changeling datum for module syncing.

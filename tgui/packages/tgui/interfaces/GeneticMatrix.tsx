@@ -687,7 +687,7 @@ const CraftComposer = ({
             <Stack.Item>
               <Input
                 value={cellSearch}
-                onInput={(_, value) => setCellSearch(value)}
+                onInput={(_, value) => setCellSearch(value ?? '')}
                 placeholder="Search cells..."
               />
             </Stack.Item>
@@ -724,7 +724,7 @@ const CraftComposer = ({
             <Stack.Item>
               <Input
                 value={abilitySearch}
-                onInput={(_, value) => setAbilitySearch(value)}
+                onInput={(_, value) => setAbilitySearch(value ?? '')}
                 placeholder="Search abilities..."
               />
             </Stack.Item>

@@ -13,8 +13,8 @@
                 "exclusiveTags" = list("fleshmend_upgrade"),
                 "button_icon_state" = "fleshmend",
                 "effects" = list(
-                        "fleshmend_duration_add" = 3 SECONDS,
-                        "fleshmend_heal_mult" = 1.2,
+                        "fleshmend_duration_add" = 6 SECONDS,
+                        "fleshmend_heal_mult" = 1.4,
                 ),
         )
         required_cells = list(

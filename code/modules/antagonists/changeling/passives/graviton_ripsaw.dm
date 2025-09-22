@@ -22,9 +22,9 @@
 	)
 
 /datum/status_effect/changeling_gravitic_pull
-	id = "changeling_gravitic_pull"
-	status_type = STATUS_EFFECT_REFRESH
-	duration = 3 SECONDS
+        id = "changeling_gravitic_pull"
+        status_type = STATUS_EFFECT_REFRESH
+        duration = 5 SECONDS
 	tick_interval = STATUS_EFFECT_NO_TICK
 	alert_type = null
 	/// Weak reference to the changeling who struck the victim.
@@ -56,8 +56,8 @@
 		return
 	if(source == owner || owner.stat == DEAD)
 		return
-	owner.adjustStaminaLoss(6)
-	owner.set_jitter_if_lower(1.5 SECONDS)
+        owner.adjustStaminaLoss(12)
+        owner.set_jitter_if_lower(3 SECONDS)
 	if(owner.anchored || owner.throwing || owner.buckled)
 		return
 	var/turf/owner_turf = get_turf(owner)

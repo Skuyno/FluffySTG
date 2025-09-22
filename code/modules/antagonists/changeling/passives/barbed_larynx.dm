@@ -13,8 +13,8 @@
 		"exclusiveTags" = list("shriek_range"),
 		"button_icon_state" = "resonant_shriek",
 		"effects" = list(
-			"resonant_shriek_range_add" = 1,
-			"resonant_shriek_confusion_mult" = 1.05,
+                        "resonant_shriek_range_add" = 2,
+                        "resonant_shriek_confusion_mult" = 1.1,
 		),
 	)
 	required_cells = list(

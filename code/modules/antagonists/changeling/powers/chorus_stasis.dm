@@ -48,14 +48,14 @@
 	return ..()
 
 /obj/structure/changeling_chorus_cocoon/process(seconds_per_tick)
-	for(var/mob/living/occupant in buckled_mobs)
-		if(occupant.stat == DEAD)
-			continue
-		occupant.adjustBruteLoss(-1.2 * seconds_per_tick, updating_health = FALSE, forced = TRUE)
-		occupant.adjustFireLoss(-1 * seconds_per_tick, updating_health = FALSE, forced = TRUE)
-		occupant.adjustOxyLoss(-1.5 * seconds_per_tick, updating_health = FALSE, forced = TRUE)
-		occupant.adjustToxLoss(-0.4 * seconds_per_tick, forced = TRUE)
-		occupant.adjustStaminaLoss(-3 * seconds_per_tick, updating_stamina = FALSE)
+        for(var/mob/living/occupant in buckled_mobs)
+                if(occupant.stat == DEAD)
+                        continue
+                occupant.adjustBruteLoss(-2.4 * seconds_per_tick, updating_health = FALSE, forced = TRUE)
+                occupant.adjustFireLoss(-2 * seconds_per_tick, updating_health = FALSE, forced = TRUE)
+                occupant.adjustOxyLoss(-3 * seconds_per_tick, updating_health = FALSE, forced = TRUE)
+                occupant.adjustToxLoss(-0.8 * seconds_per_tick, forced = TRUE)
+                occupant.adjustStaminaLoss(-6 * seconds_per_tick, updating_stamina = FALSE)
 		occupant.updatehealth()
 
 /obj/structure/changeling_chorus_cocoon/proc/add_occupant(mob/living/victim)
@@ -75,15 +75,15 @@
 		span_danger("[src] ruptures in a wave of soporific gas!"),
 		span_notice("We unravel the cocoon, flooding the area with muting spores."),
 	)
-	for(var/mob/living/occupant in buckled_mobs.Copy())
-		unbuckle_mob(occupant, force = TRUE, can_fall = FALSE)
-               occupant.Knockdown(1 SECONDS)
-	for(var/mob/living/target in range(2, src))
-		if(target.stat == DEAD || IS_CHANGELING(target))
-			continue
-               target.adjustStaminaLoss(25)
-               target.Knockdown(2 SECONDS)
-		target.adjust_confusion(30)
+        for(var/mob/living/occupant in buckled_mobs.Copy())
+                unbuckle_mob(occupant, force = TRUE, can_fall = FALSE)
+                occupant.Knockdown(2 SECONDS)
+        for(var/mob/living/target in range(3, src))
+                if(target.stat == DEAD || IS_CHANGELING(target))
+                        continue
+                target.adjustStaminaLoss(50)
+                target.Knockdown(4 SECONDS)
+                target.adjust_confusion(60)
 	qdel(src)
 	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
 	changeling_data?.chorus_cocoon_detonated(user)

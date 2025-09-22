@@ -552,11 +552,11 @@
 		return
 	if(!istype(target) || target == user || target.stat == DEAD)
 		return
-	var/stamina_cost = 12
+        var/stamina_cost = 6
 	if(user.staminaloss + stamina_cost >= user.max_stamina)
 		return
 	user.adjustStaminaLoss(stamina_cost)
-	target.Knockdown(1 SECONDS)
+        target.Knockdown(2 SECONDS)
 	target.visible_message(
 		span_danger("[target] is hammered off balance by [user]'s driving strike!"),
 		span_userdanger("A brutal shoulder slam knocks you sprawling!"),
@@ -599,11 +599,11 @@
 		span_warning("[user] releases a concussive chemical shockwave!"),
 		span_changeling("We vent a surge of volatile chemicals in a stunning wave."),
 	)
-	for(var/mob/living/nearby in oview(2, user))
-		if(nearby == user || nearby.stat == DEAD)
-			continue
-		nearby.Knockdown(1.5 SECONDS)
-		nearby.adjustStaminaLoss(10)
+        for(var/mob/living/nearby in oview(2, user))
+                if(nearby == user || nearby.stat == DEAD)
+                        continue
+                nearby.Knockdown(3 SECONDS)
+                nearby.adjustStaminaLoss(20)
 
 /datum/antagonist/changeling/proc/update_matrix_aether_drake_effect(is_active)
 	matrix_aether_drake_active = !!is_active
@@ -643,8 +643,8 @@
 	if(istype(living_owner, /mob/living/carbon/human))
 		var/mob/living/carbon/human/human_owner = living_owner
 		var/datum/physiology/phys = human_owner.physiology
-		if(phys && !matrix_aether_drake_resist_bonus)
-			var/bonus = 0.15
+                if(phys && !matrix_aether_drake_resist_bonus)
+                        var/bonus = 0.3
 			phys.brute_mod *= (1 - bonus)
 			phys.burn_mod *= (1 - bonus)
 			matrix_aether_drake_resist_bonus = bonus
@@ -667,8 +667,8 @@
 	if(!matrix_graviton_ripsaw_active)
 		COOLDOWN_RESET(src, matrix_graviton_ripsaw_grapple_cooldown)
 
-#define GRAVITON_RIPSAW_GRAPPLE_RANGE 7
-#define GRAVITON_RIPSAW_GRAPPLE_COOLDOWN (3 SECONDS)
+#define GRAVITON_RIPSAW_GRAPPLE_RANGE 9
+#define GRAVITON_RIPSAW_GRAPPLE_COOLDOWN (2 SECONDS)
 
 /datum/antagonist/changeling/proc/try_matrix_graviton_ripsaw_grapple(atom/grapple_target, mob/living/user)
 	if(!matrix_graviton_ripsaw_active || owner?.current != user)
@@ -843,14 +843,14 @@
 /datum/antagonist/changeling/proc/apply_neuro_sap_bonus()
         if(matrix_neuro_sap_bonus_applied)
                 return
-	chem_recharge_rate += 0.4
-	matrix_neuro_sap_bonus_applied = TRUE
+        chem_recharge_rate += 0.8
+        matrix_neuro_sap_bonus_applied = TRUE
 
 /datum/antagonist/changeling/proc/remove_neuro_sap_bonus()
-	if(!matrix_neuro_sap_bonus_applied)
-		return
-	chem_recharge_rate -= 0.4
-	matrix_neuro_sap_bonus_applied = FALSE
+        if(!matrix_neuro_sap_bonus_applied)
+                return
+        chem_recharge_rate -= 0.8
+        matrix_neuro_sap_bonus_applied = FALSE
 
 /datum/antagonist/changeling/proc/schedule_resonant_echo(mob/living/user, range, confusion_mult)
 	if(!matrix_echo_cascade_active || !istype(user))
@@ -868,8 +868,8 @@
 	var/turf/user_turf = get_turf(user)
 	if(user_turf)
 		playsound(user_turf, 'sound/effects/screech.ogg', 40, TRUE)
-	var/confusion = round(12 SECONDS * confusion_mult / max(echo_index, 1))
-	var/jitter = round(60 SECONDS * confusion_mult / max(echo_index, 1))
+        var/confusion = round(24 SECONDS * confusion_mult / max(echo_index, 1))
+        var/jitter = round(120 SECONDS * confusion_mult / max(echo_index, 1))
 	for(var/mob/living/target in get_hearers_in_view(max(range, 0), user))
 		if(target == user || IS_CHANGELING(target))
 			continue
@@ -904,7 +904,7 @@
 		if(issilicon(target))
 			target.Paralyze(10)
 		else
-			target.adjustStaminaLoss(8)
+                        target.adjustStaminaLoss(16)
 
 /datum/antagonist/changeling/proc/handle_graviton_ripsaw_hit(atom/target, mob/living/user)
 	if(!matrix_graviton_ripsaw_active || !istype(user))
@@ -920,9 +920,9 @@
 	if(!matrix_hemolytic_bloom_active || !isliving(target) || !istype(user))
 		return
 	var/mob/living/living_target = target
-	if(isliving(user))
-		user.adjustBruteLoss(-0.8, forced = TRUE)
-		adjust_chemicals(1)
+        if(isliving(user))
+                user.adjustBruteLoss(-1.6, forced = TRUE)
+                adjust_chemicals(2)
 	if(iscarbon(living_target))
 		var/mob/living/carbon/C = living_target
 		var/zone = BODY_ZONE_CHEST
@@ -932,7 +932,7 @@
 		var/obj/item/bodypart/part = C.get_bodypart(zone)
 		if(!part)
 			part = C.get_bodypart(BODY_ZONE_CHEST)
-		part?.adjustBleedStacks(3, 0)
+                part?.adjustBleedStacks(6, 0)
 	if(living_target.stat == DEAD)
 		for(var/datum/weakref/ref in matrix_hemolytic_seeded.Copy())
 			var/mob/living/cached = ref?.resolve()
@@ -954,7 +954,7 @@
 	if(!matrix_ashen_pump_active || !istype(user))
 		return
 	user.apply_status_effect(/datum/status_effect/changeling_ashen_pump, src)
-	adjust_chemicals(-5)
+        adjust_chemicals(-3)
 
 /datum/antagonist/changeling/proc/on_panacea_used(mob/living/carbon/user)
 	if(!matrix_neuro_sap_active || !istype(user))
@@ -1274,12 +1274,12 @@
 	if(matrix_symbiotic_overgrowth_active && living_owner?.stat != DEAD)
 		var/seconds = seconds_per_tick
 		var/needs_update = FALSE
-		if(living_owner && !living_owner.on_fire)
-			needs_update |= living_owner.adjustBruteLoss(-1.2 * seconds, updating_health = FALSE, forced = TRUE)
-			needs_update |= living_owner.adjustFireLoss(-0.8 * seconds, updating_health = FALSE, forced = TRUE)
-		needs_update |= living_owner.adjustToxLoss(-0.5 * seconds, forced = TRUE)
-		needs_update |= living_owner.adjustOxyLoss(-(1.5 * seconds), updating_health = FALSE, forced = TRUE)
-		var/stam_delta = living_owner.adjustStaminaLoss(-2 * seconds, updating_stamina = FALSE)
+                if(living_owner && !living_owner.on_fire)
+                        needs_update |= living_owner.adjustBruteLoss(-2.4 * seconds, updating_health = FALSE, forced = TRUE)
+                        needs_update |= living_owner.adjustFireLoss(-1.6 * seconds, updating_health = FALSE, forced = TRUE)
+                needs_update |= living_owner.adjustToxLoss(-1 * seconds, forced = TRUE)
+                needs_update |= living_owner.adjustOxyLoss(-(3 * seconds), updating_health = FALSE, forced = TRUE)
+                var/stam_delta = living_owner.adjustStaminaLoss(-4 * seconds, updating_stamina = FALSE)
 		if(stam_delta)
 			needs_update = TRUE
 		if(needs_update)

@@ -13,8 +13,8 @@
 		"exclusiveTags" = list("endurance_upgrade"),
 		"button_icon_state" = "strained_muscles",
 		"effects" = list(
-			"stamina_use_mult" = 0.9,
-			"chem_recharge_rate_add" = 0.2,
+                        "stamina_use_mult" = 0.8,
+                        "chem_recharge_rate_add" = 0.4,
 		),
 	)
 	required_cells = list(

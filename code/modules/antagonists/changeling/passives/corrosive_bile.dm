@@ -13,8 +13,8 @@
                 "exclusiveTags" = list("biodegrade_upgrade"),
                 "button_icon_state" = "biodegrade",
                 "effects" = list(
-                        "biodegrade_timer_mult" = 0.7,
-                        "biodegrade_chem_discount" = 8,
+                        "biodegrade_timer_mult" = 0.4,
+                        "biodegrade_chem_discount" = 16,
                 ),
         )
         required_cells = list(

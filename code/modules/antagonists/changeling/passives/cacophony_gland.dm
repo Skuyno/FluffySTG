@@ -14,8 +14,8 @@
 		"exclusiveTags" = list("shriek_upgrade"),
 		"button_icon_state" = "dissonant_shriek",
 		"effects" = list(
-			"dissonant_shriek_emp_range_add" = 1,
-			"dissonant_shriek_structure_mult" = 1.15,
+                        "dissonant_shriek_emp_range_add" = 2,
+                        "dissonant_shriek_structure_mult" = 1.3,
 		),
 	)
 	required_cells = list(
