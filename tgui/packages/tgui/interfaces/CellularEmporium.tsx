@@ -74,7 +74,7 @@ export const CellularEmporium = (props) => {
               <Stack.Item>
                 <Input
                   width="200px"
-                  onChange={setSearchAbilities}
+                  onChange={(value) => setSearchAbilities(value?.toString() ?? '')}
                   placeholder="Search Abilities..."
                   value={searchAbilities}
                 />
@@ -100,22 +100,19 @@ const AbilityList = (props: { searchAbilities: string }) => {
     dna_count,
   } = data;
 
-  const filteredAbilities =
-    searchAbilities.length <= 1
-      ? abilities
-      : abilities.filter((ability) => {
-          return (
-            ability.name
-              .toLowerCase()
-              .includes(searchAbilities.toLowerCase()) ||
-            ability.desc
-              .toLowerCase()
-              .includes(searchAbilities.toLowerCase()) ||
-            ability.helptext
-              .toLowerCase()
-              .includes(searchAbilities.toLowerCase())
-          );
-        });
+  const normalizedSearch = searchAbilities.trim().toLowerCase();
+  const filteredAbilities = !normalizedSearch.length
+    ? abilities
+    : abilities.filter((ability) => {
+        const abilityName = ability.name.toLowerCase();
+        const abilityDesc = ability.desc?.toLowerCase() ?? '';
+        const abilityHelp = ability.helptext?.toLowerCase() ?? '';
+        return (
+          abilityName.includes(normalizedSearch) ||
+          abilityDesc.includes(normalizedSearch) ||
+          abilityHelp.includes(normalizedSearch)
+        );
+      });
 
   if (filteredAbilities.length === 0) {
     return (

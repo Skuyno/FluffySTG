@@ -65,13 +65,11 @@
 	var/list/tracked_refs = list()
 
 /obj/structure/changeling_spore_node/Initialize(mapload, datum/antagonist/changeling/changeling_data)
-	. = ..()
-	if(changeling_data)
-		changeling_ref = WEAKREF(changeling_data)
-	START_PROCESSING(SSobj, src)
-	if(!mapload)
-		do_smoke(range = 1, location = loc)
-	return .
+       . = ..()
+       if(changeling_data)
+               changeling_ref = WEAKREF(changeling_data)
+       START_PROCESSING(SSobj, src)
+       return .
 
 /obj/structure/changeling_spore_node/Destroy()
 	STOP_PROCESSING(SSobj, src)
@@ -108,14 +106,15 @@
 	to_chat(owner, span_changeling("Our spore node senses movement near [victim]."))
 
 /obj/structure/changeling_spore_node/proc/detonate(mob/living/user)
-	playsound(src, 'sound/effects/magic/disable_tech.ogg', 60, TRUE)
-	visible_message(
-		span_danger("[src] ruptures into a haze of grasping spores!"),
-		span_notice("Our spores rupture into a slowing miasma."),
-	)
-	for(var/mob/living/target in range(3, src))
-		if(target.stat == DEAD || IS_CHANGELING(target))
-			continue
+       playsound(src, 'sound/effects/magic/disable_tech.ogg', 60, TRUE)
+       visible_message(
+               span_danger("[src] ruptures into a haze of grasping spores!"),
+               span_notice("Our spores rupture into a slowing miasma."),
+       )
+       do_smoke(range = 1, location = loc)
+       for(var/mob/living/target in range(3, src))
+               if(target.stat == DEAD || IS_CHANGELING(target))
+                       continue
 		target.adjustStaminaLoss(40)
 		target.Knockdown(2 SECONDS)
 		target.apply_status_effect(/datum/status_effect/dazed, 6 SECONDS)
