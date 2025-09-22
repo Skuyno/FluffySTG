@@ -43,11 +43,11 @@
 	/// Timer tracking the fade-out of a burst.
 	var/tmp/current_burst_timer
 	/// How long we remain fully invisible after moving.
-	var/burst_duration = 1.5 SECONDS
-	/// Cooldown between bursts while continuously moving.
-	var/burst_cooldown = 1 SECONDS
-	/// How transparent we become during the burst.
-	var/burst_alpha = 15
+        var/burst_duration = 2.5 SECONDS
+        /// Cooldown between bursts while continuously moving.
+        var/burst_cooldown = 1 SECONDS
+        /// How transparent we become during the burst.
+        var/burst_alpha = 10
 
 /datum/status_effect/changeling_feathered_veil/on_creation(mob/living/new_owner, datum/antagonist/changeling/changeling_data)
 	changeling_source = changeling_data

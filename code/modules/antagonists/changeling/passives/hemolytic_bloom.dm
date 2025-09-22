@@ -27,7 +27,7 @@
 	icon_state = "splatter1"
 	layer = ABOVE_MOB_LAYER
 	plane = GAME_PLANE
-	duration = 3 SECONDS
+        duration = 4 SECONDS
 	var/datum/weakref/changeling_ref
 
 /obj/effect/temp_visual/changeling_hemolytic_seed/Initialize(mapload, mob/living/victim, datum/antagonist/changeling/changeling_data)
@@ -43,11 +43,11 @@
 		span_danger("[src] ruptures into a spray of acidic spores!"),
 		span_notice("Our bloom erupts, digesting fresh biomass."),
 	)
-	for(var/mob/living/target in range(1, src))
+        for(var/mob/living/target in range(1, src))
 		if(IS_CHANGELING(target))
 			continue
-		target.adjustToxLoss(6)
-		target.apply_status_effect(/datum/status_effect/dazed, 2 SECONDS)
+                target.adjustToxLoss(12)
+                target.apply_status_effect(/datum/status_effect/dazed, 4 SECONDS)
 	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
-	changeling_data?.adjust_chemicals(2)
+        changeling_data?.adjust_chemicals(4)
 	qdel(src)

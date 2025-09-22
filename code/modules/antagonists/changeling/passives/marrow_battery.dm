@@ -13,8 +13,8 @@
                 "exclusiveTags" = list("chem_pool"),
                 "button_icon_state" = null,
                 "effects" = list(
-                        "chem_recharge_rate_add" = 0.6,
-                        "stamina_regen_time_mult" = 0.95,
+                        "chem_recharge_rate_add" = 1.2,
+                        "stamina_regen_time_mult" = 0.9,
                 ),
         )
         required_cells = list(

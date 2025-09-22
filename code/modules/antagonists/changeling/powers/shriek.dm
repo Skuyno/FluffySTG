@@ -72,7 +72,7 @@
 		for(var/mob/living/victim in get_hearers_in_view(lethal_range, user))
 			if(victim == user || IS_CHANGELING(victim))
 				continue
-			var/damage = victim.apply_damage(round(25 * structure_mult), BRUTE, BODY_ZONE_HEAD, forced = TRUE, wound_bonus = 15, sharpness = SHARP_POINTY)
+                        var/damage = victim.apply_damage(round(40 * structure_mult), BRUTE, BODY_ZONE_HEAD, forced = TRUE, wound_bonus = 15, sharpness = SHARP_POINTY)
 			if(damage > 0)
 				victim.visible_message(
 					span_danger("[victim] reels as [user]'s killing tone tears through [victim.p_their()] skull!"),
@@ -84,7 +84,7 @@
 				continue
 			if(!istype(O, /obj/machinery) && !istype(O, /obj/structure))
 				continue
-			O.take_damage(round(40 * structure_mult), BRUTE, MELEE, TRUE, get_dir(O, user))
+                        O.take_damage(round(80 * structure_mult), BRUTE, MELEE, TRUE, get_dir(O, user))
 
 	changeling_data?.schedule_dissonant_echo(user, heavy_range, light_range)
 	return TRUE

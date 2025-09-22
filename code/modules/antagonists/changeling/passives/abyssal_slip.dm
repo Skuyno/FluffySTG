@@ -12,7 +12,7 @@
 			"slotType" = BIO_INCUBATOR_SLOT_FLEX,
 			"tags" = list("stealth", "mobility"),
 			"effects" = list(
-					"move_speed_slowdown" = -0.15,
+                        "move_speed_slowdown" = -0.3,
 			),
 	)
 	required_cells = list(

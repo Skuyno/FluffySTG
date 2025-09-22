@@ -13,9 +13,9 @@
 		"exclusiveTags" = list("camo_upgrade"),
 		"button_icon_state" = "digital_camo",
 		"effects" = list(
-			"feathered_veil_burst_duration_add" = 0.5 SECONDS,
-			"feathered_veil_cooldown_mult" = 0.75,
-			"feathered_veil_alpha_add" = -20,
+                        "feathered_veil_burst_duration_add" = 1 SECONDS,
+                        "feathered_veil_cooldown_mult" = 0.5,
+                        "feathered_veil_alpha_add" = -40,
 		),
 	)
 	required_cells = list(
