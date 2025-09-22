@@ -40,6 +40,7 @@
 		changeling_ref = WEAKREF(changeling_data)
 	cocooned_mobs = list()
 	START_PROCESSING(SSobj, src)
+	GLOB.changeling_chorus_cocoons += src
 	update_cocoon_appearance()
 	return .
 
@@ -50,21 +51,29 @@
 		remove_cocoon_effects(hidden)
 	cocooned_mobs.Cut()
 	STOP_PROCESSING(SSobj, src)
+	GLOB.changeling_chorus_cocoons -= src
 	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
 	changeling_data?.clear_chorus_cocoon(src)
 	changeling_ref = null
 	return ..()
 
 /obj/structure/changeling_chorus_cocoon/process(seconds_per_tick)
-	if(!length(cocooned_mobs))
+	if(!length(buckled_mobs))
+		if(length(cocooned_mobs))
+			for(var/mob/living/stale as anything in cocooned_mobs.Copy())
+				remove_cocoon_effects(stale)
 		return
-	for(var/mob/living/victim as anything in cocooned_mobs.Copy())
-		if(QDELETED(victim) || !(victim in buckled_mobs))
-			remove_cocoon_effects(victim)
+	for(var/mob/living/victim as anything in buckled_mobs.Copy())
+		if(QDELETED(victim))
 			continue
+		if(!(victim in cocooned_mobs))
+			apply_cocoon_effects(victim)
 		if(victim.stat == DEAD)
 			continue
 		heal_cocooned_mob(victim, seconds_per_tick)
+	for(var/mob/living/hidden in cocooned_mobs.Copy())
+		if(QDELETED(hidden) || !(hidden in buckled_mobs))
+			remove_cocoon_effects(hidden)
 
 /obj/structure/changeling_chorus_cocoon/proc/heal_cocooned_mob(mob/living/victim, seconds_per_tick)
 	if(!isliving(victim))
@@ -113,6 +122,7 @@
 
 /obj/structure/changeling_chorus_cocoon/proc/remove_cocoon_effects(mob/living/victim)
 	if(!isliving(victim))
+		cocooned_mobs -= victim
 		return
 	cocooned_mobs -= victim
 	victim.RemoveInvisibility(REF(src))
