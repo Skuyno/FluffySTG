@@ -112,8 +112,6 @@
 	var/matrix_neuro_sap_bonus_applied = FALSE
 	/// Whether the chitin courier matrix module is active.
 	var/matrix_chitin_courier_active = FALSE
-	/// Whether the memory archivist matrix module is active.
-	var/matrix_memory_archivist_active = FALSE
 	/// Whether the spore node matrix module is active.
 	var/matrix_spore_node_active = FALSE
 	/// Whether the chorus stasis matrix module is active.
@@ -134,8 +132,6 @@
 	var/datum/action/changeling/aether_burst/matrix_aether_burst_action
 	/// Matrix-provided chitin courier action instance.
 	var/datum/action/changeling/chitin_courier/matrix_chitin_courier_action
-	/// Matrix-provided memory archive action instance.
-	var/datum/action/changeling/memory_archive/matrix_memory_archivist_action
 	/// Matrix-provided spore node action instance.
 	var/datum/action/changeling/spore_node/matrix_spore_node_action
 	/// Matrix-provided chorus stasis action instance.
@@ -148,8 +144,6 @@
 	var/obj/effect/abstract/changeling_chitin_cache/matrix_chitin_courier_cache
 	/// Stored item within the chitin courier cache.
 	var/obj/item/matrix_chitin_courier_item
-	/// Queue of prepared memory fragments ready to share.
-	var/list/matrix_memory_fragments = list()
 	/// Tracks corpses that have already produced a hemolytic seed.
 	var/list/matrix_hemolytic_seeded = list()
 	/// Aggregated matrix effects currently applied to this changeling.
@@ -221,7 +215,6 @@
 	remove_matrix_aether_drake_traits()
 	remove_matrix_chitin_courier_action()
 	clear_chitin_courier_cache(drop_item = TRUE)
-	remove_matrix_memory_archivist_action()
 	remove_matrix_spore_node_action()
 	clear_spore_node()
 	remove_matrix_chorus_stasis_action()
@@ -455,7 +448,6 @@
 	update_matrix_ashen_pump_effect("matrix_ashen_pump" in active_ids)
 	update_matrix_neuro_sap_effect("matrix_neuro_sap" in active_ids)
 	update_matrix_chitin_courier_effect("matrix_chitin_courier" in active_ids)
-	update_matrix_memory_archivist_effect("matrix_memory_archivist" in active_ids)
 	update_matrix_spore_node_effect("matrix_spore_node" in active_ids)
 	update_matrix_chorus_stasis_effect("matrix_chorus_stasis" in active_ids)
 	update_matrix_passive_effects(active_ids)
@@ -848,79 +840,9 @@
 		matrix_chitin_courier_action.Remove(owner.current)
 	QDEL_NULL(matrix_chitin_courier_action)
 
-/datum/antagonist/changeling/proc/update_matrix_memory_archivist_effect(is_active)
-	matrix_memory_archivist_active = !!is_active
-	if(!matrix_memory_archivist_active)
-		remove_matrix_memory_archivist_action()
-		matrix_memory_fragments.Cut()
-		return
-	ensure_matrix_memory_archivist_action()
-
-/datum/antagonist/changeling/proc/ensure_matrix_memory_archivist_action()
-	if(!matrix_memory_archivist_active)
-		return
-	if(!matrix_memory_archivist_action)
-		matrix_memory_archivist_action = new
-	if(owner?.current)
-		matrix_memory_archivist_action.Grant(owner.current)
-
-/datum/antagonist/changeling/proc/remove_matrix_memory_archivist_action()
-	if(!matrix_memory_archivist_action)
-		return
-	if(owner?.current)
-		matrix_memory_archivist_action.Remove(owner.current)
-	QDEL_NULL(matrix_memory_archivist_action)
-
-/datum/antagonist/changeling/proc/queue_memory_fragment(mob/living/carbon/human/target, list/recent_speech)
-	if(!matrix_memory_archivist_active || !istype(target))
-		return
-	var/list/fragment = list(
-		"name" = target.real_name,
-		"assignment" = target.get_assignment() || target.job || target.mind?.assigned_role || "Unknown",
-		"key" = target.key || "",
-		"speech" = islist(recent_speech) ? recent_speech.Copy() : list(),
-		"time" = world.time,
-	)
-	matrix_memory_fragments += list(fragment)
-	while(matrix_memory_fragments.len > 3)
-		matrix_memory_fragments.Cut(1, 2)
-
-/datum/antagonist/changeling/proc/share_memory_fragment(mob/living/user, mob/living/target)
-	if(!matrix_memory_archivist_active || !matrix_memory_fragments.len)
-		user?.balloon_alert(user, "no archives")
-		return FALSE
-	if(!istype(user) || !istype(target))
-		return FALSE
-	if(!user.Adjacent(target))
-		user.balloon_alert(user, "too far")
-		return FALSE
-	var/list/fragment = matrix_memory_fragments[1]
-	matrix_memory_fragments.Cut(1, 2)
-	var/name = fragment["name"]
-	var/assignment = fragment["assignment"]
-	var/key = fragment["key"]
-	var/list/speech = fragment["speech"]
-	user.visible_message(
-		span_warning("[user] presses a palm to [target], sharing a flicker of stolen memory."),
-		span_changeling("We release a fragment of [name]'s life."),
-	)
-	var/list/messages = list(
-		span_notice("A whisper of [name], [assignment]."),
-	)
-	if(key)
-		messages += span_notice("Their credentials echo with the key <b>[key]</b>.")
-	if(LAZYLEN(speech))
-		messages += span_notice("Snatches of speech linger:")
-	for(var/sample in speech)
-		messages += span_notice("\"[sample]\"")
-	for(var/message in messages)
-		to_chat(target, message)
-       playsound(target, 'sound/effects/magic/magic_block_mind.ogg', 50, TRUE)
-	return TRUE
-
 /datum/antagonist/changeling/proc/apply_neuro_sap_bonus()
-	if(matrix_neuro_sap_bonus_applied)
-		return
+        if(matrix_neuro_sap_bonus_applied)
+                return
 	chem_recharge_rate += 0.4
 	matrix_neuro_sap_bonus_applied = TRUE
 
