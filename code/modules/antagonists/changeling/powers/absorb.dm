@@ -106,6 +106,7 @@
 	//Recent as opposed to all because rounds tend to have a LOT of text.
 
 	var/list/recent_speech = target.copy_recent_speech()
+	changeling.queue_memory_fragment(target, recent_speech)
 
 	if(recent_speech.len)
 		changeling.antag_memory += "Some of [target]'s speech patterns, we should study these to better impersonate [target.p_them()]: "

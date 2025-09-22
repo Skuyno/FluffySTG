@@ -52,4 +52,6 @@
 			if(D.severity == DISEASE_SEVERITY_POSITIVE)
 				continue
 			D.cure()
+	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
+	changeling_data?.on_panacea_used(user)
 	return TRUE

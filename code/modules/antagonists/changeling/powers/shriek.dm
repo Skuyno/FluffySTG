@@ -39,7 +39,8 @@
 	for(var/obj/machinery/light/L in range(effective_range, user))
 		L.on = TRUE
 		L.break_light_tube()
-		stoplag()
+	stoplag()
+	changeling_data?.schedule_resonant_echo(user, effective_range, confusion_mult)
 	return TRUE
 
 /datum/action/changeling/dissonant_shriek
@@ -63,7 +64,7 @@
 	for(var/obj/machinery/light/L in range(light_range, user))
 		L.on = TRUE
 		L.break_light_tube()
-		stoplag()
+	stoplag()
 
 	if(changeling_data?.matrix_predatory_howl_active)
 		var/lethal_range = max(2 + emp_range_bonus, 0)
@@ -85,4 +86,5 @@
 				continue
 			O.take_damage(round(40 * structure_mult), BRUTE, MELEE, TRUE, get_dir(O, user))
 
+	changeling_data?.schedule_dissonant_echo(user, heavy_range, light_range)
 	return TRUE
