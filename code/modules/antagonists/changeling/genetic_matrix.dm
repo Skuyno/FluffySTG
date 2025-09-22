@@ -251,18 +251,18 @@
 /// Produce the list of standard purchasable abilities for the Standard Skills tab.
 /datum/antagonist/changeling/proc/get_standard_ability_catalog()
 	var/list/catalog = list()
-        for(var/datum/action/changeling/ability_path as anything in all_powers)
-                var/dna_cost = initial(ability_path.dna_cost)
-                if(dna_cost < 0 || dna_cost == CHANGELING_POWER_INNATE)
-                        continue
-                var/ability_name = initial(ability_path.name)
-                if(ability_name == "Cellular Emporium")
-                        continue
-                var/list/entry = list(
-                        "id" = "[ability_path]",
-                        "name" = ability_name,
-                        "desc" = initial(ability_path.desc),
-                        "helptext" = initial(ability_path.helptext),
+	for(var/datum/action/changeling/ability_path as anything in all_powers)
+		var/dna_cost = initial(ability_path.dna_cost)
+		if(dna_cost < 0 || dna_cost == CHANGELING_POWER_INNATE)
+			continue
+		var/ability_name = initial(ability_path.name)
+		if(ability_name == "Cellular Emporium")
+			continue
+		var/list/entry = list(
+			"id" = "[ability_path]",
+			"name" = ability_name,
+			"desc" = initial(ability_path.desc),
+			"helptext" = initial(ability_path.helptext),
 			"dnaCost" = dna_cost,
 			"absorbsRequired" = initial(ability_path.req_absorbs),
 			"dnaRequired" = initial(ability_path.req_dna),

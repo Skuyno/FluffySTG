@@ -23,9 +23,9 @@
 	)
 
 /datum/status_effect/changeling_ashen_pump
-        id = "changeling_ashen_pump"
-        status_type = STATUS_EFFECT_REFRESH
-        duration = 10 SECONDS
+	id = "changeling_ashen_pump"
+	status_type = STATUS_EFFECT_REFRESH
+	duration = 10 SECONDS
 	tick_interval = 0.5 SECONDS
 	alert_type = null
 	var/datum/weakref/changeling_ref
@@ -70,7 +70,7 @@
 		var/mob/living/carbon/human/H = owner
 		var/datum/physiology/phys = H.physiology
 		if(phys)
-                        phys.burn_mod *= 0.5
+			phys.burn_mod *= 0.5
 			applied_bonus = TRUE
 
 /datum/status_effect/changeling_ashen_pump/proc/remove_burn_bonus()
@@ -80,5 +80,5 @@
 		var/mob/living/carbon/human/H = owner
 		var/datum/physiology/phys = H.physiology
 		if(phys)
-                        phys.burn_mod /= 0.5
+			phys.burn_mod /= 0.5
 	applied_bonus = FALSE

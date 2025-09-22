@@ -348,8 +348,8 @@
 		to_chat(owner.current, span_userdanger("You grow weak and lose your powers! You are no longer a changeling and are stuck in your current form!"))
 
 /*
- * Instantiate the cellular emporium for the changeling.
- */
+	* Instantiate the cellular emporium for the changeling.
+	*/
 /datum/antagonist/changeling/proc/create_emporium()
 	cellular_emporium = new(src)
 	emporium_action = new(cellular_emporium)
@@ -564,11 +564,11 @@
 		return
 	if(!istype(target) || target == user || target.stat == DEAD)
 		return
-        var/stamina_cost = 6
+	var/stamina_cost = 6
 	if(user.staminaloss + stamina_cost >= user.max_stamina)
 		return
 	user.adjustStaminaLoss(stamina_cost)
-        target.Knockdown(2 SECONDS)
+	target.Knockdown(2 SECONDS)
 	target.visible_message(
 		span_danger("[target] is hammered off balance by [user]'s driving strike!"),
 		span_userdanger("A brutal shoulder slam knocks you sprawling!"),
@@ -611,11 +611,11 @@
 		span_warning("[user] releases a concussive chemical shockwave!"),
 		span_changeling("We vent a surge of volatile chemicals in a stunning wave."),
 	)
-        for(var/mob/living/nearby in oview(2, user))
-                if(nearby == user || nearby.stat == DEAD)
-                        continue
-                nearby.Knockdown(3 SECONDS)
-                nearby.adjustStaminaLoss(20)
+	for(var/mob/living/nearby in oview(2, user))
+		if(nearby == user || nearby.stat == DEAD)
+			continue
+		nearby.Knockdown(3 SECONDS)
+		nearby.adjustStaminaLoss(20)
 
 /datum/antagonist/changeling/proc/update_matrix_aether_drake_effect(is_active)
 	matrix_aether_drake_active = !!is_active
@@ -655,8 +655,8 @@
 	if(istype(living_owner, /mob/living/carbon/human))
 		var/mob/living/carbon/human/human_owner = living_owner
 		var/datum/physiology/phys = human_owner.physiology
-                if(phys && !matrix_aether_drake_resist_bonus)
-                        var/bonus = 0.3
+		if(phys && !matrix_aether_drake_resist_bonus)
+			var/bonus = 0.3
 			phys.brute_mod *= (1 - bonus)
 			phys.burn_mod *= (1 - bonus)
 			matrix_aether_drake_resist_bonus = bonus
@@ -928,16 +928,16 @@
 	QDEL_NULL(matrix_chitin_courier_action)
 
 /datum/antagonist/changeling/proc/apply_neuro_sap_bonus()
-        if(matrix_neuro_sap_bonus_applied)
-                return
-        chem_recharge_rate += 0.8
-        matrix_neuro_sap_bonus_applied = TRUE
+	if(matrix_neuro_sap_bonus_applied)
+		return
+	chem_recharge_rate += 0.8
+	matrix_neuro_sap_bonus_applied = TRUE
 
 /datum/antagonist/changeling/proc/remove_neuro_sap_bonus()
-        if(!matrix_neuro_sap_bonus_applied)
-                return
-        chem_recharge_rate -= 0.8
-        matrix_neuro_sap_bonus_applied = FALSE
+	if(!matrix_neuro_sap_bonus_applied)
+		return
+	chem_recharge_rate -= 0.8
+	matrix_neuro_sap_bonus_applied = FALSE
 
 /datum/antagonist/changeling/proc/schedule_resonant_echo(mob/living/user, range, confusion_mult)
 	if(!matrix_echo_cascade_active || !istype(user))
@@ -955,8 +955,8 @@
 	var/turf/user_turf = get_turf(user)
 	if(user_turf)
 		playsound(user_turf, 'sound/effects/screech.ogg', 40, TRUE)
-        var/confusion = round(24 SECONDS * confusion_mult / max(echo_index, 1))
-        var/jitter = round(120 SECONDS * confusion_mult / max(echo_index, 1))
+	var/confusion = round(24 SECONDS * confusion_mult / max(echo_index, 1))
+	var/jitter = round(120 SECONDS * confusion_mult / max(echo_index, 1))
 	for(var/mob/living/target in get_hearers_in_view(max(range, 0), user))
 		if(target == user || IS_CHANGELING(target))
 			continue
@@ -991,7 +991,7 @@
 		if(issilicon(target))
 			target.Paralyze(10)
 		else
-                        target.adjustStaminaLoss(16)
+			target.adjustStaminaLoss(16)
 
 /datum/antagonist/changeling/proc/handle_graviton_ripsaw_hit(atom/target, mob/living/user)
 	if(!matrix_graviton_ripsaw_active || !istype(user))
@@ -1007,9 +1007,9 @@
 	if(!matrix_hemolytic_bloom_active || !isliving(target) || !istype(user))
 		return
 	var/mob/living/living_target = target
-        if(isliving(user))
-                user.adjustBruteLoss(-1.6, forced = TRUE)
-                adjust_chemicals(2)
+	if(isliving(user))
+		user.adjustBruteLoss(-1.6, forced = TRUE)
+		adjust_chemicals(2)
 	if(iscarbon(living_target))
 		var/mob/living/carbon/C = living_target
 		var/zone = BODY_ZONE_CHEST
@@ -1019,7 +1019,7 @@
 		var/obj/item/bodypart/part = C.get_bodypart(zone)
 		if(!part)
 			part = C.get_bodypart(BODY_ZONE_CHEST)
-                part?.adjustBleedStacks(6, 0)
+		part?.adjustBleedStacks(6, 0)
 	if(living_target.stat == DEAD)
 		for(var/datum/weakref/ref in matrix_hemolytic_seeded.Copy())
 			var/mob/living/cached = ref?.resolve()
@@ -1041,7 +1041,7 @@
 	if(!matrix_ashen_pump_active || !istype(user))
 		return
 	user.apply_status_effect(/datum/status_effect/changeling_ashen_pump, src)
-        adjust_chemicals(-3)
+	adjust_chemicals(-3)
 
 /datum/antagonist/changeling/proc/on_panacea_used(mob/living/carbon/user)
 	if(!matrix_neuro_sap_active || !istype(user))
@@ -1172,57 +1172,57 @@
 	matrix_spore_node_ref = null
 
 /datum/antagonist/changeling/proc/handle_chorus_stasis_activation(mob/living/user, mob/living/target)
-       if(!matrix_chorus_stasis_active || !istype(user))
-               return FALSE
-       var/obj/structure/changeling_chorus_cocoon/current = matrix_chorus_cocoon_ref?.resolve()
-       if(current)
-               current.detonate(user)
-               return TRUE
-       var/turf/location = get_turf(user)
-       if(!istype(location) || location.is_blocked_turf(TRUE, source_atom = user))
-               user.balloon_alert(user, "bad turf")
-               return FALSE
-       var/mob/living/chorus_target = (istype(target) && target != user) ? target : null
-       if(!do_after(user, 4 SECONDS, target = location, extra_checks = CALLBACK(src, PROC_REF(can_continue_chorus_stasis), user, location)))
-               return FALSE
-       if(!matrix_chorus_stasis_active || !istype(user))
-               return FALSE
-       if(matrix_chorus_cocoon_ref?.resolve())
-               return FALSE
-       location = get_turf(user)
-       if(!istype(location) || location.is_blocked_turf(TRUE, source_atom = user))
-               user.balloon_alert(user, "bad turf")
-               return FALSE
-       if(chorus_target && (QDELETED(chorus_target) || !user.Adjacent(chorus_target)))
-               chorus_target = null
-       var/obj/structure/changeling_chorus_cocoon/cocoon = new(location, src)
-       if(!cocoon.add_occupant(user))
-               qdel(cocoon)
-               return FALSE
-       matrix_chorus_cocoon_ref = WEAKREF(cocoon)
-       if(chorus_target)
-               cocoon.add_occupant(chorus_target)
-       user.visible_message(
-               span_warning("[user] weaves a muffled cocoon of tendrils!"),
-               span_changeling("We spin a chorus cocoon to hide and recover."),
-       )
-       return TRUE
+	if(!matrix_chorus_stasis_active || !istype(user))
+		return FALSE
+	var/obj/structure/changeling_chorus_cocoon/current = matrix_chorus_cocoon_ref?.resolve()
+	if(current)
+		current.detonate(user)
+		return TRUE
+	var/turf/location = get_turf(user)
+	if(!istype(location) || location.is_blocked_turf(TRUE, source_atom = user))
+		user.balloon_alert(user, "bad turf")
+		return FALSE
+	var/mob/living/chorus_target = (istype(target) && target != user) ? target : null
+	if(!do_after(user, 4 SECONDS, target = location, extra_checks = CALLBACK(src, PROC_REF(can_continue_chorus_stasis), user, location)))
+		return FALSE
+	if(!matrix_chorus_stasis_active || !istype(user))
+		return FALSE
+	if(matrix_chorus_cocoon_ref?.resolve())
+		return FALSE
+	location = get_turf(user)
+	if(!istype(location) || location.is_blocked_turf(TRUE, source_atom = user))
+		user.balloon_alert(user, "bad turf")
+		return FALSE
+	if(chorus_target && (QDELETED(chorus_target) || !user.Adjacent(chorus_target)))
+		chorus_target = null
+	var/obj/structure/changeling_chorus_cocoon/cocoon = new(location, src)
+	if(!cocoon.add_occupant(user))
+		qdel(cocoon)
+		return FALSE
+	matrix_chorus_cocoon_ref = WEAKREF(cocoon)
+	if(chorus_target)
+		cocoon.add_occupant(chorus_target)
+	user.visible_message(
+		span_warning("[user] weaves a muffled cocoon of tendrils!"),
+		span_changeling("We spin a chorus cocoon to hide and recover."),
+	)
+	return TRUE
 
 /datum/antagonist/changeling/proc/can_continue_chorus_stasis(mob/living/user, turf/original_location)
-       if(QDELETED(user) || !matrix_chorus_stasis_active)
-               return FALSE
-       if(user.stat >= UNCONSCIOUS)
-               return FALSE
-       if(matrix_chorus_cocoon_ref?.resolve())
-               return FALSE
-       if(!original_location)
-               return FALSE
-       var/turf/current_location = get_turf(user)
-       if(!current_location || current_location != original_location)
-               return FALSE
-       if(current_location.is_blocked_turf(TRUE, source_atom = user))
-               return FALSE
-       return TRUE
+	if(QDELETED(user) || !matrix_chorus_stasis_active)
+		return FALSE
+	if(user.stat >= UNCONSCIOUS)
+		return FALSE
+	if(matrix_chorus_cocoon_ref?.resolve())
+		return FALSE
+	if(!original_location)
+		return FALSE
+	var/turf/current_location = get_turf(user)
+	if(!current_location || current_location != original_location)
+		return FALSE
+	if(current_location.is_blocked_turf(TRUE, source_atom = user))
+		return FALSE
+	return TRUE
 
 /datum/antagonist/changeling/proc/chorus_cocoon_detonated(mob/living/user)
 	matrix_chorus_cocoon_ref = null
@@ -1340,9 +1340,9 @@
 		return default_value
 	return result
 /*
- * Instantiate all the default actions of a ling (transform, dna sting, absorb, etc)
- * Any Changeling action with dna_cost = CHANGELING_POWER_INNATE will be added here automatically
- */
+	* Instantiate all the default actions of a ling (transform, dna sting, absorb, etc)
+	* Any Changeling action with dna_cost = CHANGELING_POWER_INNATE will be added here automatically
+	*/
 /datum/antagonist/changeling/proc/create_innate_actions()
 	for(var/datum/action/changeling/path as anything in all_powers)
 		if(initial(path.dna_cost) != CHANGELING_POWER_INNATE)
@@ -1354,9 +1354,9 @@
 	update_genetic_matrix_unlocks()
 
 /*
- * Signal proc for [COMSIG_MOB_LOGIN].
- * Gives us back our action buttons if we lose them on log-in.
- */
+	* Signal proc for [COMSIG_MOB_LOGIN].
+	* Gives us back our action buttons if we lose them on log-in.
+	*/
 /datum/antagonist/changeling/proc/on_login(datum/source)
 	SIGNAL_HANDLER
 
@@ -1370,9 +1370,9 @@
 	apply_genetic_matrix_effects()
 
 /**
- * Signal proc for [COMSIG_LIVING_LIFE].
- * Handles regenerating chemicals on life ticks.
- */
+	* Signal proc for [COMSIG_LIVING_LIFE].
+	* Handles regenerating chemicals on life ticks.
+	*/
 /datum/antagonist/changeling/proc/on_life(datum/source, seconds_per_tick, times_fired)
 	SIGNAL_HANDLER
 
@@ -1406,8 +1406,8 @@
 	try_matrix_anaerobic_reservoir_surge(living_owner)
 
 /**
- * Signal proc for [COMSIG_LIVING_POST_FULLY_HEAL]
- */
+	* Signal proc for [COMSIG_LIVING_POST_FULLY_HEAL]
+	*/
 /datum/antagonist/changeling/proc/on_fullhealed(mob/living/source, heal_flags)
 	SIGNAL_HANDLER
 
@@ -1419,9 +1419,9 @@
 	make_brain_decoy(source)
 
 /**
- * Signal proc for [COMSIG_MOB_MIDDLECLICKON] and [COMSIG_MOB_ALTCLICKON].
- * Allows the changeling to sting people with a click.
- */
+	* Signal proc for [COMSIG_MOB_MIDDLECLICKON] and [COMSIG_MOB_ALTCLICKON].
+	* Allows the changeling to sting people with a click.
+	*/
 /datum/antagonist/changeling/proc/on_click_sting(mob/living/ling, atom/clicked)
 	SIGNAL_HANDLER
 
@@ -1452,9 +1452,9 @@
 	items += "Absorbed DNA: [absorbed_count]"
 
 /*
- * Adjust the chem charges of the ling by [amount]
- * and clamp it between 0 and override_cap (if supplied) or total_chem_storage (if no override supplied)
- */
+	* Adjust the chem charges of the ling by [amount]
+	* and clamp it between 0 and override_cap (if supplied) or total_chem_storage (if no override supplied)
+	*/
 /datum/antagonist/changeling/proc/adjust_chemicals(amount, override_cap)
 	if(!isnum(amount))
 		return
@@ -1464,10 +1464,10 @@
 	lingchemdisplay?.maptext = FORMAT_CHEM_CHARGES_TEXT(chem_charges)
 
 /*
- * Remove changeling powers from the current Changeling's purchased_powers list.
- *
- * if [include_innate] = TRUE, will also remove all powers from the Changeling's innate_powers list.
- */
+	* Remove changeling powers from the current Changeling's purchased_powers list.
+	*
+	* if [include_innate] = TRUE, will also remove all powers from the Changeling's innate_powers list.
+	*/
 /datum/antagonist/changeling/proc/remove_changeling_powers(include_innate = FALSE)
 	if(!isliving(owner.current))
 		return
@@ -1488,8 +1488,8 @@
 	apply_genetic_matrix_effects()
 
 /*
- * For resetting all of the changeling's action buttons. (IE, re-granting them all.)
- */
+	* For resetting all of the changeling's action buttons. (IE, re-granting them all.)
+	*/
 /datum/antagonist/changeling/proc/regain_powers()
 	emporium_action.Grant(owner.current)
 	if(genetic_matrix_action)
@@ -1503,10 +1503,10 @@
 			power.on_purchase(owner.current)
 
 /*
- * The act of purchasing a certain power for a changeling.
- *
- * [sting_path] - the power that's being purchased / evolved.
- */
+	* The act of purchasing a certain power for a changeling.
+	*
+	* [sting_path] - the power that's being purchased / evolved.
+	*/
 /datum/antagonist/changeling/proc/purchase_power(datum/action/changeling/sting_path)
 	if(!ispath(sting_path, /datum/action/changeling))
 		CRASH("Changeling purchase_power attempted to purchase an invalid typepath! (got: [sting_path])")
@@ -1542,14 +1542,14 @@
 	return success
 
 /**
- * Gives a passed changeling power datum to the player
- *
- * Is passed a path to a changeling power, and applies it to the user.
- * If successful, we return TRUE, otherwise not.
- *
- * Arguments:
- * * power_path - The path of the power we will be giving to our attached player.
- */
+	* Gives a passed changeling power datum to the player
+	*
+	* Is passed a path to a changeling power, and applies it to the user.
+	* If successful, we return TRUE, otherwise not.
+	*
+	* Arguments:
+	* * power_path - The path of the power we will be giving to our attached player.
+	*/
 
 /datum/antagonist/changeling/proc/give_power(power_path)
 	var/datum/action/changeling/new_action = new power_path()
@@ -1567,8 +1567,8 @@
 	return TRUE
 
 /*
- * Changeling's ability to re-adapt all of their learned powers.
- */
+	* Changeling's ability to re-adapt all of their learned powers.
+	*/
 /datum/antagonist/changeling/proc/readapt()
 	if(!ishuman(owner.current) || ismonkey(owner.current))
 		to_chat(owner.current, span_warning("We can't remove our evolutions in this form!"))
@@ -1590,16 +1590,16 @@
 	return TRUE
 
 /*
- * Get the corresponding changeling profile for the passed name.
- */
+	* Get the corresponding changeling profile for the passed name.
+	*/
 /datum/antagonist/changeling/proc/get_dna(searched_dna_name)
 	for(var/datum/changeling_profile/found_profile as anything in stored_profiles)
 		if(searched_dna_name == found_profile.name)
 			return found_profile
 
 /*
- * Checks if we have a changeling profile with the passed DNA.
- */
+	* Checks if we have a changeling profile with the passed DNA.
+	*/
 /datum/antagonist/changeling/proc/has_profile_with_dna(datum/dna/searched_dna)
 	for(var/datum/changeling_profile/found_profile as anything in stored_profiles)
 		if(searched_dna.is_same_as(found_profile.dna))
@@ -1607,9 +1607,9 @@
 	return FALSE
 
 /*
- * Checks if this changeling can absorb the DNA of [target].
- * if [verbose] = TRUE, give feedback as to why they cannot absorb the DNA.
- */
+	* Checks if this changeling can absorb the DNA of [target].
+	* if [verbose] = TRUE, give feedback as to why they cannot absorb the DNA.
+	*/
 /datum/antagonist/changeling/proc/can_absorb_dna(mob/living/carbon/human/target, verbose = TRUE)
 	if(!target)
 		return FALSE
@@ -1653,11 +1653,11 @@
 	return TRUE
 
 /*
- * Create a new changeling profile datum based off of [target].
- *
- * target - the human we're basing the new profile off of.
- * protect - if TRUE, set the new profile to protected, preventing it from being removed (without force).
- */
+	* Create a new changeling profile datum based off of [target].
+	*
+	* target - the human we're basing the new profile off of.
+	* protect - if TRUE, set the new profile to protected, preventing it from being removed (without force).
+	*/
 /datum/antagonist/changeling/proc/create_profile(mob/living/carbon/human/target, protect = 0)
 	var/datum/changeling_profile/new_profile = new()
 
@@ -1750,11 +1750,11 @@
 	return new_profile
 
 /*
- * Add a new profile to our changeling's profile list.
- * Pops the first profile in the list if we're above our limit of profiles.
- *
- * new_profile - the profile being added.
- */
+	* Add a new profile to our changeling's profile list.
+	* Pops the first profile in the list if we're above our limit of profiles.
+	*
+	* new_profile - the profile being added.
+	*/
 /datum/antagonist/changeling/proc/add_profile(datum/changeling_profile/new_profile)
 	if(stored_profiles.len > dna_max)
 		if(!push_out_profile())
@@ -1768,23 +1768,23 @@
 	absorbed_count++
 
 /*
- * Create a new profile from the given [profile_target]
- * and add it to our profile list via add_profile.
- *
- * profile_target - the human we're making a profile based off of
- * protect - if TRUE, mark the new profile as protected. If protected, it cannot be removed / popped from the profile list (without force).
- */
+	* Create a new profile from the given [profile_target]
+	* and add it to our profile list via add_profile.
+	*
+	* profile_target - the human we're making a profile based off of
+	* protect - if TRUE, mark the new profile as protected. If protected, it cannot be removed / popped from the profile list (without force).
+	*/
 /datum/antagonist/changeling/proc/add_new_profile(mob/living/carbon/human/profile_target, protect = FALSE)
 	var/datum/changeling_profile/new_profile = create_profile(profile_target, protect)
 	add_profile(new_profile)
 	return new_profile
 
 /*
- * Remove a given profile from the profile list.
- *  *
- * profile_target - the human we want to remove from our profile list (looks for a profile with a matching name)
- * force - if TRUE, removes the profile even if it's protected.
- */
+	* Remove a given profile from the profile list.
+	*  *
+	* profile_target - the human we want to remove from our profile list (looks for a profile with a matching name)
+	* force - if TRUE, removes the profile even if it's protected.
+	*/
 /datum/antagonist/changeling/proc/remove_profile(mob/living/carbon/human/profile_target, force = FALSE)
 	for(var/datum/changeling_profile/found_profile as anything in stored_profiles)
 		if(profile_target.real_name == found_profile.name)
@@ -1794,11 +1794,11 @@
 			qdel(found_profile)
 
 /*
- * Removes the highest changeling profile from the list
- * that isn't protected and returns TRUE if successful.
- *
- * Returns TRUE if a profile was removed, FALSE otherwise.
- */
+	* Removes the highest changeling profile from the list
+	* that isn't protected and returns TRUE if successful.
+	*
+	* Returns TRUE if a profile was removed, FALSE otherwise.
+	*/
 /datum/antagonist/changeling/proc/push_out_profile()
 	var/datum/changeling_profile/profile_to_remove
 	for(var/datum/changeling_profile/found_profile as anything in stored_profiles)
@@ -1813,8 +1813,8 @@
 	return FALSE
 
 /*
- * Create a profile based on the changeling's initial appearance.
- */
+	* Create a profile based on the changeling's initial appearance.
+	*/
 /datum/antagonist/changeling/proc/create_initial_profile()
 	if(!ishuman(owner.current))
 		return
@@ -1894,8 +1894,8 @@
 		.["Transform to initial appearance."] = CALLBACK(src, PROC_REF(admin_restore_appearance))
 
 /*
- * Restores the appearance of the changeling to the original DNA.
- */
+	* Restores the appearance of the changeling to the original DNA.
+	*/
 /datum/antagonist/changeling/proc/admin_restore_appearance(mob/admin)
 	if(!stored_profiles.len || !iscarbon(owner.current))
 		to_chat(admin, span_danger("Resetting DNA failed!"))
@@ -1908,8 +1908,8 @@
 	carbon_owner.domutcheck()
 
 /*
- * Transform the currentc hangeing [user] into the [chosen_profile].
- */
+	* Transform the currentc hangeing [user] into the [chosen_profile].
+	*/
 /datum/antagonist/changeling/proc/transform(mob/living/carbon/human/user, datum/changeling_profile/chosen_profile)
 	var/static/list/slot2slot = list(
 		"head" = ITEM_SLOT_HEAD,
@@ -2146,9 +2146,9 @@
 	return ..()
 
 /*
- * Copy every aspect of this file into a new instance of a profile.
- * Must be suppied with an instance.
- */
+	* Copy every aspect of this file into a new instance of a profile.
+	* Must be suppied with an instance.
+	*/
 /datum/changeling_profile/proc/copy_profile(datum/changeling_profile/new_profile)
 	new_profile.name = name
 	new_profile.protected = protected

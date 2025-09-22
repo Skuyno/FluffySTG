@@ -43,11 +43,11 @@
 	/// Timer tracking the fade-out of a burst.
 	var/tmp/current_burst_timer
 	/// How long we remain fully invisible after moving.
-        var/burst_duration = 2.5 SECONDS
-        /// Cooldown between bursts while continuously moving.
-        var/burst_cooldown = 1 SECONDS
-        /// How transparent we become during the burst.
-        var/burst_alpha = 10
+	var/burst_duration = 2.5 SECONDS
+	/// Cooldown between bursts while continuously moving.
+	var/burst_cooldown = 1 SECONDS
+	/// How transparent we become during the burst.
+	var/burst_alpha = 10
 
 /datum/status_effect/changeling_feathered_veil/on_creation(mob/living/new_owner, datum/antagonist/changeling/changeling_data)
 	changeling_source = changeling_data
@@ -68,20 +68,20 @@
 	changeling_source = null
 
 /datum/status_effect/changeling_feathered_veil/proc/update_sources(datum/antagonist/changeling/changeling_data)
-        if(changeling_data)
-                changeling_source = changeling_data
-        if(!changeling_source?.matrix_feathered_veil_active || QDELETED(owner) || !HAS_TRAIT(owner, TRAIT_CHAMELEON_SKIN))
-                qdel(src)
-                return
-        var/duration_bonus = changeling_source?.get_genetic_matrix_effect("feathered_veil_burst_duration_add", 0) || 0
-        burst_duration = max(1, round(initial(burst_duration) + duration_bonus))
-        var/cooldown_mult = changeling_source?.get_genetic_matrix_effect("feathered_veil_cooldown_mult", 1) || 1
-        if(cooldown_mult < 0)
-                cooldown_mult = 0
-        burst_cooldown = max(1, round(initial(burst_cooldown) * cooldown_mult))
-        var/alpha_bonus = changeling_source?.get_genetic_matrix_effect("feathered_veil_alpha_add", 0) || 0
-        burst_alpha = clamp(initial(burst_alpha) + round(alpha_bonus), 0, 255)
-        original_alpha = owner.alpha
+	if(changeling_data)
+		changeling_source = changeling_data
+	if(!changeling_source?.matrix_feathered_veil_active || QDELETED(owner) || !HAS_TRAIT(owner, TRAIT_CHAMELEON_SKIN))
+		qdel(src)
+		return
+	var/duration_bonus = changeling_source?.get_genetic_matrix_effect("feathered_veil_burst_duration_add", 0) || 0
+	burst_duration = max(1, round(initial(burst_duration) + duration_bonus))
+	var/cooldown_mult = changeling_source?.get_genetic_matrix_effect("feathered_veil_cooldown_mult", 1) || 1
+	if(cooldown_mult < 0)
+		cooldown_mult = 0
+	burst_cooldown = max(1, round(initial(burst_cooldown) * cooldown_mult))
+	var/alpha_bonus = changeling_source?.get_genetic_matrix_effect("feathered_veil_alpha_add", 0) || 0
+	burst_alpha = clamp(initial(burst_alpha) + round(alpha_bonus), 0, 255)
+	original_alpha = owner.alpha
 
 /datum/status_effect/changeling_feathered_veil/proc/on_owner_moved(atom/movable/source, atom/oldloc, atom/newloc)
 	SIGNAL_HANDLER

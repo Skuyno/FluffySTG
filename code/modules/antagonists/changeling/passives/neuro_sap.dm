@@ -25,7 +25,7 @@
 /datum/status_effect/changeling_neuro_sap
 	id = "changeling_neuro_sap"
 	status_type = STATUS_EFFECT_REFRESH
-        duration = 90 SECONDS
+	duration = 90 SECONDS
 	tick_interval = STATUS_EFFECT_NO_TICK
 	alert_type = null
 	var/datum/weakref/changeling_ref
