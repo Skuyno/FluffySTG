@@ -853,7 +853,7 @@
 	if(LAZYLEN(speech))
 		messages += span_notice("Snatches of speech linger:")
 	for(var/sample in speech)
-		messages += span_notice(""[sample]"")
+		messages += span_notice("\"[sample]\"")
 	for(var/message in messages)
 		to_chat(target, message)
 	playsound(target, 'sound/magic/mindswap.ogg', 50, TRUE)
