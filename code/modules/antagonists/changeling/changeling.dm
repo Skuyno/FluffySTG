@@ -104,6 +104,14 @@
 	var/matrix_abyssal_slip_active = FALSE
 	/// Whether the crystalline buffer matrix module is active.
 	var/matrix_crystalline_buffer_active = FALSE
+	/// Whether the anaerobic reservoir matrix module is active.
+	var/matrix_anaerobic_reservoir_active = FALSE
+	/// Temporary stamina cushion granted by the anaerobic reservoir surge.
+	var/matrix_anaerobic_reservoir_guard = 0
+	/// Whether we've already messaged about the current anaerobic guard soaking a hit.
+	var/matrix_anaerobic_reservoir_guard_feedback = FALSE
+	/// Cooldown tracker for anaerobic reservoir surges.
+	COOLDOWN_DECLARE(matrix_anaerobic_reservoir_cooldown)
 	/// Whether the ashen pump matrix module is active.
 	var/matrix_ashen_pump_active = FALSE
 	/// Whether the neuro sap matrix module is active.
@@ -118,6 +126,8 @@
 	var/matrix_chorus_stasis_active = FALSE
 	/// Mob currently registered for predator's sinew hit hooks.
 	var/mob/living/matrix_predator_sinew_bound_mob
+	/// Mob currently registered for anaerobic reservoir stamina interception.
+	var/mob/living/matrix_anaerobic_reservoir_bound_mob
 	/// Timer tracking a pending adrenal spike shockwave.
 	var/matrix_adrenal_spike_shockwave_timer
 	/// Cached mob registered for abyssal slip movement hooks.
@@ -317,6 +327,7 @@
 	REMOVE_TRAIT(living_mob, TRAIT_FAKE_SOULLESS, CHANGELING_TRAIT)
 	remove_matrix_feathered_veil_status()
 	unbind_predator_sinew_signals()
+	unbind_anaerobic_reservoir_signals()
 
 	if(living_mob.hud_used)
 		var/datum/hud/hud_used = living_mob.hud_used
@@ -445,6 +456,7 @@
 	update_matrix_echo_cascade_effect("matrix_echo_cascade" in active_ids)
 	update_matrix_abyssal_slip_effect("matrix_abyssal_slip" in active_ids)
 	update_matrix_crystalline_buffer_effect("matrix_crystalline_buffer" in active_ids)
+	update_matrix_anaerobic_reservoir_effect("matrix_anaerobic_reservoir" in active_ids)
 	update_matrix_ashen_pump_effect("matrix_ashen_pump" in active_ids)
 	update_matrix_neuro_sap_effect("matrix_neuro_sap" in active_ids)
 	update_matrix_chitin_courier_effect("matrix_chitin_courier" in active_ids)
@@ -805,6 +817,81 @@
 		living_owner.apply_status_effect(/datum/status_effect/changeling_crystalline_buffer, src)
 	else
 		living_owner.remove_status_effect(/datum/status_effect/changeling_crystalline_buffer)
+
+/datum/antagonist/changeling/proc/update_matrix_anaerobic_reservoir_effect(is_active)
+	matrix_anaerobic_reservoir_active = !!is_active
+	if(!matrix_anaerobic_reservoir_active)
+		matrix_anaerobic_reservoir_guard = 0
+		matrix_anaerobic_reservoir_guard_feedback = FALSE
+		COOLDOWN_RESET(src, matrix_anaerobic_reservoir_cooldown)
+		unbind_anaerobic_reservoir_signals()
+		return
+	bind_anaerobic_reservoir_signals(owner?.current)
+
+/datum/antagonist/changeling/proc/bind_anaerobic_reservoir_signals(mob/living/new_host)
+	if(matrix_anaerobic_reservoir_bound_mob == new_host)
+		return
+	unbind_anaerobic_reservoir_signals()
+	if(!matrix_anaerobic_reservoir_active || !isliving(new_host))
+		return
+	RegisterSignal(new_host, COMSIG_LIVING_ADJUST_STAMINA_DAMAGE, PROC_REF(on_anaerobic_reservoir_stamina_damage))
+	matrix_anaerobic_reservoir_bound_mob = new_host
+
+/datum/antagonist/changeling/proc/unbind_anaerobic_reservoir_signals()
+	if(!matrix_anaerobic_reservoir_bound_mob)
+		return
+	UnregisterSignal(matrix_anaerobic_reservoir_bound_mob, COMSIG_LIVING_ADJUST_STAMINA_DAMAGE)
+	matrix_anaerobic_reservoir_bound_mob = null
+	matrix_anaerobic_reservoir_guard = 0
+	matrix_anaerobic_reservoir_guard_feedback = FALSE
+
+#define ANAEROBIC_RESERVOIR_TRIGGER_MARGIN 15
+#define ANAEROBIC_RESERVOIR_STAMINA_RESTORE 35
+#define ANAEROBIC_RESERVOIR_GUARD_AMOUNT 12
+#define ANAEROBIC_RESERVOIR_COOLDOWN (20 SECONDS)
+
+/datum/antagonist/changeling/proc/try_matrix_anaerobic_reservoir_surge(mob/living/living_owner)
+	if(!matrix_anaerobic_reservoir_active || !isliving(living_owner))
+		return
+	bind_anaerobic_reservoir_signals(living_owner)
+	if(living_owner.stat == DEAD)
+		return
+	if(!COOLDOWN_FINISHED(src, matrix_anaerobic_reservoir_cooldown))
+		return
+	var/threshold = max(0, living_owner.max_stamina - ANAEROBIC_RESERVOIR_TRIGGER_MARGIN)
+	if(living_owner.staminaloss < threshold)
+		return
+	var/recovered = living_owner.adjustStaminaLoss(-ANAEROBIC_RESERVOIR_STAMINA_RESTORE)
+	if(recovered <= 0)
+		return
+	matrix_anaerobic_reservoir_guard = ANAEROBIC_RESERVOIR_GUARD_AMOUNT
+	matrix_anaerobic_reservoir_guard_feedback = FALSE
+	to_chat(living_owner, span_changeling("Our anaerobic reservoir vents, flooding our muscles and bracing for the next blow."))
+	COOLDOWN_START(src, matrix_anaerobic_reservoir_cooldown, ANAEROBIC_RESERVOIR_COOLDOWN)
+
+/datum/antagonist/changeling/proc/on_anaerobic_reservoir_stamina_damage(mob/living/source, damage_type, amount, forced)
+	SIGNAL_HANDLER
+	if(!matrix_anaerobic_reservoir_active || source != matrix_anaerobic_reservoir_bound_mob)
+		return NONE
+	if(amount <= 0 || matrix_anaerobic_reservoir_guard <= 0)
+		return NONE
+	var/absorbed = min(matrix_anaerobic_reservoir_guard, amount)
+	if(absorbed <= 0)
+		return NONE
+	matrix_anaerobic_reservoir_guard -= absorbed
+	if(!matrix_anaerobic_reservoir_guard_feedback && source.stat == CONSCIOUS)
+		to_chat(source, span_changeling("Redundant oxygen sacs bulge, diffusing the strike."))
+		matrix_anaerobic_reservoir_guard_feedback = TRUE
+	var/remaining = amount - absorbed
+	if(remaining <= 0)
+		return COMPONENT_IGNORE_CHANGE
+	source.adjustStaminaLoss(remaining, forced = forced)
+	return COMPONENT_IGNORE_CHANGE
+
+#undef ANAEROBIC_RESERVOIR_TRIGGER_MARGIN
+#undef ANAEROBIC_RESERVOIR_STAMINA_RESTORE
+#undef ANAEROBIC_RESERVOIR_GUARD_AMOUNT
+#undef ANAEROBIC_RESERVOIR_COOLDOWN
 
 /datum/antagonist/changeling/proc/update_matrix_ashen_pump_effect(is_active)
 	matrix_ashen_pump_active = !!is_active
@@ -1274,16 +1361,18 @@
 	if(matrix_symbiotic_overgrowth_active && living_owner?.stat != DEAD)
 		var/seconds = seconds_per_tick
 		var/needs_update = FALSE
-                if(living_owner && !living_owner.on_fire)
-                        needs_update |= living_owner.adjustBruteLoss(-2.4 * seconds, updating_health = FALSE, forced = TRUE)
-                        needs_update |= living_owner.adjustFireLoss(-1.6 * seconds, updating_health = FALSE, forced = TRUE)
-                needs_update |= living_owner.adjustToxLoss(-1 * seconds, forced = TRUE)
-                needs_update |= living_owner.adjustOxyLoss(-(3 * seconds), updating_health = FALSE, forced = TRUE)
-                var/stam_delta = living_owner.adjustStaminaLoss(-4 * seconds, updating_stamina = FALSE)
+		if(living_owner && !living_owner.on_fire)
+			needs_update |= living_owner.adjustBruteLoss(-2.4 * seconds, updating_health = FALSE, forced = TRUE)
+			needs_update |= living_owner.adjustFireLoss(-1.6 * seconds, updating_health = FALSE, forced = TRUE)
+		needs_update |= living_owner.adjustToxLoss(-1 * seconds, forced = TRUE)
+		needs_update |= living_owner.adjustOxyLoss(-(3 * seconds), updating_health = FALSE, forced = TRUE)
+		var/stam_delta = living_owner.adjustStaminaLoss(-4 * seconds, updating_stamina = FALSE)
 		if(stam_delta)
 			needs_update = TRUE
 		if(needs_update)
 			living_owner.updatehealth()
+
+	try_matrix_anaerobic_reservoir_surge(living_owner)
 
 /**
  * Signal proc for [COMSIG_LIVING_POST_FULLY_HEAL]
