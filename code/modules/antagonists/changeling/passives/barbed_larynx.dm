@@ -1,22 +1,26 @@
-/// Passive: Barbed Larynx — reinforces our stinging anatomy with telescoping harpoons for safer injections.
+/// Passive: Barbed Larynx — reshapes our voicebox into resonant spines that amplify sonic assaults.
 /datum/changeling_genetic_matrix_recipe/barbed_larynx
-        id = "matrix_barbed_larynx"
-        name = "Barbed Larynx"
-        description = "Extend needle-like ossifications through our voicebox to lengthen sting reach."
-        module = list(
-                "id" = "matrix_barbed_larynx",
-                "name" = "Barbed Larynx",
-                "desc" = "Extends sting range and stability, letting us tag prey from a step farther without risk.",
-                "category" = GENETIC_MATRIX_CATEGORY_PASSIVE,
-                "slotType" = BIO_INCUBATOR_SLOT_FLEX,
-                "tags" = list("sting", "utility"),
-                "exclusiveTags" = list("sting_range"),
-                "button_icon_state" = null,
-                "effects" = list(
-                        "sting_range_add" = 1,
-                ),
-        )
-        required_cells = list(
-                CHANGELING_CELL_ID_FELINID,
-                CHANGELING_CELL_ID_SHADEKIN,
-        )
+	id = "matrix_barbed_larynx"
+	name = "Barbed Larynx"
+	description = "Thread needle-like ossifications through our voicebox to channel brutal harmonics."
+	module = list(
+		"id" = "matrix_barbed_larynx",
+		"name" = "Barbed Larynx",
+		"desc" = "Bolsters our sonic shrieks with broader reach and lingering vertigo.",
+		"category" = GENETIC_MATRIX_CATEGORY_PASSIVE,
+		"slotType" = BIO_INCUBATOR_SLOT_FLEX,
+		"tags" = list("sonic", "crowd_control"),
+		"exclusiveTags" = list("shriek_range"),
+		"button_icon_state" = "resonant_shriek",
+		"effects" = list(
+			"resonant_shriek_range_add" = 1,
+			"resonant_shriek_confusion_mult" = 1.05,
+		),
+	)
+	required_cells = list(
+		CHANGELING_CELL_ID_FELINID,
+		CHANGELING_CELL_ID_SHADEKIN,
+	)
+	required_abilities = list(
+		/datum/action/changeling/resonant_shriek,
+	)

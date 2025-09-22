@@ -36,8 +36,6 @@
 
 	/// The changeling datum maintaining this effect.
 	var/datum/antagonist/changeling/changeling_source
-	/// The digital camo action powering the effect.
-	var/datum/action/changeling/digitalcamo/camo_source
 	/// Cached alpha to restore when the invisibility burst ends.
 	var/original_alpha = 255
 	/// When we can next trigger another invisibility burst (world.time deciseconds).
@@ -51,9 +49,8 @@
 	/// How transparent we become during the burst.
 	var/burst_alpha = 15
 
-/datum/status_effect/changeling_feathered_veil/on_creation(mob/living/new_owner, datum/antagonist/changeling/changeling_data, datum/action/changeling/digitalcamo/camo)
+/datum/status_effect/changeling_feathered_veil/on_creation(mob/living/new_owner, datum/antagonist/changeling/changeling_data)
 	changeling_source = changeling_data
-	camo_source = camo
 	original_alpha = new_owner?.alpha || original_alpha
 	return ..()
 
@@ -62,21 +59,18 @@
 		return FALSE
 	RegisterSignal(owner, COMSIG_MOVABLE_MOVED, PROC_REF(on_owner_moved))
 	RegisterSignal(owner, COMSIG_LIVING_SET_BODY_POSITION, PROC_REF(on_owner_position_changed))
-	update_sources(changeling_source, camo_source)
+	update_sources(changeling_source)
 	return TRUE
 
 /datum/status_effect/changeling_feathered_veil/on_remove()
 	end_invisibility_burst(TRUE)
 	UnregisterSignal(owner, list(COMSIG_MOVABLE_MOVED, COMSIG_LIVING_SET_BODY_POSITION))
 	changeling_source = null
-	camo_source = null
 
-/datum/status_effect/changeling_feathered_veil/proc/update_sources(datum/antagonist/changeling/changeling_data, datum/action/changeling/digitalcamo/camo)
+/datum/status_effect/changeling_feathered_veil/proc/update_sources(datum/antagonist/changeling/changeling_data)
         if(changeling_data)
                 changeling_source = changeling_data
-        if(camo)
-                camo_source = camo
-        if(!changeling_source?.matrix_feathered_veil_active || !camo_source?.active || QDELETED(owner))
+        if(!changeling_source?.matrix_feathered_veil_active || QDELETED(owner) || !HAS_TRAIT(owner, TRAIT_CHAMELEON_SKIN))
                 qdel(src)
                 return
         var/duration_bonus = changeling_source?.get_genetic_matrix_effect("feathered_veil_burst_duration_add", 0) || 0
@@ -105,7 +99,7 @@
 /datum/status_effect/changeling_feathered_veil/proc/trigger_invisibility_burst()
 	if(world.time < next_burst_allowed)
 		return
-	if(!changeling_source?.matrix_feathered_veil_active || !camo_source?.active)
+	if(!changeling_source?.matrix_feathered_veil_active || !HAS_TRAIT(owner, TRAIT_CHAMELEON_SKIN))
 		qdel(src)
 		return
 	next_burst_allowed = world.time + burst_cooldown
