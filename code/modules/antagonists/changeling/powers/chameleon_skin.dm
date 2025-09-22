@@ -12,14 +12,19 @@
 	if(!istype(cling)) // req_human could be done in can_sting stuff.
 		return
 	..()
+	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
 	if(cling.dna.get_mutation(/datum/mutation/chameleon/changeling))
 		cling.dna.remove_mutation(/datum/mutation/chameleon/changeling, MUTATION_SOURCE_CHANGELING)
+		changeling_data?.remove_matrix_feathered_veil_status()
 	else
 		cling.dna.add_mutation(/datum/mutation/chameleon/changeling, MUTATION_SOURCE_CHANGELING)
+		changeling_data?.ensure_matrix_feathered_veil_status()
 	return TRUE
 
 /datum/action/changeling/chameleon_skin/Remove(mob/user)
 	if(user.has_dna())
 		var/mob/living/carbon/cling = user
 		cling.dna.remove_mutation(/datum/mutation/chameleon/changeling, MUTATION_SOURCE_CHANGELING)
+	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
+	changeling_data?.remove_matrix_feathered_veil_status()
 	..()

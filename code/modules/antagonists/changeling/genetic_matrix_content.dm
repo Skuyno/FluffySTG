@@ -107,5 +107,6 @@ GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, setup_changeling_genetic_mat
                 "feathered_veil_alpha_add" = 0,
                 "resonant_shriek_range_add" = 0,
                 "resonant_shriek_confusion_mult" = 1,
+                "dissonant_shriek_emp_range_add" = 0,
                 "dissonant_shriek_structure_mult" = 1,
         )

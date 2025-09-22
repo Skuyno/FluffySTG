@@ -43,8 +43,8 @@
         return TRUE
 
 /datum/action/changeling/dissonant_shriek
-	name = "Technophagic Shriek"
-	desc = "We shift our vocal cords to release a high-frequency sound that overloads nearby electronics. Breaks headsets and cameras, and can sometimes break laser weaponry, doors, and modsuits. Costs 20 chemicals."
+	name = "Dissonant Shriek"
+	desc = "We shift our vocal cords to release a dissonant, high-frequency sound that overloads nearby electronics. Breaks headsets and cameras, and can sometimes break laser weaponry, doors, and modsuits. Costs 20 chemicals."
 	button_icon_state = "dissonant_shriek"
 	chemical_cost = 20
 	dna_cost = 1
@@ -55,17 +55,19 @@
         if(user.movement_type & VENTCRAWLING)
                 user.balloon_alert(user, "can't shriek in pipes!")
                 return FALSE
-        empulse(get_turf(user), 2, 5, 1)
-        var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
-        var/range_bonus = round(changeling_data?.get_genetic_matrix_effect("resonant_shriek_range_add", 0))
-        for(var/obj/machinery/light/L in range(max(5 + range_bonus, 0), user))
-                L.on = TRUE
-                L.break_light_tube()
-                stoplag()
+	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
+	var/emp_range_bonus = round(changeling_data?.get_genetic_matrix_effect("dissonant_shriek_emp_range_add", 0))
+	var/heavy_range = max(2 + emp_range_bonus, 0)
+	var/light_range = max(5 + emp_range_bonus, 0)
+	empulse(get_turf(user), heavy_range, light_range, 1)
+	for(var/obj/machinery/light/L in range(light_range, user))
+		L.on = TRUE
+		L.break_light_tube()
+		stoplag()
 
-        if(changeling_data?.matrix_predatory_howl_active)
-                var/lethal_range = max(2 + range_bonus, 0)
-                var/structure_mult = changeling_data?.get_genetic_matrix_effect("dissonant_shriek_structure_mult", 1) || 1
+	if(changeling_data?.matrix_predatory_howl_active)
+		var/lethal_range = max(2 + emp_range_bonus, 0)
+		var/structure_mult = changeling_data?.get_genetic_matrix_effect("dissonant_shriek_structure_mult", 1) || 1
                 for(var/mob/living/victim in get_hearers_in_view(lethal_range, user))
                         if(victim == user || IS_CHANGELING(victim))
                                 continue

@@ -9,6 +9,8 @@
 
 	/// Traits we apply to become immune to the environment
 	var/static/list/gain_traits = list(TRAIT_NO_BREATHLESS_DAMAGE, TRAIT_RESISTCOLD, TRAIT_RESISTLOWPRESSURE, TRAIT_SNOWSTORM_IMMUNE)
+	/// Additional traits granted when the void carapace matrix module is active.
+	var/static/list/module_gain_traits = list(TRAIT_RESISTHEAT, TRAIT_RESISTHIGHPRESSURE)
 	/// How much we slow chemical regeneration while active, in chems per second
 	var/recharge_slowdown = 0.25
 	/// Baseline slowdown applied without void carapace.
@@ -19,6 +21,8 @@
 	var/currently_active = FALSE
 	/// Cached changeling datum for module syncing.
 	var/datum/antagonist/changeling/linked_changeling
+	/// Do we currently have the module traits applied to our owner?
+	var/module_traits_applied = FALSE
 
 /datum/action/changeling/void_adaption/on_purchase(mob/user, is_respec)
 	. = ..()
@@ -31,6 +35,7 @@
 	UnregisterSignal(remove_from, COMSIG_LIVING_LIFE)
 	if (currently_active)
 		on_removed_adaption(remove_from, "Our cells relax, despite the danger!")
+	update_module_traits(FALSE)
 	linked_changeling = null
 	return ..()
 
@@ -39,19 +44,39 @@
 	SIGNAL_HANDLER
 
 	var/list/active_reasons = list()
+	var/has_carapace = linked_changeling?.matrix_void_carapace_active
 
 	var/datum/gas_mixture/environment = void_adapted.loc.return_air()
 	if (!isnull(environment))
 		var/vulnerable_temperature = void_adapted.get_body_temp_cold_damage_limit()
 		var/affected_temperature = environment.return_temperature()
+		var/environment_pressure = environment.return_pressure()
 		if (ishuman(void_adapted))
 			var/mob/living/carbon/human/special_boy = void_adapted
 			var/cold_protection = special_boy.get_cold_protection(affected_temperature)
 			vulnerable_temperature *= (1 - cold_protection)
 
-			var/affected_pressure = special_boy.calculate_affecting_pressure(environment.return_pressure())
+			var/affected_pressure = special_boy.calculate_affecting_pressure(environment_pressure)
 			if (affected_pressure < HAZARD_LOW_PRESSURE)
 				active_reasons += "vacuum"
+			if (has_carapace && affected_pressure > HAZARD_HIGH_PRESSURE)
+				if(!("pressure" in active_reasons))
+					active_reasons += "pressure"
+			if (has_carapace)
+				var/heat_limit = special_boy.get_body_temp_heat_damage_limit()
+				var/heat_protection = special_boy.get_heat_protection(affected_temperature)
+				heat_limit *= (1 + heat_protection)
+				if (affected_temperature > heat_limit)
+					if(!("heat" in active_reasons))
+						active_reasons += "heat"
+		else if (has_carapace)
+			if (environment_pressure > HAZARD_HIGH_PRESSURE)
+				if(!("pressure" in active_reasons))
+					active_reasons += "pressure"
+			var/base_heat_limit = void_adapted.get_body_temp_heat_damage_limit()
+			if (affected_temperature > base_heat_limit)
+				if(!("heat" in active_reasons))
+					active_reasons += "heat"
 
 		if (affected_temperature < vulnerable_temperature)
 			active_reasons += "cold"
@@ -84,7 +109,8 @@
 	else if(owner)
 		linked_changeling = IS_CHANGELING(owner)
 	var/target_slowdown = base_recharge_slowdown
-	if(linked_changeling?.matrix_void_carapace_active)
+	var/has_carapace = linked_changeling?.matrix_void_carapace_active
+	if(has_carapace)
 		target_slowdown = module_recharge_slowdown
 	if(recharge_slowdown == target_slowdown)
 		return
@@ -94,6 +120,22 @@
 		linked_changeling.chem_recharge_slowdown -= recharge_slowdown
 	else
 		recharge_slowdown = target_slowdown
-	if(owner && linked_changeling?.matrix_void_carapace_active)
+	update_module_traits(has_carapace)
+	if(owner && has_carapace)
 		check_environment(owner)
 
+
+/datum/action/changeling/void_adaption/proc/update_module_traits(has_module)
+	if(!ismob(owner))
+		module_traits_applied = FALSE
+		return
+	if(has_module)
+		if(module_traits_applied)
+			return
+		owner.add_traits(module_gain_traits, REF(src))
+		module_traits_applied = TRUE
+		return
+	if(!module_traits_applied)
+		return
+	owner.remove_traits(module_gain_traits, REF(src))
+	module_traits_applied = FALSE

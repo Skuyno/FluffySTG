@@ -420,15 +420,14 @@
 	var/mob/living/living_owner = owner?.current
 	if(!living_owner)
 		return
-	var/datum/action/changeling/digitalcamo/camo = get_changeling_power_instance(/datum/action/changeling/digitalcamo)
-	if(!camo || !camo.active)
+	if(!HAS_TRAIT(living_owner, TRAIT_CHAMELEON_SKIN))
 		remove_matrix_feathered_veil_status()
 		return
 	var/datum/status_effect/changeling_feathered_veil/existing = living_owner.has_status_effect(/datum/status_effect/changeling_feathered_veil)
 	if(existing)
-		existing.update_sources(src, camo)
+		existing.update_sources(src)
 	else
-		living_owner.apply_status_effect(/datum/status_effect/changeling_feathered_veil, src, camo)
+		living_owner.apply_status_effect(/datum/status_effect/changeling_feathered_veil, src)
 
 /datum/antagonist/changeling/proc/remove_matrix_feathered_veil_status()
 	var/mob/living/living_owner = owner?.current
