@@ -28,18 +28,18 @@
 	duration = 10 SECONDS
 	tick_interval = 0.5 SECONDS
 	alert_type = null
-        var/datum/weakref/changeling_ref
-        var/applied_bonus = FALSE
+	var/datum/weakref/changeling_ref
+	var/applied_bonus = FALSE
 
 /datum/status_effect/changeling_ashen_pump/on_creation(mob/living/new_owner, datum/antagonist/changeling/changeling_data)
 	changeling_ref = WEAKREF(changeling_data)
 	return ..()
 
 /datum/status_effect/changeling_ashen_pump/on_apply()
-        RegisterSignal(owner, COMSIG_MOVABLE_MOVED, PROC_REF(on_owner_moved))
-        apply_burn_bonus()
-        create_flare(get_turf(owner))
-        return TRUE
+	RegisterSignal(owner, COMSIG_MOVABLE_MOVED, PROC_REF(on_owner_moved))
+	apply_burn_bonus()
+	create_flare(get_turf(owner))
+	return TRUE
 
 /datum/status_effect/changeling_ashen_pump/on_remove()
 	UnregisterSignal(owner, COMSIG_MOVABLE_MOVED)
@@ -50,26 +50,26 @@
 	create_flare(get_turf(owner))
 
 /datum/status_effect/changeling_ashen_pump/proc/on_owner_moved(atom/movable/source, atom/old_loc, move_dir, forced, list/atom/old_locs)
-        SIGNAL_HANDLER
-        create_flare(old_loc)
+	SIGNAL_HANDLER
+	create_flare(old_loc)
 
 /datum/status_effect/changeling_ashen_pump/proc/create_flare(atom/location)
-        if(!owner || !isturf(location))
-                return
-        var/turf/open/T = get_turf(location)
-        if(!istype(T))
-                return
-        new /obj/effect/temp_visual/changeling_ashen_flare(T)
-        if(!(locate(/obj/effect/hotspot) in T))
-                new /obj/effect/hotspot(T)
-        T.hotspot_expose(900, 50, 1)
-        if(owner in T)
-                owner.extinguish_mob()
-        for(var/mob/living/carbon/victim in T)
-                if(victim == owner || IS_CHANGELING(victim))
-                        continue
-                victim.adjust_fire_stacks(0.5)
-                victim.ignite_mob()
+	if(!owner || !isturf(location))
+		return
+	var/turf/open/T = get_turf(location)
+	if(!istype(T))
+		return
+	new /obj/effect/temp_visual/changeling_ashen_flare(T)
+	if(!(locate(/obj/effect/hotspot) in T))
+		new /obj/effect/hotspot(T)
+	T.hotspot_expose(900, 50, 1)
+	if(owner in T)
+		owner.extinguish_mob()
+	for(var/mob/living/carbon/victim in T)
+		if(victim == owner || IS_CHANGELING(victim))
+			continue
+		victim.adjust_fire_stacks(0.5)
+		victim.ignite_mob()
 
 /datum/status_effect/changeling_ashen_pump/proc/apply_burn_bonus()
 	if(applied_bonus)
@@ -82,25 +82,25 @@
 			applied_bonus = TRUE
 
 /datum/status_effect/changeling_ashen_pump/proc/remove_burn_bonus()
-        if(!applied_bonus)
-                return
-        if(ishuman(owner))
-                var/mob/living/carbon/human/H = owner
-                var/datum/physiology/phys = H.physiology
-                if(phys)
-                        phys.burn_mod /= 0.5
-        applied_bonus = FALSE
+	if(!applied_bonus)
+		return
+	if(ishuman(owner))
+		var/mob/living/carbon/human/H = owner
+		var/datum/physiology/phys = H.physiology
+		if(phys)
+			phys.burn_mod /= 0.5
+	applied_bonus = FALSE
 
 /obj/effect/temp_visual/changeling_ashen_flare
-        name = "ashen flare"
-        icon = 'icons/effects/fire.dmi'
-        icon_state = "heavy"
-        duration = 0.8 SECONDS
-        light_range = 2
-        light_color = LIGHT_COLOR_FIRE
-        randomdir = FALSE
+	name = "ashen flare"
+	icon = 'icons/effects/fire.dmi'
+	icon_state = "heavy"
+	duration = 0.8 SECONDS
+	light_range = 2
+	light_color = LIGHT_COLOR_FIRE
+	randomdir = FALSE
 
 /obj/effect/temp_visual/changeling_ashen_flare/Initialize(mapload)
-        . = ..()
-        color = "#ffb347"
-        animate(src, alpha = 0, time = duration, easing = EASE_OUT)
+	. = ..()
+	color = "#ffb347"
+	animate(src, alpha = 0, time = duration, easing = EASE_OUT)
