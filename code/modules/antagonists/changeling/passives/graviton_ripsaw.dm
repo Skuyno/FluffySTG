@@ -3,26 +3,23 @@
 /datum/changeling_genetic_matrix_recipe/graviton_ripsaw
 	id = "matrix_graviton_ripsaw"
 	name = "Graviton Ripsaw"
-	description = "Channel voidwalker tendons through our arm blade to drag prey and lunge across open space."
+	description = "Channel voidwalker tendons through our arm blade to lash out with gravitational tendrils."
 	module = list(
-			"id" = "matrix_graviton_ripsaw",
-			"name" = "Graviton Ripsaw",
-			"desc" = "Arm Blade attacks tug victims inward and let us sling toward anchored targets for EVA mobility.",
-			"category" = GENETIC_MATRIX_CATEGORY_UPGRADE,
-			"slotType" = BIO_INCUBATOR_SLOT_FLEX,
-			"tags" = list("arm_blade", "control"),
-			"button_icon_state" = "armblade",
-	)
+		"id" = "matrix_graviton_ripsaw",
+		"name" = "Graviton Ripsaw",
+		"desc" = "Arm Blade attacks yank victims inward while right-click launches a flesh tether to reel ourselves forward.",
+		"category" = GENETIC_MATRIX_CATEGORY_UPGRADE,
+		"slotType" = BIO_INCUBATOR_SLOT_FLEX,
+		"tags" = list("arm_blade", "control", "mobility"),
+		"button_icon_state" = "armblade",
+)
 	required_cells = list(
-			CHANGELING_CELL_ID_VOIDWALKER,
-			CHANGELING_CELL_ID_SPACE_CARP,
-	)
+		CHANGELING_CELL_ID_VOIDWALKER,
+		CHANGELING_CELL_ID_SPACE_CARP,
+)
 	required_abilities = list(
-			/datum/action/changeling/weapon/arm_blade,
+		/datum/action/changeling/weapon/arm_blade,
 	)
-
-/datum/movespeed_modifier/changeling/gravitic_pull
-	multiplicative_slowdown = 1.3
 
 /datum/status_effect/changeling_gravitic_pull
 	id = "changeling_gravitic_pull"
@@ -30,11 +27,46 @@
 	duration = 3 SECONDS
 	tick_interval = STATUS_EFFECT_NO_TICK
 	alert_type = null
+	/// Weak reference to the changeling who struck the victim.
+	var/datum/weakref/source_ref
+
+/datum/status_effect/changeling_gravitic_pull/on_creation(mob/living/new_owner, mob/living/source)
+	source_ref = WEAKREF(source)
+	return ..()
 
 /datum/status_effect/changeling_gravitic_pull/on_apply()
-	owner.add_or_update_variable_movespeed_modifier(/datum/movespeed_modifier/changeling/gravitic_pull, TRUE)
+	. = ..()
+	if(!.)
+		return FALSE
+	apply_gravitic_tug()
 	return TRUE
 
+/datum/status_effect/changeling_gravitic_pull/refresh(mob/living/new_owner, mob/living/source)
+	..()
+	source_ref = WEAKREF(source)
+	apply_gravitic_tug()
+
 /datum/status_effect/changeling_gravitic_pull/on_remove()
-	owner.remove_movespeed_modifier(/datum/movespeed_modifier/changeling/gravitic_pull)
+	source_ref = null
 	return ..()
+
+/datum/status_effect/changeling_gravitic_pull/proc/apply_gravitic_tug()
+	var/mob/living/source = source_ref?.resolve()
+	if(!source || !owner)
+		return
+	if(source == owner || owner.stat == DEAD)
+		return
+	owner.adjustStaminaLoss(6)
+	owner.set_jitter_if_lower(1.5 SECONDS)
+	if(owner.anchored || owner.throwing || owner.buckled)
+		return
+	var/turf/owner_turf = get_turf(owner)
+	var/turf/source_turf = get_turf(source)
+	if(!owner_turf || !source_turf)
+		return
+	if(owner_turf.z != source_turf.z)
+		return
+	if(get_dist(owner_turf, source_turf) <= 1)
+		return
+	step_towards(owner, source)
+

@@ -256,6 +256,15 @@
 	changeling_data?.handle_graviton_ripsaw_hit(target, user)
 	changeling_data?.handle_hemolytic_bloom_hit(target, user)
 
+/obj/item/melee/arm_blade/ranged_interact_with_atom_secondary(atom/interacting_with, mob/living/user, list/modifiers)
+	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
+	if(!changeling_data?.matrix_graviton_ripsaw_active)
+		return ..()
+	var/result = changeling_data.try_matrix_graviton_ripsaw_grapple(interacting_with, user)
+	if(result)
+		return result
+	return ..()
+
 /obj/item/melee/arm_blade/dropped(mob/user)
 	..()
 	if(can_drop)
