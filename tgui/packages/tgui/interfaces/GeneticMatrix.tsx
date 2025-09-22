@@ -655,7 +655,7 @@ const CraftComposer = ({
   const [abilitySearch, setAbilitySearch] = useState('');
 
   const filteredCells = useMemo(() => {
-    const query = cellSearch.toLowerCase();
+    const query = cellSearch.trim().toLowerCase();
     if (!query) {
       return cells;
     }
@@ -666,7 +666,7 @@ const CraftComposer = ({
   }, [cells, cellSearch]);
 
   const filteredAbilities = useMemo(() => {
-    const query = abilitySearch.toLowerCase();
+    const query = abilitySearch.trim().toLowerCase();
     if (!query) {
       return abilities;
     }
@@ -687,7 +687,7 @@ const CraftComposer = ({
             <Stack.Item>
               <Input
                 value={cellSearch}
-                onInput={(_, value) => setCellSearch(value ?? '')}
+                onChange={(value) => setCellSearch(value ?? '')}
                 placeholder="Search cells..."
               />
             </Stack.Item>
@@ -724,7 +724,7 @@ const CraftComposer = ({
             <Stack.Item>
               <Input
                 value={abilitySearch}
-                onInput={(_, value) => setAbilitySearch(value ?? '')}
+                onChange={(value) => setAbilitySearch(value ?? '')}
                 placeholder="Search abilities..."
               />
             </Stack.Item>
@@ -1379,7 +1379,7 @@ const RecipesTab = ({ recipes }: RecipesTabProps) => {
   const [recipeSearch, setRecipeSearch] = useState('');
 
   const filteredRecipes = useMemo(() => {
-    const query = recipeSearch.toLowerCase();
+    const query = recipeSearch.trim().toLowerCase();
     if (!query) {
       return recipes;
     }
@@ -1399,7 +1399,7 @@ const RecipesTab = ({ recipes }: RecipesTabProps) => {
         <Stack.Item>
           <Input
             value={recipeSearch}
-            onInput={(_, value) => setRecipeSearch(value)}
+            onChange={(value) => setRecipeSearch(value ?? '')}
             placeholder="Search recipes..."
           />
         </Stack.Item>
