@@ -2,11 +2,11 @@
 /datum/changeling_genetic_matrix_recipe/anaerobic_reservoir
         id = "matrix_anaerobic_reservoir"
         name = "Anaerobic Reservoir"
-        description = "Forge redundant oxygen sacs to blunt fatigue and keep our muscles charged."
+        description = "Forge redundant oxygen sacs to blunt fatigue, venting a burst of strength when exhaustion peaks."
         module = list(
                 "id" = "matrix_anaerobic_reservoir",
                 "name" = "Anaerobic Reservoir",
-                "desc" = "Adds a reserve of stamina and trims everyday expenditure, keeping us fresh in prolonged brawls.",
+                "desc" = "Adds a reserve of stamina and trims everyday expenditure, then erupts near collapse to refill us and cushion the next impact.",
                 "category" = GENETIC_MATRIX_CATEGORY_PASSIVE,
                 "slotType" = BIO_INCUBATOR_SLOT_FLEX,
                 "tags" = list("stamina", "resilience"),
