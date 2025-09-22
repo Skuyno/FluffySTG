@@ -1,48 +1,77 @@
 
 /datum/action/changeling/spore_node
-        name = "Spore Node"
-        desc = "Seed a stationary pheromone node that alerts us and can burst into slowing spores. Costs 8 chemicals."
-	helptext = "Requires the Spore Node key matrix. Using it while a node exists detonates the current node."
-	button_icon_state = "spiders"
-        chemical_cost = 8
-	dna_cost = CHANGELING_POWER_UNOBTAINABLE
-	req_stat = CONSCIOUS
-	disabled_by_fire = FALSE
+       name = "Spore Node"
+       desc = "Seed a stationary pheromone node that alerts us and can burst into slowing spores. Costs 8 chemicals."
+       helptext = "Requires the Spore Node key matrix. Using it while a node exists detonates the current node."
+       button_icon_state = "spread_infestation"
+       chemical_cost = 8
+       dna_cost = CHANGELING_POWER_UNOBTAINABLE
+       req_stat = CONSCIOUS
+       disabled_by_fire = FALSE
 
 /datum/action/changeling/spore_node/sting_action(mob/living/user)
-	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
-	if(!changeling_data?.matrix_spore_node_active)
-		user.balloon_alert(user, "needs node module")
-		return FALSE
-	if(changeling_data.detonate_spore_node(user))
-		return TRUE
-	var/turf/placement = get_turf(user)
-	if(!placement || placement.is_blocked_turf(TRUE, source_atom = user))
-		user.balloon_alert(user, "bad turf")
-		return FALSE
-	changeling_data.place_spore_node(placement, user)
-	return TRUE
+       var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
+       if(!changeling_data?.matrix_spore_node_active)
+               user.balloon_alert(user, "needs node module")
+               return FALSE
+       if(changeling_data.detonate_spore_node(user))
+               return TRUE
+       var/turf/placement = get_turf(user)
+       if(!placement || placement.is_blocked_turf(TRUE, source_atom = user))
+               user.balloon_alert(user, "bad turf")
+               return FALSE
+       if(!do_after(user, 4 SECONDS, target = placement, extra_checks = CALLBACK(src, PROC_REF(can_continue_spore_node), user, placement)))
+               return FALSE
+       changeling_data = IS_CHANGELING(user)
+       if(!changeling_data?.matrix_spore_node_active)
+               return FALSE
+       if(changeling_data.matrix_spore_node_ref?.resolve())
+               return FALSE
+       placement = get_turf(user)
+       if(!placement || placement.is_blocked_turf(TRUE, source_atom = user))
+               return FALSE
+       return changeling_data.place_spore_node(placement, user)
+
+/datum/action/changeling/spore_node/proc/can_continue_spore_node(mob/living/user, turf/placement)
+       if(QDELETED(src) || QDELETED(user) || user.stat >= UNCONSCIOUS)
+               return FALSE
+       if(!placement)
+               return FALSE
+       var/turf/current_turf = get_turf(user)
+       if(!current_turf || current_turf != placement)
+               return FALSE
+       if(placement.is_blocked_turf(TRUE, source_atom = user))
+               return FALSE
+       var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
+       if(!changeling_data?.matrix_spore_node_active)
+               return FALSE
+       if(changeling_data.matrix_spore_node_ref?.resolve())
+               return FALSE
+       return TRUE
 
 /obj/structure/changeling_spore_node
-	name = "spore node"
-	desc = "A pulsating changeling beacon that hums with pheromonal static."
-       icon = 'modular_nova/modules/spider/icons/spider.dmi'
-	icon_state = "egg"
-	anchored = TRUE
-	density = FALSE
-	resistance_flags = FIRE_PROOF | ACID_PROOF
-        max_integrity = 80
+       name = "spore node"
+       desc = "A pulsating changeling beacon that hums with pheromonal static."
+       icon = 'icons/mob/simple/meteor_heart.dmi'
+       icon_state = "eggs"
+       anchored = TRUE
+       density = FALSE
+       obj_flags = CAN_BE_HIT
+       resistance_flags = FIRE_PROOF | ACID_PROOF
+       max_integrity = 80
 	/// Cached changeling maintaining the node.
 	var/datum/weakref/changeling_ref
 	/// Tracks recently pinged mobs to avoid spam.
 	var/list/tracked_refs = list()
 
 /obj/structure/changeling_spore_node/Initialize(mapload, datum/antagonist/changeling/changeling_data)
-	. = ..()
-	if(changeling_data)
-		changeling_ref = WEAKREF(changeling_data)
-	START_PROCESSING(SSobj, src)
-	return .
+       . = ..()
+       if(changeling_data)
+               changeling_ref = WEAKREF(changeling_data)
+       START_PROCESSING(SSobj, src)
+       if(!mapload)
+               do_smoke(range = 1, location = loc)
+       return .
 
 /obj/structure/changeling_spore_node/Destroy()
 	STOP_PROCESSING(SSobj, src)
