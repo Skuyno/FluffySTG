@@ -39,6 +39,14 @@
 #define CHANGELING_CELL_ID_GLOCKROACH "glockroach"
 #define CHANGELING_CELL_ID_SPACE_DRAGON "space_dragon"
 #define CHANGELING_CELL_ID_HERETIC_ROBE "heretic_robe"
+#define CHANGELING_CELL_ID_BEE "bee"
+#define CHANGELING_CELL_ID_NIGHTMARE "nightmare"
+#define CHANGELING_CELL_ID_VOIDWALKER "voidwalker"
+#define CHANGELING_CELL_ID_ASH_DRAKE "ash_drake"
+#define CHANGELING_CELL_ID_BUBBLEGUM "bubblegum"
+#define CHANGELING_CELL_ID_LEGION "legion"
+#define CHANGELING_CELL_ID_WATCHER "watcher"
+#define CHANGELING_CELL_ID_GOLIATH "goliath"
 
 GLOBAL_LIST_INIT(changeling_cell_registry, list(
         CHANGELING_CELL_ID_HUMAN = list(
@@ -233,6 +241,46 @@ GLOBAL_LIST_INIT(changeling_cell_registry, list(
                         /obj/item/clothing/suit/hooded/cultrobes/eldritch,
                         /obj/item/clothing/head/hooded/cult_hoodie/eldritch,
                 ),
+        ),
+        CHANGELING_CELL_ID_BEE = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Bee",
+                CHANGELING_CELL_REGISTRY_DESC = "Honey-slick muscle strands and venom sacs harvested from buzzing station bees.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/bee),
+        ),
+        CHANGELING_CELL_ID_NIGHTMARE = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Nightmare",
+                CHANGELING_CELL_REGISTRY_DESC = "Shadow-dense sinew and void-cold ichor siphoned from nightmare hunters.",
+                CHANGELING_CELL_REGISTRY_SPECIES = list(SPECIES_NIGHTMARE),
+        ),
+        CHANGELING_CELL_ID_VOIDWALKER = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Voidwalker",
+                CHANGELING_CELL_REGISTRY_DESC = "Gravity-shearing tendons and spatial resonators pulled from voidwalkers.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/voidwalker),
+        ),
+        CHANGELING_CELL_ID_ASH_DRAKE = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Ash Drake",
+                CHANGELING_CELL_REGISTRY_DESC = "Cinder-hardened scales and thermal glands carved from ash drakes.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/simple_animal/hostile/megafauna/dragon),
+        ),
+        CHANGELING_CELL_ID_BUBBLEGUM = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Bubblegum",
+                CHANGELING_CELL_REGISTRY_DESC = "Blood-saturated cartilage and demonic marrow reaped from Bubblegum.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/simple_animal/hostile/megafauna/bubblegum),
+        ),
+        CHANGELING_CELL_ID_LEGION = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Legion",
+                CHANGELING_CELL_REGISTRY_DESC = "Fractured necropolis bone shards and hive masks split from Legion.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/simple_animal/hostile/megafauna/legion),
+        ),
+        CHANGELING_CELL_ID_WATCHER = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Watcher",
+                CHANGELING_CELL_REGISTRY_DESC = "Crystalline ocular cores and frost-bitten wings lifted from cavern watchers.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/mining/watcher),
+        ),
+        CHANGELING_CELL_ID_GOLIATH = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Goliath",
+                CHANGELING_CELL_REGISTRY_DESC = "Stone-plated musculature and tether sinew ripped from goliath tendrils.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/mining/goliath),
         ),
 ))
 
