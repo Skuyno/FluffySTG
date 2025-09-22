@@ -26,7 +26,7 @@
 /obj/structure/changeling_spore_node
 	name = "spore node"
 	desc = "A pulsating changeling beacon that hums with pheromonal static."
-	icon = 'icons/obj/structures/spider.dmi'
+       icon = 'modular_nova/modules/spider/icons/spider.dmi'
 	icon_state = "egg"
 	anchored = TRUE
 	density = FALSE
@@ -79,7 +79,7 @@
 	to_chat(owner, span_changeling("Our spore node senses movement near [victim]."))
 
 /obj/structure/changeling_spore_node/proc/detonate(mob/living/user)
-	playsound(src, 'sound/magic/disable.ogg', 60, TRUE)
+       playsound(src, 'sound/effects/magic/disable_tech.ogg', 60, TRUE)
 	visible_message(
 		span_danger("[src] ruptures into a haze of grasping spores!"),
 		span_notice("Our spores rupture into a slowing miasma."),
@@ -87,8 +87,8 @@
 	for(var/mob/living/target in range(2, src))
 		if(target.stat == DEAD || IS_CHANGELING(target))
 			continue
-		target.adjustStaminaLoss(20)
-		target.Weaken(1)
+               target.adjustStaminaLoss(20)
+               target.Knockdown(1 SECONDS)
 		target.apply_status_effect(/datum/status_effect/dazed, 3 SECONDS)
 	qdel(src)
 	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()

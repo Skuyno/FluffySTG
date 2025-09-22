@@ -35,7 +35,7 @@
 		return FALSE
 	if(user.throw_at(target, range = 4, speed = 2, thrower = user, gentle = TRUE))
 		next_allowed = world.time + cooldown_length
-		playsound(user, 'sound/magic/wandteleport.ogg', 50, TRUE)
+               playsound(user, 'sound/effects/magic/wand_teleport.ogg', 50, TRUE)
 		user.visible_message(
 			span_warning("[user] rockets forward in a streak of violet plasma!"),
 			span_changeling("We vent a burst of voidfire to surge ahead."),
