@@ -204,6 +204,17 @@
 		"s_store" = /obj/item/changeling,
 	)
 
+	/// Keys whose matrix effects combine multiplicatively rather than additively.
+	var/static/list/matrix_multiplicative_effect_keys = list(
+		"stamina_use_mult",
+		"stamina_regen_time_mult",
+		"fleshmend_heal_mult",
+		"biodegrade_timer_mult",
+		"feathered_veil_cooldown_mult",
+		"resonant_shriek_confusion_mult",
+		"dissonant_shriek_structure_mult",
+	)
+
 	/// A list of all memories we've stolen through absorbs.
 	var/list/stolen_memories = list()
 
@@ -1280,7 +1291,7 @@
 				if(isnull(effect_value))
 					continue
 				if(isnum(effect_value))
-					if(effect_key in CHANGELING_MATRIX_MULTIPLICATIVE_EFFECT_KEYS)
+					if(effect_key in matrix_multiplicative_effect_keys)
 						effect_totals[effect_key] *= effect_value
 					else
 						effect_totals[effect_key] += effect_value
