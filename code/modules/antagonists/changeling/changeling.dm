@@ -856,7 +856,7 @@
 		messages += span_notice("\"[sample]\"")
 	for(var/message in messages)
 		to_chat(target, message)
-	playsound(target, 'sound/magic/mindswap.ogg', 50, TRUE)
+       playsound(target, 'sound/effects/magic/magic_block_mind.ogg', 50, TRUE)
 	return TRUE
 
 /datum/antagonist/changeling/proc/apply_neuro_sap_bonus()

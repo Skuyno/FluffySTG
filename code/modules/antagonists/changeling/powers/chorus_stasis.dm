@@ -19,7 +19,7 @@
 /obj/structure/changeling_chorus_cocoon
 	name = "chorus cocoon"
 	desc = "A resonant changeling pod humming with muffled voices."
-	icon = 'icons/obj/structures/spider.dmi'
+       icon = 'modular_nova/modules/spider/icons/spider.dmi'
 	icon_state = "cocoon"
 	anchored = TRUE
 	density = FALSE
@@ -70,19 +70,19 @@
 	return TRUE
 
 /obj/structure/changeling_chorus_cocoon/proc/detonate(mob/living/user)
-	playsound(src, 'sound/magic/clockwork/anima_fragment_charge.ogg', 60, TRUE)
+       playsound(src, 'sound/effects/magic/clockwork/anima_fragment_attack.ogg', 60, TRUE)
 	visible_message(
 		span_danger("[src] ruptures in a wave of soporific gas!"),
 		span_notice("We unravel the cocoon, flooding the area with muting spores."),
 	)
 	for(var/mob/living/occupant in buckled_mobs.Copy())
 		unbuckle_mob(occupant, force = TRUE, can_fall = FALSE)
-		occupant.Weaken(1)
+               occupant.Knockdown(1 SECONDS)
 	for(var/mob/living/target in range(2, src))
 		if(target.stat == DEAD || IS_CHANGELING(target))
 			continue
-		target.adjustStaminaLoss(25)
-		target.Weaken(2)
+               target.adjustStaminaLoss(25)
+               target.Knockdown(2 SECONDS)
 		target.adjust_confusion(30)
 	qdel(src)
 	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
