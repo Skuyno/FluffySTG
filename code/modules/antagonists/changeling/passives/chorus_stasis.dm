@@ -1,14 +1,14 @@
 
-/// Key Active: Chorus Stasis — weaves a two-body cocoon that heals, conceals, and can erupt into soporific gas.
+/// Key Active: Chorus Stasis — weaves a single-body cocoon that heals, conceals, and can erupt into soporific gas.
 /datum/changeling_genetic_matrix_recipe/chorus_stasis
 	id = "matrix_chorus_stasis"
 	name = "Chorus Stasis"
-	description = "Spin a cooperative cocoon to hide allies or prey before detonating them in chemical fog."
+        description = "Spin a solitary cocoon to hide yourself or one victim before detonating it in chemical fog."
 	module = list(
 			"id" = "matrix_chorus_stasis",
 			"name" = "Chorus Stasis",
-			"desc" = "Encase up to two bodies in a stasis cocoon that heals quietly and can burst into disorienting gas.",
-			"helptext" = "Activate to create or add to a cocoon; reuse while a cocoon exists to detonate it.",
+                        "desc" = "Encase one body in a stasis cocoon that quietly heals and can burst into disorienting gas.",
+                        "helptext" = "Activate to cocoon yourself or an adjacent creature; reuse while it exists to detonate it.",
 			"category" = GENETIC_MATRIX_CATEGORY_KEY,
 			"slotType" = BIO_INCUBATOR_SLOT_KEY,
 			"tags" = list("healing", "control"),
