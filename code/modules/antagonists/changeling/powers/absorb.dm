@@ -104,8 +104,7 @@
 
 	//Some of target's recent speech, so the changeling can attempt to imitate them better.
 	//Recent as opposed to all because rounds tend to have a LOT of text.
-
-		var/list/recent_speech = target.copy_recent_speech()
+	var/list/recent_speech = target.copy_recent_speech()
 
 	if(recent_speech.len)
 		changeling.antag_memory += "Some of [target]'s speech patterns, we should study these to better impersonate [target.p_them()]: "
@@ -115,7 +114,6 @@
 			to_chat(owner, span_notice("\"[spoken_memory]\""))
 		changeling.antag_memory += ". We have no more knowledge of [target]'s speech patterns. "
 		to_chat(owner, span_boldnotice("We have no more knowledge of [target]'s speech patterns."))
-
 
 	var/datum/antagonist/changeling/target_ling = IS_CHANGELING(target)
 	if(target_ling)//If the target was a changeling, suck out their extra juice and objective points!
