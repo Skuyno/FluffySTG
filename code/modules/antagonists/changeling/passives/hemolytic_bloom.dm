@@ -22,19 +22,19 @@
 	)
 
 /obj/effect/particle_effect/fluid/smoke/hemolytic_bloom
-       parent_type = /obj/effect/particle_effect/fluid/smoke/quick
-       lifetime = 2 SECONDS
+	parent_type = /obj/effect/particle_effect/fluid/smoke/quick
+	lifetime = 2 SECONDS
 
 /obj/effect/particle_effect/fluid/smoke/hemolytic_bloom/Initialize(mapload, datum/fluid_group/group, ...)
-       . = ..()
-       add_atom_colour("#84ff9f", FIXED_COLOUR_PRIORITY)
-       color = "#84ff9f"
+	. = ..()
+	add_atom_colour("#84ff9f", FIXED_COLOUR_PRIORITY)
+	color = "#84ff9f"
 
 /obj/effect/temp_visual/changeling_hemolytic_seed
-       name = "hemolytic bloom"
-       icon = 'icons/effects/blood.dmi'
-       icon_state = "splatter1"
-       layer = ABOVE_MOB_LAYER
+	name = "hemolytic bloom"
+	icon = 'icons/effects/blood.dmi'
+	icon_state = "splatter1"
+	layer = ABOVE_MOB_LAYER
 	plane = GAME_PLANE
 	duration = 4 SECONDS
 	light_range = 1.5
@@ -54,17 +54,17 @@
 	if(QDELETED(src))
 		return
 	playsound(src, 'sound/effects/splat.ogg', 55, TRUE)
-       visible_message(
-               span_danger("[src] ruptures into a spray of acidic spores!"),
-               span_notice("Our bloom erupts, digesting fresh biomass."),
-       )
-       var/turf/location = get_turf(src)
-       if(istype(location))
-               do_smoke(range = 1, location = location, smoke_type = /obj/effect/particle_effect/fluid/smoke/hemolytic_bloom)
-               for(var/dir in GLOB.cardinals)
-                       new /obj/effect/temp_visual/dir_setting/bloodsplatter(location, dir, "#6bff9f")
-               var/obj/effect/temp_visual/small_smoke/halfsecond/mist = new(location)
-               mist.color = "#7fffb2"
+	visible_message(
+		span_danger("[src] ruptures into a spray of acidic spores!"),
+		span_notice("Our bloom erupts, digesting fresh biomass."),
+	)
+	var/turf/location = get_turf(src)
+	if(istype(location))
+		do_smoke(range = 1, location = location, smoke_type = /obj/effect/particle_effect/fluid/smoke/hemolytic_bloom)
+		for(var/dir in GLOB.cardinals)
+			new /obj/effect/temp_visual/dir_setting/bloodsplatter(location, dir, "#6bff9f")
+		var/obj/effect/temp_visual/small_smoke/halfsecond/mist = new(location)
+		mist.color = "#7fffb2"
 	for(var/mob/living/target in range(1, src))
 		if(IS_CHANGELING(target))
 			continue
