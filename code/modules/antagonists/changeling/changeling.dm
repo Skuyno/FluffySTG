@@ -1182,7 +1182,7 @@
 	if(!istype(location) || location.is_blocked_turf(TRUE, source_atom = user))
 		user.balloon_alert(user, "bad turf")
 		return FALSE
-        var/mob/living/chorus_target = (istype(target) && target != user) ? target : null
+	var/mob/living/chorus_target = (istype(target) && target != user) ? target : null
 	if(!do_after(user, 4 SECONDS, target = location, extra_checks = CALLBACK(src, PROC_REF(can_continue_chorus_stasis), user, location)))
 		return FALSE
 	if(!matrix_chorus_stasis_active || !istype(user))
@@ -1193,25 +1193,25 @@
 	if(!istype(location) || location.is_blocked_turf(TRUE, source_atom = user))
 		user.balloon_alert(user, "bad turf")
 		return FALSE
-        if(chorus_target && (QDELETED(chorus_target) || !user.Adjacent(chorus_target)))
-                chorus_target = null
-        var/mob/living/occupant = chorus_target || user
-        var/obj/structure/changeling_chorus_cocoon/cocoon = new(location, src)
-        if(!cocoon.add_occupant(occupant))
-                qdel(cocoon)
-                return FALSE
-        matrix_chorus_cocoon_ref = WEAKREF(cocoon)
-        if(occupant == user)
-                user.visible_message(
-                        span_warning("[user] weaves a muffled cocoon of tendrils around [user.p_them()]self!"),
-                        span_changeling("We spin a chorus cocoon to hide and recover."),
-                )
-        else
-                user.visible_message(
-                        span_warning("[user] lashes [occupant] into a muffled cocoon of tendrils!"),
-                        span_changeling("We bind [occupant] within a chorus cocoon."),
-                )
-        return TRUE
+	if(chorus_target && (QDELETED(chorus_target) || !user.Adjacent(chorus_target)))
+		chorus_target = null
+	var/mob/living/occupant = chorus_target || user
+	var/obj/structure/changeling_chorus_cocoon/cocoon = new(location, src)
+	if(!cocoon.add_occupant(occupant))
+		qdel(cocoon)
+		return FALSE
+	matrix_chorus_cocoon_ref = WEAKREF(cocoon)
+	if(occupant == user)
+		user.visible_message(
+			span_warning("[user] weaves a muffled cocoon of tendrils around [user.p_them()]self!"),
+			span_changeling("We spin a chorus cocoon to hide and recover."),
+		)
+	else
+		user.visible_message(
+			span_warning("[user] lashes [occupant] into a muffled cocoon of tendrils!"),
+			span_changeling("We bind [occupant] within a chorus cocoon."),
+		)
+	return TRUE
 
 /datum/antagonist/changeling/proc/can_continue_chorus_stasis(mob/living/user, turf/original_location)
 	if(QDELETED(user) || !matrix_chorus_stasis_active)
