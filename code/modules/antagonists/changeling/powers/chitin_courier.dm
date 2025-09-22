@@ -1,8 +1,8 @@
 
 /datum/action/changeling/chitin_courier
-        name = "Chitin Courier"
-        desc = "We unfurl a hidden cache beneath our skin for a single medium item."
-        helptext = "Store or retrieve a compact contraband item invisibly. Requires the Chitin Courier matrix passive."
+	name = "Chitin Courier"
+	desc = "We unfurl a hidden cache beneath our skin for a single medium item."
+	helptext = "Store or retrieve a compact contraband item invisibly. Requires the Chitin Courier matrix passive."
 	button_icon_state = "lesserform"
 	chemical_cost = 0
 	dna_cost = CHANGELING_POWER_UNOBTAINABLE
@@ -20,9 +20,9 @@
 	if(!held)
 		user.balloon_alert(user, "empty hand")
 		return FALSE
-        if(held.w_class > WEIGHT_CLASS_NORMAL)
-                user.balloon_alert(user, "too bulky")
-                return FALSE
+	if(held.w_class > WEIGHT_CLASS_NORMAL)
+		user.balloon_alert(user, "too bulky")
+		return FALSE
 	if(!user.temporarilyRemoveItemFromInventory(held))
 		user.balloon_alert(user, "cannot stash")
 		return FALSE

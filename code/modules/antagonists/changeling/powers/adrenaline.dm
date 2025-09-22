@@ -55,4 +55,4 @@
 	if(owner.stat == DEAD)
 		qdel(src)
 		return
-        owner.adjustStaminaLoss(-30)
+	owner.adjustStaminaLoss(-30)

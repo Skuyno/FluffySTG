@@ -6,7 +6,7 @@
 	module = list(
 		"id" = "matrix_crystalline_buffer",
 		"name" = "Crystalline Buffer",
-                "desc" = "Stores four refueling prism charges that negate incoming stuns before erupting in a blinding flash.",
+		"desc" = "Stores four refueling prism charges that negate incoming stuns before erupting in a blinding flash.",
 		"category" = GENETIC_MATRIX_CATEGORY_PASSIVE,
 		"slotType" = BIO_INCUBATOR_SLOT_FLEX,
 		"tags" = list("defense", "chemicals"),
@@ -23,8 +23,8 @@
 	tick_interval = STATUS_EFFECT_NO_TICK
 	alert_type = null
 	var/datum/weakref/changeling_ref
-        var/charges_left = 4
-        var/recharge_delay = 12.5 SECONDS
+	var/charges_left = 4
+	var/recharge_delay = 12.5 SECONDS
 
 /datum/status_effect/changeling_crystalline_buffer/on_creation(mob/living/new_owner, datum/antagonist/changeling/changeling_data)
 	changeling_ref = WEAKREF(changeling_data)
@@ -80,7 +80,7 @@
 			span_changeling("Our crystalline buffer devours the impact."),
 		)
 		var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
-                changeling_data?.adjust_chemicals(6)
+		changeling_data?.adjust_chemicals(6)
 	if(charges_left <= 0)
 		trigger_flash()
 		if(recharge_delay > 0)
@@ -92,11 +92,11 @@
 	for(var/mob/living/victim in oview(1, owner))
 		if(victim == owner)
 			continue
-                victim.adjustStaminaLoss(20)
-                victim.apply_status_effect(/datum/status_effect/dazed, 3 SECONDS)
+		victim.adjustStaminaLoss(20)
+		victim.apply_status_effect(/datum/status_effect/dazed, 3 SECONDS)
 
 /datum/status_effect/changeling_crystalline_buffer/proc/recharge_buffer()
-        charges_left = 4
+	charges_left = 4
 	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
 	if(changeling_data?.owner?.current)
 		to_chat(changeling_data.owner.current, span_changeling("Our crystalline buffer reconstitutes new charges."))
