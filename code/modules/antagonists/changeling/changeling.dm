@@ -1263,6 +1263,15 @@
 	genetic_matrix_effect_cache = changeling_get_default_matrix_effects()
 
 /datum/antagonist/changeling/proc/update_matrix_passive_effects(list/active_ids)
+	var/static/list/multiplicative_effect_keys = list(
+		"stamina_use_mult",
+		"stamina_regen_time_mult",
+		"fleshmend_heal_mult",
+		"biodegrade_timer_mult",
+		"feathered_veil_cooldown_mult",
+		"resonant_shriek_confusion_mult",
+		"dissonant_shriek_structure_mult",
+	)
 	var/list/effect_totals = changeling_get_default_matrix_effects()
 	if(islist(active_ids))
 		for(var/module_id in active_ids)
@@ -1280,7 +1289,7 @@
 				if(isnull(effect_value))
 					continue
 				if(isnum(effect_value))
-					if(effect_key in CHANGELING_MATRIX_MULTIPLICATIVE_EFFECT_KEYS)
+					if(effect_key in multiplicative_effect_keys)
 						effect_totals[effect_key] *= effect_value
 					else
 						effect_totals[effect_key] += effect_value

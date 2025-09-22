@@ -2,16 +2,6 @@
 #define GENETIC_MATRIX_CATEGORY_PASSIVE "passive"
 #define GENETIC_MATRIX_CATEGORY_UPGRADE "upgrade"
 
-#define CHANGELING_MATRIX_MULTIPLICATIVE_EFFECT_KEYS list(\
-        "stamina_use_mult",\
-        "stamina_regen_time_mult",\
-        "fleshmend_heal_mult",\
-        "biodegrade_timer_mult",\
-        "feathered_veil_cooldown_mult",\
-        "resonant_shriek_confusion_mult",\
-        "dissonant_shriek_structure_mult"\
-)
-
 GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, setup_changeling_genetic_matrix_recipes())
 
 /// Movespeed modifier used for genetic matrix passive bonuses.
