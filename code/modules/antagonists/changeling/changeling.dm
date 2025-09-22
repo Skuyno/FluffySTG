@@ -90,10 +90,66 @@
 	var/matrix_void_carapace_active = FALSE
 	/// Whether the adrenal spike matrix module is active.
 	var/matrix_adrenal_spike_active = FALSE
+	/// Whether the aether drake mantle matrix module is active.
+	var/matrix_aether_drake_active = FALSE
+	/// Whether the graviton ripsaw matrix module is active.
+	var/matrix_graviton_ripsaw_active = FALSE
+	/// Whether the hemolytic bloom matrix module is active.
+	var/matrix_hemolytic_bloom_active = FALSE
+	/// Whether the echo cascade matrix module is active.
+	var/matrix_echo_cascade_active = FALSE
+	/// Whether the abyssal slip matrix module is active.
+	var/matrix_abyssal_slip_active = FALSE
+	/// Whether the crystalline buffer matrix module is active.
+	var/matrix_crystalline_buffer_active = FALSE
+	/// Whether the ashen pump matrix module is active.
+	var/matrix_ashen_pump_active = FALSE
+	/// Whether the neuro sap matrix module is active.
+	var/matrix_neuro_sap_active = FALSE
+	/// Whether the neuro sap chemical bonus is currently applied.
+	var/matrix_neuro_sap_bonus_applied = FALSE
+	/// Whether the chitin courier matrix module is active.
+	var/matrix_chitin_courier_active = FALSE
+	/// Whether the memory archivist matrix module is active.
+	var/matrix_memory_archivist_active = FALSE
+	/// Whether the spore node matrix module is active.
+	var/matrix_spore_node_active = FALSE
+	/// Whether the chorus stasis matrix module is active.
+	var/matrix_chorus_stasis_active = FALSE
 	/// Mob currently registered for predator's sinew hit hooks.
 	var/mob/living/matrix_predator_sinew_bound_mob
 	/// Timer tracking a pending adrenal spike shockwave.
 	var/matrix_adrenal_spike_shockwave_timer
+	/// Cached mob registered for abyssal slip movement hooks.
+	var/mob/living/matrix_abyssal_slip_bound_mob
+	/// Cached resistance bonus granted by the aether drake mantle.
+	var/matrix_aether_drake_resist_bonus = 0
+	/// Whether aether drake mantle traits are currently applied.
+	var/matrix_aether_drake_traits_applied = FALSE
+	/// Pending timers spawned by echo cascade.
+	var/list/matrix_echo_cascade_pending = list()
+	/// Matrix-provided aether burst action instance.
+	var/datum/action/changeling/aether_burst/matrix_aether_burst_action
+	/// Matrix-provided chitin courier action instance.
+	var/datum/action/changeling/chitin_courier/matrix_chitin_courier_action
+	/// Matrix-provided memory archive action instance.
+	var/datum/action/changeling/memory_archive/matrix_memory_archivist_action
+	/// Matrix-provided spore node action instance.
+	var/datum/action/changeling/spore_node/matrix_spore_node_action
+	/// Matrix-provided chorus stasis action instance.
+	var/datum/action/changeling/chorus_stasis/matrix_chorus_stasis_action
+	/// Weak reference to an active spore node structure.
+	var/datum/weakref/matrix_spore_node_ref
+	/// Weak reference to an active chorus cocoon.
+	var/datum/weakref/matrix_chorus_cocoon_ref
+	/// Container for a stored item from chitin courier.
+	var/obj/effect/abstract/changeling_chitin_cache/matrix_chitin_courier_cache
+	/// Stored item within the chitin courier cache.
+	var/obj/item/matrix_chitin_courier_item
+	/// Queue of prepared memory fragments ready to share.
+	var/list/matrix_memory_fragments = list()
+	/// Tracks corpses that have already produced a hemolytic seed.
+	var/list/matrix_hemolytic_seeded = list()
 	/// Aggregated matrix effects currently applied to this changeling.
 	var/list/genetic_matrix_effect_cache = list()
 	/// Mob currently benefiting from passive matrix effect adjustments.
@@ -159,6 +215,18 @@
 
 /datum/antagonist/changeling/Destroy()
 	clear_matrix_passive_effects()
+	remove_matrix_aether_burst_action()
+	remove_matrix_aether_drake_traits()
+	remove_matrix_chitin_courier_action()
+	clear_chitin_courier_cache(drop_item = TRUE)
+	remove_matrix_memory_archivist_action()
+	remove_matrix_spore_node_action()
+	clear_spore_node()
+	remove_matrix_chorus_stasis_action()
+	clear_chorus_cocoon()
+	remove_matrix_abyssal_slip_traits()
+	unbind_abyssal_slip_signals()
+	clear_matrix_echo_cascade_timers()
 	QDEL_NULL(emporium_action)
 	QDEL_NULL(cellular_emporium)
 	QDEL_NULL(genetic_matrix_action)
@@ -376,6 +444,18 @@
 	update_matrix_predator_sinew_effect("matrix_predator_sinew" in active_ids)
 	update_matrix_void_carapace_effect("matrix_void_carapace" in active_ids)
 	update_matrix_adrenal_spike_effect("matrix_adrenal_spike" in active_ids)
+	update_matrix_aether_drake_effect("matrix_aether_drake_mantle" in active_ids)
+	update_matrix_graviton_ripsaw_effect("matrix_graviton_ripsaw" in active_ids)
+	update_matrix_hemolytic_bloom_effect("matrix_hemolytic_bloom" in active_ids)
+	update_matrix_echo_cascade_effect("matrix_echo_cascade" in active_ids)
+	update_matrix_abyssal_slip_effect("matrix_abyssal_slip" in active_ids)
+	update_matrix_crystalline_buffer_effect("matrix_crystalline_buffer" in active_ids)
+	update_matrix_ashen_pump_effect("matrix_ashen_pump" in active_ids)
+	update_matrix_neuro_sap_effect("matrix_neuro_sap" in active_ids)
+	update_matrix_chitin_courier_effect("matrix_chitin_courier" in active_ids)
+	update_matrix_memory_archivist_effect("matrix_memory_archivist" in active_ids)
+	update_matrix_spore_node_effect("matrix_spore_node" in active_ids)
+	update_matrix_chorus_stasis_effect("matrix_chorus_stasis" in active_ids)
 	update_matrix_passive_effects(active_ids)
 
 /datum/antagonist/changeling/proc/is_genetic_matrix_module_active(module_identifier)
@@ -530,6 +610,547 @@
 			continue
 		nearby.Knockdown(1.5 SECONDS)
 		nearby.adjustStaminaLoss(10)
+
+/datum/antagonist/changeling/proc/update_matrix_aether_drake_effect(is_active)
+	matrix_aether_drake_active = !!is_active
+	if(!matrix_aether_drake_active)
+		remove_matrix_aether_burst_action()
+		remove_matrix_aether_drake_traits()
+		return
+	ensure_matrix_aether_burst_action()
+	apply_matrix_aether_drake_traits()
+	var/datum/action/changeling/void_adaption/adaption = get_changeling_power_instance(/datum/action/changeling/void_adaption)
+	adaption?.sync_module_state(src)
+
+/datum/antagonist/changeling/proc/ensure_matrix_aether_burst_action()
+	if(!matrix_aether_drake_active)
+		return
+	if(!matrix_aether_burst_action)
+		matrix_aether_burst_action = new
+	if(owner?.current)
+		matrix_aether_burst_action.Grant(owner.current)
+
+/datum/antagonist/changeling/proc/remove_matrix_aether_burst_action()
+	if(!matrix_aether_burst_action)
+		return
+	if(owner?.current)
+		matrix_aether_burst_action.Remove(owner.current)
+	QDEL_NULL(matrix_aether_burst_action)
+
+/datum/antagonist/changeling/proc/apply_matrix_aether_drake_traits()
+	if(!matrix_aether_drake_active)
+		return
+	var/mob/living/living_owner = owner?.current
+	if(!isliving(living_owner))
+		return
+	if(!matrix_aether_drake_traits_applied)
+		living_owner.add_traits(list(TRAIT_SPACEWALK, TRAIT_FREE_HYPERSPACE_MOVEMENT), CHANGELING_TRAIT)
+		matrix_aether_drake_traits_applied = TRUE
+	if(istype(living_owner, /mob/living/carbon/human))
+		var/mob/living/carbon/human/human_owner = living_owner
+		var/datum/physiology/phys = human_owner.physiology
+		if(phys && !matrix_aether_drake_resist_bonus)
+			var/bonus = 0.15
+			phys.brute_mod *= (1 - bonus)
+			phys.burn_mod *= (1 - bonus)
+			matrix_aether_drake_resist_bonus = bonus
+
+/datum/antagonist/changeling/proc/remove_matrix_aether_drake_traits()
+	if(matrix_aether_drake_traits_applied && owner?.current)
+		owner.current.remove_traits(list(TRAIT_SPACEWALK, TRAIT_FREE_HYPERSPACE_MOVEMENT), CHANGELING_TRAIT)
+		matrix_aether_drake_traits_applied = FALSE
+	if(matrix_aether_drake_resist_bonus && ishuman(owner?.current))
+		var/mob/living/carbon/human/human_owner = owner.current
+		var/datum/physiology/phys = human_owner?.physiology
+		if(phys)
+			var/bonus = matrix_aether_drake_resist_bonus
+			phys.brute_mod /= max(1 - bonus, 0.01)
+			phys.burn_mod /= max(1 - bonus, 0.01)
+		matrix_aether_drake_resist_bonus = 0
+
+/datum/antagonist/changeling/proc/update_matrix_graviton_ripsaw_effect(is_active)
+	matrix_graviton_ripsaw_active = !!is_active
+
+/datum/antagonist/changeling/proc/update_matrix_hemolytic_bloom_effect(is_active)
+	matrix_hemolytic_bloom_active = !!is_active
+	if(!matrix_hemolytic_bloom_active)
+		matrix_hemolytic_seeded.Cut()
+
+/datum/antagonist/changeling/proc/update_matrix_echo_cascade_effect(is_active)
+	matrix_echo_cascade_active = !!is_active
+	if(!matrix_echo_cascade_active)
+		clear_matrix_echo_cascade_timers()
+
+/datum/antagonist/changeling/proc/clear_matrix_echo_cascade_timers()
+	if(!LAZYLEN(matrix_echo_cascade_pending))
+		return
+	for(var/timer_id in matrix_echo_cascade_pending)
+		deltimer(timer_id)
+	matrix_echo_cascade_pending.Cut()
+
+/datum/antagonist/changeling/proc/update_matrix_abyssal_slip_effect(is_active)
+	matrix_abyssal_slip_active = !!is_active
+	if(!matrix_abyssal_slip_active)
+		remove_matrix_abyssal_slip_traits()
+		unbind_abyssal_slip_signals()
+		return
+	apply_matrix_abyssal_slip_traits()
+	bind_abyssal_slip_signals(owner?.current)
+
+/datum/antagonist/changeling/proc/apply_matrix_abyssal_slip_traits()
+	if(!matrix_abyssal_slip_active || !owner?.current)
+		return
+	owner.current.add_traits(list(TRAIT_SILENT_FOOTSTEPS, TRAIT_LIGHT_STEP), CHANGELING_TRAIT)
+
+/datum/antagonist/changeling/proc/remove_matrix_abyssal_slip_traits()
+	if(!owner?.current)
+		return
+	owner.current.remove_traits(list(TRAIT_SILENT_FOOTSTEPS, TRAIT_LIGHT_STEP), CHANGELING_TRAIT)
+
+/datum/antagonist/changeling/proc/bind_abyssal_slip_signals(mob/living/new_host)
+	if(matrix_abyssal_slip_bound_mob == new_host)
+		return
+	unbind_abyssal_slip_signals()
+	if(!matrix_abyssal_slip_active || !isliving(new_host))
+		return
+	RegisterSignal(new_host, COMSIG_MOVABLE_MOVED, PROC_REF(on_abyssal_slip_moved))
+	matrix_abyssal_slip_bound_mob = new_host
+
+/datum/antagonist/changeling/proc/unbind_abyssal_slip_signals()
+	if(!matrix_abyssal_slip_bound_mob)
+		return
+	UnregisterSignal(matrix_abyssal_slip_bound_mob, COMSIG_MOVABLE_MOVED)
+	matrix_abyssal_slip_bound_mob = null
+
+/datum/antagonist/changeling/proc/on_abyssal_slip_moved(atom/movable/source, atom/old_loc, move_dir, forced, list/atom/old_locs)
+	SIGNAL_HANDLER
+	if(!matrix_abyssal_slip_active || source != matrix_abyssal_slip_bound_mob)
+		return
+	var/mob/living/living_owner = matrix_abyssal_slip_bound_mob
+	if(!HAS_TRAIT(living_owner, TRAIT_CHAMELEON_SKIN))
+		return
+	var/turf/current_turf = get_turf(living_owner)
+	if(!istype(current_turf))
+		return
+	var/should_blend = current_turf.get_lumcount() <= LIGHTING_TILE_IS_DARK
+	if(!should_blend)
+		for(var/dir in GLOB.cardinals)
+			var/turf/adjacent = get_step(current_turf, dir)
+			if(!istype(adjacent))
+				continue
+			if(adjacent.density || adjacent.is_blocked_turf(TRUE, source_atom = living_owner))
+				should_blend = TRUE
+				break
+	if(!should_blend)
+		return
+	living_owner.alpha = min(living_owner.alpha, 170)
+
+/datum/antagonist/changeling/proc/update_matrix_crystalline_buffer_effect(is_active)
+	matrix_crystalline_buffer_active = !!is_active
+	var/mob/living/living_owner = owner?.current
+	if(!living_owner)
+		return
+	if(matrix_crystalline_buffer_active)
+		living_owner.apply_status_effect(/datum/status_effect/changeling_crystalline_buffer, src)
+	else
+		living_owner.remove_status_effect(/datum/status_effect/changeling_crystalline_buffer)
+
+/datum/antagonist/changeling/proc/update_matrix_ashen_pump_effect(is_active)
+	matrix_ashen_pump_active = !!is_active
+	if(!matrix_ashen_pump_active && owner?.current)
+		owner.current.remove_status_effect(/datum/status_effect/changeling_ashen_pump)
+
+/datum/antagonist/changeling/proc/update_matrix_neuro_sap_effect(is_active)
+	matrix_neuro_sap_active = !!is_active
+	if(!matrix_neuro_sap_active && owner?.current)
+		owner.current.remove_status_effect(/datum/status_effect/changeling_neuro_sap)
+	remove_neuro_sap_bonus()
+
+/datum/antagonist/changeling/proc/update_matrix_chitin_courier_effect(is_active)
+	matrix_chitin_courier_active = !!is_active
+	if(!matrix_chitin_courier_active)
+		remove_matrix_chitin_courier_action()
+		clear_chitin_courier_cache(drop_item = TRUE)
+		return
+	ensure_matrix_chitin_courier_action()
+
+/datum/antagonist/changeling/proc/ensure_matrix_chitin_courier_action()
+	if(!matrix_chitin_courier_active)
+		return
+	if(!matrix_chitin_courier_action)
+		matrix_chitin_courier_action = new
+	if(owner?.current)
+		matrix_chitin_courier_action.Grant(owner.current)
+
+/datum/antagonist/changeling/proc/remove_matrix_chitin_courier_action()
+	if(!matrix_chitin_courier_action)
+		return
+	if(owner?.current)
+		matrix_chitin_courier_action.Remove(owner.current)
+	QDEL_NULL(matrix_chitin_courier_action)
+
+/datum/antagonist/changeling/proc/update_matrix_memory_archivist_effect(is_active)
+	matrix_memory_archivist_active = !!is_active
+	if(!matrix_memory_archivist_active)
+		remove_matrix_memory_archivist_action()
+		matrix_memory_fragments.Cut()
+		return
+	ensure_matrix_memory_archivist_action()
+
+/datum/antagonist/changeling/proc/ensure_matrix_memory_archivist_action()
+	if(!matrix_memory_archivist_active)
+		return
+	if(!matrix_memory_archivist_action)
+		matrix_memory_archivist_action = new
+	if(owner?.current)
+		matrix_memory_archivist_action.Grant(owner.current)
+
+/datum/antagonist/changeling/proc/remove_matrix_memory_archivist_action()
+	if(!matrix_memory_archivist_action)
+		return
+	if(owner?.current)
+		matrix_memory_archivist_action.Remove(owner.current)
+	QDEL_NULL(matrix_memory_archivist_action)
+
+/datum/antagonist/changeling/proc/queue_memory_fragment(mob/living/carbon/human/target, list/recent_speech)
+	if(!matrix_memory_archivist_active || !istype(target))
+		return
+	var/list/fragment = list(
+		"name" = target.real_name,
+		"assignment" = target.get_assignment() || target.job || target.mind?.assigned_role || "Unknown",
+		"key" = target.key || "",
+		"speech" = islist(recent_speech) ? recent_speech.Copy() : list(),
+		"time" = world.time,
+	)
+	matrix_memory_fragments += list(fragment)
+	while(matrix_memory_fragments.len > 3)
+		matrix_memory_fragments.Cut(1, 2)
+
+/datum/antagonist/changeling/proc/share_memory_fragment(mob/living/user, mob/living/target)
+	if(!matrix_memory_archivist_active || !matrix_memory_fragments.len)
+		user?.balloon_alert(user, "no archives")
+		return FALSE
+	if(!istype(user) || !istype(target))
+		return FALSE
+	if(!user.Adjacent(target))
+		user.balloon_alert(user, "too far")
+		return FALSE
+	var/list/fragment = matrix_memory_fragments[1]
+	matrix_memory_fragments.Cut(1, 2)
+	var/name = fragment["name"]
+	var/assignment = fragment["assignment"]
+	var/key = fragment["key"]
+	var/list/speech = fragment["speech"]
+	user.visible_message(
+		span_warning("[user] presses a palm to [target], sharing a flicker of stolen memory."),
+		span_changeling("We release a fragment of [name]'s life."),
+	)
+	var/list/messages = list(
+		span_notice("A whisper of [name], [assignment]."),
+	)
+	if(key)
+		messages += span_notice("Their credentials echo with the key <b>[key]</b>.")
+	if(LAZYLEN(speech))
+		messages += span_notice("Snatches of speech linger:")
+	for(var/sample in speech)
+		messages += span_notice(""[sample]"")
+	for(var/message in messages)
+		to_chat(target, message)
+	playsound(target, 'sound/magic/mindswap.ogg', 50, TRUE)
+	return TRUE
+
+/datum/antagonist/changeling/proc/apply_neuro_sap_bonus()
+	if(matrix_neuro_sap_bonus_applied)
+		return
+	chem_recharge_rate += 0.4
+	matrix_neuro_sap_bonus_applied = TRUE
+
+/datum/antagonist/changeling/proc/remove_neuro_sap_bonus()
+	if(!matrix_neuro_sap_bonus_applied)
+		return
+	chem_recharge_rate -= 0.4
+	matrix_neuro_sap_bonus_applied = FALSE
+
+/datum/antagonist/changeling/proc/schedule_resonant_echo(mob/living/user, range, confusion_mult)
+	if(!matrix_echo_cascade_active || !istype(user))
+		return
+	var/id_one = addtimer(CALLBACK(src, PROC_REF(perform_resonant_echo), user, range, confusion_mult, 1), 1.2 SECONDS, TIMER_STOPPABLE)
+	var/id_two = addtimer(CALLBACK(src, PROC_REF(perform_resonant_echo), user, max(range - 1, 0), confusion_mult, 2), 2.4 SECONDS, TIMER_STOPPABLE)
+	if(id_one)
+		matrix_echo_cascade_pending += id_one
+	if(id_two)
+		matrix_echo_cascade_pending += id_two
+
+/datum/antagonist/changeling/proc/perform_resonant_echo(mob/living/user, range, confusion_mult, echo_index)
+	if(!matrix_echo_cascade_active || !istype(user) || user.stat == DEAD)
+		return
+	var/turf/user_turf = get_turf(user)
+	if(user_turf)
+		playsound(user_turf, 'sound/effects/screech.ogg', 40, TRUE)
+	var/confusion = round(12 SECONDS * confusion_mult / max(echo_index, 1))
+	var/jitter = round(60 SECONDS * confusion_mult / max(echo_index, 1))
+	for(var/mob/living/target in get_hearers_in_view(max(range, 0), user))
+		if(target == user || IS_CHANGELING(target))
+			continue
+		if(iscarbon(target))
+			var/mob/living/carbon/C = target
+			C.adjust_confusion(confusion)
+			C.set_jitter_if_lower(jitter)
+			C.apply_status_effect(/datum/status_effect/dazed, 2 SECONDS)
+		else if(issilicon(target))
+			target.Paralyze(10)
+
+/datum/antagonist/changeling/proc/schedule_dissonant_echo(mob/living/user, heavy_range, light_range)
+	if(!matrix_echo_cascade_active || !istype(user))
+		return
+	var/id_one = addtimer(CALLBACK(src, PROC_REF(perform_dissonant_echo), user, heavy_range, light_range, 1), 1.2 SECONDS, TIMER_STOPPABLE)
+	var/id_two = addtimer(CALLBACK(src, PROC_REF(perform_dissonant_echo), user, max(heavy_range - 1, 0), max(light_range - 1, 0), 2), 2.4 SECONDS, TIMER_STOPPABLE)
+	if(id_one)
+		matrix_echo_cascade_pending += id_one
+	if(id_two)
+		matrix_echo_cascade_pending += id_two
+
+/datum/antagonist/changeling/proc/perform_dissonant_echo(mob/living/user, heavy_range, light_range, echo_index)
+	if(!matrix_echo_cascade_active || !istype(user) || user.stat == DEAD)
+		return
+	var/turf/user_turf = get_turf(user)
+	if(user_turf)
+		playsound(user_turf, 'sound/items/weapons/flash.ogg', 45, TRUE)
+	empulse(user_turf, max(heavy_range, 0), max(light_range, 0), 1)
+	for(var/mob/living/target in oview(max(light_range, 0), user))
+		if(target == user || IS_CHANGELING(target))
+			continue
+		if(issilicon(target))
+			target.Paralyze(10)
+		else
+			target.adjustStaminaLoss(8)
+
+/datum/antagonist/changeling/proc/handle_graviton_ripsaw_hit(atom/target, mob/living/user)
+	if(!matrix_graviton_ripsaw_active || !istype(user))
+		return
+	if(isliving(target))
+		var/mob/living/living_target = target
+		if(living_target.stat != DEAD)
+			living_target.apply_status_effect(/datum/status_effect/changeling_gravitic_pull, user)
+	else if(istype(target, /atom))
+		handle_graviton_ripsaw_anchor_hit(target, user)
+
+/datum/antagonist/changeling/proc/handle_graviton_ripsaw_anchor_hit(atom/anchor, mob/living/user)
+	if(!matrix_graviton_ripsaw_active || user.has_gravity())
+		return
+	var/turf/anchor_turf = get_turf(anchor)
+	var/turf/user_turf = get_turf(user)
+	if(!anchor_turf || !user_turf)
+		return
+	var/dir = get_dir(user_turf, anchor_turf)
+	if(!dir)
+		dir = user.dir
+	var/turf/destination = get_step(anchor_turf, dir)
+	if(!destination)
+		destination = get_step(user_turf, dir)
+	if(destination)
+		user.throw_at(destination, 4, 1, user, gentle = TRUE)
+
+/datum/antagonist/changeling/proc/handle_hemolytic_bloom_hit(atom/target, mob/living/user)
+	if(!matrix_hemolytic_bloom_active || !isliving(target) || !istype(user))
+		return
+	var/mob/living/living_target = target
+	if(isliving(user))
+		user.adjustBruteLoss(-0.8, forced = TRUE)
+		adjust_chemicals(1)
+	if(iscarbon(living_target))
+		var/mob/living/carbon/C = living_target
+		var/zone = BODY_ZONE_CHEST
+		if(istype(user, /mob/living/carbon))
+			var/mob/living/carbon/attacker = user
+			zone = attacker.zone_selected || BODY_ZONE_CHEST
+		var/obj/item/bodypart/part = C.get_bodypart(zone)
+		if(!part)
+			part = C.get_bodypart(BODY_ZONE_CHEST)
+		part?.adjustBleedStacks(3, 0)
+	if(living_target.stat == DEAD)
+		for(var/datum/weakref/ref in matrix_hemolytic_seeded.Copy())
+			var/mob/living/cached = ref?.resolve()
+			if(!cached)
+				matrix_hemolytic_seeded -= ref
+		if(!(WEAKREF(living_target) in matrix_hemolytic_seeded))
+			spawn_hemolytic_seed(living_target)
+
+/datum/antagonist/changeling/proc/spawn_hemolytic_seed(mob/living/victim)
+	if(!matrix_hemolytic_bloom_active || !istype(victim))
+		return
+	var/turf/location = get_turf(victim)
+	if(!istype(location))
+		return
+	matrix_hemolytic_seeded += WEAKREF(victim)
+	new /obj/effect/temp_visual/changeling_hemolytic_seed(location, victim, src)
+
+/datum/antagonist/changeling/proc/on_gene_stim_used(mob/living/carbon/user)
+	if(!matrix_ashen_pump_active || !istype(user))
+		return
+	user.apply_status_effect(/datum/status_effect/changeling_ashen_pump, src)
+	adjust_chemicals(-5)
+
+/datum/antagonist/changeling/proc/on_panacea_used(mob/living/carbon/user)
+	if(!matrix_neuro_sap_active || !istype(user))
+		return
+	user.apply_status_effect(/datum/status_effect/changeling_neuro_sap, src)
+
+/datum/antagonist/changeling/proc/update_matrix_spore_node_effect(is_active)
+	matrix_spore_node_active = !!is_active
+	if(!matrix_spore_node_active)
+		remove_matrix_spore_node_action()
+		clear_spore_node()
+		return
+	ensure_matrix_spore_node_action()
+
+/datum/antagonist/changeling/proc/ensure_matrix_spore_node_action()
+	if(!matrix_spore_node_active)
+		return
+	if(!matrix_spore_node_action)
+		matrix_spore_node_action = new
+	if(owner?.current)
+		matrix_spore_node_action.Grant(owner.current)
+
+/datum/antagonist/changeling/proc/remove_matrix_spore_node_action()
+	if(!matrix_spore_node_action)
+		return
+	if(owner?.current)
+		matrix_spore_node_action.Remove(owner.current)
+	QDEL_NULL(matrix_spore_node_action)
+
+/datum/antagonist/changeling/proc/update_matrix_chorus_stasis_effect(is_active)
+	matrix_chorus_stasis_active = !!is_active
+	if(!matrix_chorus_stasis_active)
+		remove_matrix_chorus_stasis_action()
+		clear_chorus_cocoon()
+		return
+	ensure_matrix_chorus_stasis_action()
+
+/datum/antagonist/changeling/proc/ensure_matrix_chorus_stasis_action()
+	if(!matrix_chorus_stasis_active)
+		return
+	if(!matrix_chorus_stasis_action)
+		matrix_chorus_stasis_action = new
+	if(owner?.current)
+		matrix_chorus_stasis_action.Grant(owner.current)
+
+/datum/antagonist/changeling/proc/remove_matrix_chorus_stasis_action()
+	if(!matrix_chorus_stasis_action)
+		return
+	if(owner?.current)
+		matrix_chorus_stasis_action.Remove(owner.current)
+	QDEL_NULL(matrix_chorus_stasis_action)
+
+/datum/antagonist/changeling/proc/stash_chitin_courier_item(obj/item/held_item, mob/living/user)
+	if(!matrix_chitin_courier_active || !istype(held_item))
+		return FALSE
+	if(matrix_chitin_courier_item)
+		clear_chitin_courier_cache(drop_item = TRUE)
+	if(!matrix_chitin_courier_cache)
+		matrix_chitin_courier_cache = new(user)
+	matrix_chitin_courier_cache.forceMove(user)
+	held_item.forceMove(matrix_chitin_courier_cache)
+	matrix_chitin_courier_item = held_item
+	user.visible_message(
+		span_warning("[user] flexes [user.p_their()] arm as flesh folds swallow [held_item]!"),
+		span_changeling("We thread [held_item] into a hidden courier sac."),
+	)
+	return TRUE
+
+/datum/antagonist/changeling/proc/retrieve_chitin_courier_item(mob/living/user)
+	if(!matrix_chitin_courier_item)
+		return FALSE
+	var/obj/item/stored = matrix_chitin_courier_item
+	matrix_chitin_courier_item = null
+	if(!istype(user))
+		stored.forceMove(get_turf(stored))
+		clear_chitin_courier_cache()
+		return TRUE
+	if(!user.put_in_hands(stored))
+		stored.forceMove(get_turf(user))
+	user.visible_message(
+		span_warning("[user] flexes and extrudes [stored] from beneath [user.p_their()] skin!"),
+		span_changeling("We regurgitate our cached [stored]."),
+	)
+	clear_chitin_courier_cache()
+	return TRUE
+
+/datum/antagonist/changeling/proc/clear_chitin_courier_cache(drop_item = FALSE)
+	if(matrix_chitin_courier_item)
+		var/obj/item/stored = matrix_chitin_courier_item
+		matrix_chitin_courier_item = null
+		if(drop_item)
+			var/turf/drop_loc = get_turf(owner?.current) || get_turf(stored)
+			stored.forceMove(drop_loc)
+		else
+			stored.forceMove(get_turf(stored))
+	QDEL_NULL(matrix_chitin_courier_cache)
+
+/datum/antagonist/changeling/proc/place_spore_node(turf/location, mob/living/user)
+	if(!matrix_spore_node_active || !istype(location))
+		return FALSE
+	clear_spore_node()
+	var/obj/structure/changeling_spore_node/node = new(location, src)
+	matrix_spore_node_ref = WEAKREF(node)
+	if(istype(user))
+		user.visible_message(
+			span_warning("[user] plants a throbbing spore node that quickly roots into the floor!"),
+			span_changeling("We seed a pheromone node to watch this space."),
+		)
+	return TRUE
+
+/datum/antagonist/changeling/proc/detonate_spore_node(mob/living/user)
+	var/obj/structure/changeling_spore_node/node = matrix_spore_node_ref?.resolve()
+	if(!node)
+		return FALSE
+	node.detonate(user)
+	return TRUE
+
+/datum/antagonist/changeling/proc/spore_node_detonated(mob/living/user)
+	matrix_spore_node_ref = null
+	if(!istype(user))
+		return
+	to_chat(user, span_changeling("Our spore node ruptures, flooding the area with grasping spores."))
+
+/datum/antagonist/changeling/proc/clear_spore_node(obj/structure/changeling_spore_node/ignore)
+	var/obj/structure/changeling_spore_node/current = matrix_spore_node_ref?.resolve()
+	if(current && (!ignore || ignore != current))
+		qdel(current)
+	matrix_spore_node_ref = null
+
+/datum/antagonist/changeling/proc/handle_chorus_stasis_activation(mob/living/user, mob/living/target)
+	if(!matrix_chorus_stasis_active || !istype(user))
+		return FALSE
+	var/obj/structure/changeling_chorus_cocoon/current = matrix_chorus_cocoon_ref?.resolve()
+	if(current)
+		current.detonate(user)
+		return TRUE
+	var/turf/location = get_turf(user)
+	if(!istype(location) || location.is_blocked_turf(TRUE, source_atom = user))
+		user.balloon_alert(user, "bad turf")
+		return FALSE
+	var/obj/structure/changeling_chorus_cocoon/cocoon = new(location, src)
+	matrix_chorus_cocoon_ref = WEAKREF(cocoon)
+	cocoon.add_occupant(user)
+	if(istype(target) && target != user && user.Adjacent(target))
+		cocoon.add_occupant(target)
+	user.visible_message(
+		span_warning("[user] weaves a muffled cocoon of tendrils!"),
+		span_changeling("We spin a chorus cocoon to hide and recover."),
+	)
+	return TRUE
+
+/datum/antagonist/changeling/proc/chorus_cocoon_detonated(mob/living/user)
+	matrix_chorus_cocoon_ref = null
+	if(istype(user))
+		to_chat(user, span_changeling("We rupture the cocoon in a wash of soporific spores."))
+
+/datum/antagonist/changeling/proc/clear_chorus_cocoon(obj/structure/changeling_chorus_cocoon/ignore)
+	var/obj/structure/changeling_chorus_cocoon/current = matrix_chorus_cocoon_ref?.resolve()
+	if(current && (!ignore || ignore != current))
+		qdel(current)
+	matrix_chorus_cocoon_ref = null
 
 /datum/antagonist/changeling/proc/clear_matrix_passive_effects()
 	if(matrix_passive_effects_bound_mob)

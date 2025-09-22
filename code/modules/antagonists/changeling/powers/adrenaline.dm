@@ -25,6 +25,7 @@
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
 	changeling_data?.apply_matrix_adrenal_overdrive(user)
 	changeling_data?.schedule_adrenal_spike_shockwave(user)
+	changeling_data?.on_gene_stim_used(user)
 
 	return TRUE
 
