@@ -4,9 +4,6 @@ GLOBAL_LIST_EMPTY(cable_list)
 /// List of all portals
 GLOBAL_LIST_EMPTY(portals)
 
-/// Active changeling chorus cocoons tracked for cleanup and limiting
-GLOBAL_LIST_EMPTY(changeling_chorus_cocoons)
-
 /// List of all curtains for button tracking
 GLOBAL_LIST_EMPTY(curtains)
 
