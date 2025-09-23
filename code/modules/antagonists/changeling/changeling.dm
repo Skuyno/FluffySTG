@@ -1197,6 +1197,8 @@
 		chorus_target = null
 	var/mob/living/occupant = chorus_target || user
 	var/obj/structure/changeling_chorus_cocoon/cocoon = new(location, src)
+	if(cocoon)
+		cocoon.changeling_ref = WEAKREF(src)
 	if(!cocoon.add_occupant(occupant))
 		qdel(cocoon)
 		return FALSE
