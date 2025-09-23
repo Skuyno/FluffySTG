@@ -1,8 +1,7 @@
-
 /datum/action/changeling/chorus_stasis
 	name = "Chorus Stasis"
-	desc = "Spin a cocoon around ourselves or an adjacent creature, rapidly knitting wounds until detonated. Costs 18 chemicals."
-	helptext = "Requires the Chorus Stasis key. Target an adjacent mob to cocoon them instead; reuse while it exists to detonate it."
+	desc = "Weave a living cocoon that shelters and mends its occupant. Costs 18 chemicals."
+	helptext = "Requires the Chorus Stasis key. Target an adjacent creature to wrap them immediately; otherwise we climb inside ourselves. Only one cocoon may exist at a time."
 	button_icon_state = "fake_death"
 	chemical_cost = 18
 	dna_cost = CHANGELING_POWER_UNOBTAINABLE
@@ -18,7 +17,7 @@
 
 /obj/structure/changeling_chorus_cocoon
 	name = "chorus cocoon"
-	desc = "A resonant changeling pod humming with layered heartbeats."
+	desc = "A resonant changeling pod lined with patient heartbeats."
 	icon = 'icons/mob/simple/meteor_heart.dmi'
 	icon_state = "flesh_pod_open"
 	anchored = TRUE
@@ -29,77 +28,63 @@
 	obj_flags = CAN_BE_HIT
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 	max_integrity = 80
-	/// Changeling maintaining the cocoon.
+	/// Changeling maintaining this cocoon.
 	var/datum/weakref/changeling_ref
 	/// Mob currently wrapped within the cocoon.
 	var/mob/living/current_occupant
 
 /obj/structure/changeling_chorus_cocoon/Initialize(mapload, datum/antagonist/changeling/changeling_data)
 	. = ..()
-	if(changeling_data)
-		changeling_ref = WEAKREF(changeling_data)
+	if(istype(changeling_data))
+		bind_to_changeling(changeling_data)
 	START_PROCESSING(SSobj, src)
-	GLOB.changeling_chorus_cocoons += src
-	update_cocoon_appearance()
+	if(!(src in GLOB.changeling_chorus_cocoons))
+		GLOB.changeling_chorus_cocoons += src
+	refresh_visual_state()
 	return .
 
 /obj/structure/changeling_chorus_cocoon/Destroy()
-	var/list/occupants = buckled_mobs ? buckled_mobs.Copy() : null
-	if(length(occupants))
-		for(var/mob/living/occupant in occupants)
-			unbuckle_mob(occupant, force = TRUE, can_fall = FALSE)
-	set_current_occupant(null)
+	release_occupant(TRUE)
 	STOP_PROCESSING(SSobj, src)
 	GLOB.changeling_chorus_cocoons -= src
 	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
-	changeling_data?.clear_chorus_cocoon(src)
 	changeling_ref = null
+	changeling_data?.notify_chorus_cocoon_removed(src)
 	return ..()
 
-/obj/structure/changeling_chorus_cocoon/process(seconds_per_tick)
-	if(!length(buckled_mobs))
-		if(current_occupant)
-			set_current_occupant(null)
+/obj/structure/changeling_chorus_cocoon/proc/bind_to_changeling(datum/antagonist/changeling/changeling_data)
+	if(!istype(changeling_data))
 		return
-	var/mob/living/occupant = locate(/mob/living) in buckled_mobs
-	if(!istype(occupant) || QDELETED(occupant))
-		if(current_occupant)
-			set_current_occupant(null)
-		return
-	if(occupant != current_occupant)
-		set_current_occupant(occupant)
-	maintain_occupant(occupant, seconds_per_tick)
+	changeling_ref = WEAKREF(changeling_data)
 
-/obj/structure/changeling_chorus_cocoon/proc/add_occupant(mob/living/victim)
-	if(!isliving(victim))
-		return FALSE
-	if(length(buckled_mobs) >= max_buckled_mobs)
-		return FALSE
-	if(!victim.buckle_mob(src, force = TRUE, check_loc = TRUE))
-		return FALSE
-	victim.visible_message(
-		span_warning("[victim] is swallowed by [src]!"),
-		span_userdanger("A thick chorus of tendrils binds you inside the cocoon!"),
-	)
-	to_chat(victim, span_notice("A soothing chorus thrums through your body, beginning to knit your wounds."))
-	return TRUE
+/obj/structure/changeling_chorus_cocoon/proc/release_occupant(force_release = FALSE)
+	if(!current_occupant)
+		return
+	var/mob/living/victim = current_occupant
+	if(victim.buckled != src)
+		set_current_occupant(null)
+		return
+	unbuckle_mob(victim, force = TRUE, can_fall = FALSE)
+	if(force_release && victim)
+		victim.forceMove(get_turf(src))
 
 /obj/structure/changeling_chorus_cocoon/post_buckle_mob(mob/living/buckled_mob)
 	. = ..()
+	if(QDELETED(src))
+		return
 	set_current_occupant(buckled_mob)
-	update_cocoon_appearance()
-
-/obj/structure/changeling_chorus_cocoon/proc/update_cocoon_appearance()
-	if(length(buckled_mobs))
-		icon_state = "flesh_pod"
-	else
-		icon_state = "flesh_pod_open"
+	refresh_visual_state()
+	if(istype(buckled_mob))
+		buckled_mob.visible_message(
+			span_warning("[buckled_mob] is wrapped in [src]!"),
+			span_notice("The cocoon folds shut, filling your ears with calming chords."),
+		)
 
 /obj/structure/changeling_chorus_cocoon/post_unbuckle_mob(mob/living/unbuckled_mob)
 	. = ..()
 	if(unbuckled_mob == current_occupant)
 		set_current_occupant(null)
-	update_cocoon_appearance()
+	refresh_visual_state()
 
 /obj/structure/changeling_chorus_cocoon/proc/set_current_occupant(mob/living/new_occupant)
 	if(current_occupant == new_occupant)
@@ -115,81 +100,101 @@
 /obj/structure/changeling_chorus_cocoon/proc/apply_cocoon_effects(mob/living/victim)
 	if(!istype(victim))
 		return
-	victim.SetInvisibility(INVISIBILITY_MAXIMUM, id = REF(src))
 	victim.extinguish_mob()
-	victim.add_traits(list(TRAIT_HANDS_BLOCKED, TRAIT_IMMOBILIZED, TRAIT_STASIS, TRAIT_ANALGESIA), REF(src))
+	victim.add_traits(list(TRAIT_ANALGESIA), REF(src))
+	victim.SetSleeping(2 SECONDS)
 
 /obj/structure/changeling_chorus_cocoon/proc/remove_cocoon_effects(mob/living/victim)
 	if(!istype(victim))
 		return
-	victim.RemoveInvisibility(REF(src))
-	victim.remove_traits(list(TRAIT_HANDS_BLOCKED, TRAIT_IMMOBILIZED, TRAIT_STASIS, TRAIT_ANALGESIA), REF(src))
+	victim.remove_traits(list(TRAIT_ANALGESIA), REF(src))
 	victim.SetSleeping(0)
+
+/obj/structure/changeling_chorus_cocoon/proc/refresh_visual_state()
+	icon_state = length(buckled_mobs) ? "flesh_pod" : "flesh_pod_open"
+
+/obj/structure/changeling_chorus_cocoon/process(seconds_per_tick)
+	var/mob/living/occupant = locate(/mob/living) in buckled_mobs
+	if(!istype(occupant) || QDELETED(occupant))
+		if(current_occupant)
+			set_current_occupant(null)
+		return
+	if(occupant != current_occupant)
+		set_current_occupant(occupant)
+	maintain_occupant(occupant, seconds_per_tick)
 
 /obj/structure/changeling_chorus_cocoon/proc/maintain_occupant(mob/living/victim, seconds_between_ticks)
 	if(!istype(victim))
 		return
 	if(victim.stat != DEAD)
 		heal_occupant(victim, seconds_between_ticks)
-	if(!HAS_TRAIT(victim, TRAIT_STASIS) || !HAS_TRAIT(victim, TRAIT_HANDS_BLOCKED) || !HAS_TRAIT(victim, TRAIT_IMMOBILIZED))
+	if(!HAS_TRAIT(victim, TRAIT_ANALGESIA))
 		apply_cocoon_effects(victim)
 	victim.SetSleeping(2 SECONDS)
 
 /obj/structure/changeling_chorus_cocoon/proc/heal_occupant(mob/living/victim, seconds_between_ticks)
 	var/heal_scale = max(seconds_between_ticks, 0)
-	var/brute_heal = 6 * heal_scale
-	var/burn_heal = 6 * heal_scale
-	var/stamina_heal = 12 * heal_scale
+	var/brute_heal = 5 * heal_scale
+	var/burn_heal = 5 * heal_scale
+	var/stamina_heal = 10 * heal_scale
 	victim.heal_overall_damage(brute = brute_heal, burn = burn_heal, stamina = stamina_heal, forced = TRUE, updating_health = FALSE)
-	victim.adjustToxLoss(-4 * heal_scale, forced = TRUE)
-	victim.adjustOxyLoss(-8 * heal_scale, updating_health = FALSE, forced = TRUE)
-	victim.adjust_drowsiness(-5 * heal_scale)
+	victim.adjustToxLoss(-2 * heal_scale, forced = TRUE)
+	victim.adjustOxyLoss(-6 * heal_scale, updating_health = FALSE, forced = TRUE)
+	victim.adjust_drowsiness(-4 * heal_scale)
 	victim.extinguish_mob()
 	if(iscarbon(victim))
 		var/mob/living/carbon/carbon_victim = victim
 		if(carbon_victim.blood_volume && carbon_victim.blood_volume < BLOOD_VOLUME_NORMAL)
-			carbon_victim.blood_volume = min(carbon_victim.blood_volume + (4 * heal_scale), BLOOD_VOLUME_NORMAL)
+			carbon_victim.blood_volume = min(carbon_victim.blood_volume + (3 * heal_scale), BLOOD_VOLUME_NORMAL)
 	victim.updatehealth()
 	victim.update_stamina()
 
+/obj/structure/changeling_chorus_cocoon/proc/accept_occupant(mob/living/victim)
+	if(!istype(victim))
+		return FALSE
+	if(victim.buckled || isobj(victim.loc))
+		return FALSE
+	if(!victim.buckle_mob(src, force = TRUE, check_loc = TRUE))
+		return FALSE
+	return TRUE
+
 /obj/structure/changeling_chorus_cocoon/attack_hand(mob/user, list/modifiers)
 	. = ..()
+	if(.)
+		return TRUE
 	if(!isliving(user))
 		return TRUE
-	if(HAS_TRAIT(user, TRAIT_HANDS_BLOCKED))
+	if(length(buckled_mobs))
+		if(HAS_TRAIT(user, TRAIT_HANDS_BLOCKED))
+			return TRUE
+		var/mob/living/occupant = locate(/mob/living) in buckled_mobs
+		user.visible_message(
+			span_warning("[user] pulls at [src]'s seams, trying to free [occupant]!"),
+			span_warning("You start peeling open the cocoon."),
+		)
+		if(!do_after(user, 3 SECONDS, target = src))
+			return TRUE
+		if(QDELETED(src))
+			return TRUE
+		if(occupant && occupant.buckled == src)
+			user.visible_message(
+				span_warning("[user] tears open [src], freeing [occupant]!"),
+				span_notice("You rip the cocoon apart and pull [occupant] free."),
+			)
+			release_occupant()
+		refresh_visual_state()
 		return TRUE
 	user.visible_message(
-		span_warning("[user] claws at [src], tearing at its tendrils!"),
-		span_warning("You start ripping apart the cocoon..."),
+		span_warning("[user] starts rending [src] apart!"),
+		span_warning("You begin to tear down the cocoon."),
 	)
-	if(!do_after(user, 2.5 SECONDS, target = src))
+	if(!do_after(user, 2 SECONDS, target = src))
 		return TRUE
 	if(QDELETED(src))
 		return TRUE
-	visible_message(
-		span_danger("[src] splits apart under the assault!"),
-		span_notice("We rip open the cocoon."),
+	user.visible_message(
+		span_danger("[src] collapses into slack flesh at [user]'s touch!"),
+		span_notice("You dismantle the chorus cocoon."),
 	)
 	qdel(src)
 	return TRUE
-
-/obj/structure/changeling_chorus_cocoon/proc/detonate(mob/living/user)
-	playsound(src, 'sound/effects/magic/clockwork/anima_fragment_attack.ogg', 60, TRUE)
-	visible_message(
-		span_danger("[src] ruptures in a wave of soporific gas!"),
-		span_notice("We unravel the cocoon, flooding the area with muting spores."),
-	)
-	var/list/occupants = buckled_mobs ? buckled_mobs.Copy() : null
-	if(length(occupants))
-		for(var/mob/living/occupant in occupants)
-			unbuckle_mob(occupant, force = TRUE, can_fall = FALSE)
-			occupant.Knockdown(2 SECONDS)
-	for(var/mob/living/target in range(3, src))
-		if(target.stat == DEAD || IS_CHANGELING(target))
-			continue
-		target.adjustStaminaLoss(50)
-		target.Knockdown(4 SECONDS)
-		target.adjust_confusion(60)
-	qdel(src)
-	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
-	changeling_data?.chorus_cocoon_detonated(user)
