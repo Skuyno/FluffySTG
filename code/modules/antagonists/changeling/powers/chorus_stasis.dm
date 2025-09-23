@@ -57,6 +57,12 @@
 		return
 	changeling_ref = WEAKREF(changeling_data)
 
+/obj/structure/changeling_chorus_cocoon/proc/should_restrain(mob/living/victim)
+	if(!istype(victim))
+		return FALSE
+	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
+	return changeling_data?.owner?.current != victim
+
 /obj/structure/changeling_chorus_cocoon/proc/release_occupant(force_release = FALSE)
 	if(!current_occupant)
 		return
@@ -73,6 +79,8 @@
 	if(QDELETED(src))
 		return
 	set_current_occupant(buckled_mob)
+	if(istype(buckled_mob) && buckled_mob.loc != src)
+		buckled_mob.forceMove(src)
 	refresh_visual_state()
 	if(istype(buckled_mob))
 		buckled_mob.visible_message(
@@ -84,6 +92,8 @@
 	. = ..()
 	if(unbuckled_mob == current_occupant)
 		set_current_occupant(null)
+	if(istype(unbuckled_mob) && unbuckled_mob.loc == src)
+		unbuckled_mob.forceMove(get_turf(src))
 	refresh_visual_state()
 
 /obj/structure/changeling_chorus_cocoon/proc/set_current_occupant(mob/living/new_occupant)
@@ -101,14 +111,15 @@
 	if(!istype(victim))
 		return
 	victim.extinguish_mob()
-	victim.add_traits(list(TRAIT_ANALGESIA), REF(src))
-	victim.SetSleeping(2 SECONDS)
+	var/list/traits_to_add = list(TRAIT_ANALGESIA)
+	if(should_restrain(victim))
+		traits_to_add += TRAIT_RESTRAINED
+	victim.add_traits(traits_to_add, REF(src))
 
 /obj/structure/changeling_chorus_cocoon/proc/remove_cocoon_effects(mob/living/victim)
 	if(!istype(victim))
 		return
-	victim.remove_traits(list(TRAIT_ANALGESIA), REF(src))
-	victim.SetSleeping(0)
+	victim.remove_traits(list(TRAIT_ANALGESIA, TRAIT_RESTRAINED), REF(src))
 
 /obj/structure/changeling_chorus_cocoon/proc/refresh_visual_state()
 	icon_state = length(buckled_mobs) ? "flesh_pod" : "flesh_pod_open"
@@ -128,9 +139,8 @@
 		return
 	if(victim.stat != DEAD)
 		heal_occupant(victim, seconds_between_ticks)
-	if(!HAS_TRAIT(victim, TRAIT_ANALGESIA))
+	if(!HAS_TRAIT(victim, TRAIT_ANALGESIA) || (should_restrain(victim) && !HAS_TRAIT(victim, TRAIT_RESTRAINED)))
 		apply_cocoon_effects(victim)
-	victim.SetSleeping(2 SECONDS)
 
 /obj/structure/changeling_chorus_cocoon/proc/heal_occupant(mob/living/victim, seconds_between_ticks)
 	var/heal_scale = max(seconds_between_ticks, 0)
