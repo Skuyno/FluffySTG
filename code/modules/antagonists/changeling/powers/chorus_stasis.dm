@@ -131,7 +131,6 @@
 		heal_occupant(victim, seconds_between_ticks)
 	if(!HAS_TRAIT(victim, TRAIT_STASIS) || !HAS_TRAIT(victim, TRAIT_HANDS_BLOCKED) || !HAS_TRAIT(victim, TRAIT_IMMOBILIZED))
 		apply_cocoon_effects(victim)
-	victim.SetSleeping(2 SECONDS)
 
 /obj/structure/changeling_chorus_cocoon/proc/heal_occupant(mob/living/victim, seconds_between_ticks)
 	var/heal_scale = max(seconds_between_ticks, 0)
