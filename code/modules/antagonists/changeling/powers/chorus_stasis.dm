@@ -45,6 +45,10 @@
 
 /obj/structure/changeling_chorus_cocoon/Destroy()
 	release_occupant(TRUE)
+	for(var/mob/living/rescued in src)
+		if(QDELETED(rescued))
+			continue
+		rescued.forceMove(get_turf(src))
 	STOP_PROCESSING(SSobj, src)
 	GLOB.changeling_chorus_cocoons -= src
 	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
@@ -111,10 +115,13 @@
 	if(!istype(victim))
 		return
 	victim.extinguish_mob()
+	var/should_restrain_victim = should_restrain(victim)
 	var/list/traits_to_add = list(TRAIT_ANALGESIA)
-	if(should_restrain(victim))
+	if(should_restrain_victim)
 		traits_to_add += TRAIT_RESTRAINED
 	victim.add_traits(traits_to_add, REF(src))
+	if(should_restrain_victim)
+		REMOVE_TRAIT(victim, TRAIT_UI_BLOCKED, TRAIT_HANDS_BLOCKED)
 
 /obj/structure/changeling_chorus_cocoon/proc/remove_cocoon_effects(mob/living/victim)
 	if(!istype(victim))
@@ -165,6 +172,40 @@
 	if(victim.buckled || isobj(victim.loc))
 		return FALSE
 	if(!victim.buckle_mob(src, force = TRUE, check_loc = TRUE))
+		return FALSE
+	return TRUE
+
+/obj/structure/changeling_chorus_cocoon/user_unbuckle_mob(mob/living/buckled_mob, mob/living/user)
+	if(user != buckled_mob || !should_restrain(buckled_mob))
+		return ..()
+	if(buckled_mob.buckled != src)
+		return
+
+	user.visible_message(
+		span_warning("[user] struggles against [src] from the inside!"),
+		span_warning("You strain against the cocoon's seams, trying to pry them apart..."),
+	)
+
+	if(!do_after(user, 5 SECONDS, target = src, extra_checks = CALLBACK(src, PROC_REF(can_self_unbuckle), user)))
+		if(buckled_mob.buckled == src)
+			to_chat(user, span_warning("The cocoon refuses to yield."))
+		return
+
+	if(QDELETED(src) || buckled_mob.buckled != src)
+		return
+
+	user.visible_message(
+		span_warning("[user] bursts free of [src], shredding it from within!"),
+		span_notice("You tear your way out of the cocoon and spill onto the floor!"),
+	)
+	release_occupant()
+	add_fingerprint(user)
+	return buckled_mob
+
+/obj/structure/changeling_chorus_cocoon/proc/can_self_unbuckle(mob/living/user)
+	if(QDELETED(src) || QDELETED(user))
+		return FALSE
+	if(user.buckled != src)
 		return FALSE
 	return TRUE
 
