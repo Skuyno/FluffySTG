@@ -16,6 +16,41 @@
 		return FALSE
 	return changeling_data.handle_chorus_stasis_activation(user, target)
 
+/datum/status_effect/changeling_chorus_stasis
+	id = "changeling_chorus_stasis"
+	status_type = STATUS_EFFECT_REFRESH
+	duration = STATUS_EFFECT_PERMANENT
+	tick_interval = 1 SECONDS
+	alert_type = null
+	/// Weak reference to the chorus cocoon providing the healing.
+	var/datum/weakref/cocoon_ref
+
+/datum/status_effect/changeling_chorus_stasis/on_creation(mob/living/new_owner, obj/structure/changeling_chorus_cocoon/cocoon)
+	. = ..()
+	if(!.)
+		return
+	if(istype(cocoon))
+		cocoon_ref = WEAKREF(cocoon)
+
+/datum/status_effect/changeling_chorus_stasis/tick(seconds_between_ticks)
+	var/obj/structure/changeling_chorus_cocoon/cocoon = cocoon_ref?.resolve()
+	if(QDELETED(owner) || !cocoon || !(owner in cocoon.buckled_mobs))
+		qdel(src)
+		return
+	if(owner.stat == DEAD)
+		return
+	owner.adjustBruteLoss(-2.4 * seconds_between_ticks, updating_health = FALSE, forced = TRUE)
+	owner.adjustFireLoss(-2 * seconds_between_ticks, updating_health = FALSE, forced = TRUE)
+	owner.adjustOxyLoss(-3 * seconds_between_ticks, updating_health = FALSE, forced = TRUE)
+	owner.adjustToxLoss(-0.8 * seconds_between_ticks, forced = TRUE)
+	owner.adjustStaminaLoss(-6 * seconds_between_ticks, updating_stamina = FALSE)
+	owner.updatehealth()
+	owner.update_stamina()
+
+/datum/status_effect/changeling_chorus_stasis/on_remove()
+	cocoon_ref = null
+	return ..()
+
 /obj/structure/changeling_chorus_cocoon
 	name = "chorus cocoon"
 	desc = "A resonant changeling pod humming with muffled voices."
@@ -68,23 +103,13 @@
 			continue
 		if(!(victim in cocooned_mobs))
 			apply_cocoon_effects(victim)
+		else if(!victim.has_status_effect(/datum/status_effect/changeling_chorus_stasis))
+			victim.apply_status_effect(/datum/status_effect/changeling_chorus_stasis, src)
 		if(victim.stat == DEAD)
 			continue
-		heal_cocooned_mob(victim, seconds_per_tick)
 	for(var/mob/living/hidden in cocooned_mobs.Copy())
 		if(QDELETED(hidden) || !(hidden in buckled_mobs))
 			remove_cocoon_effects(hidden)
-
-/obj/structure/changeling_chorus_cocoon/proc/heal_cocooned_mob(mob/living/victim, seconds_per_tick)
-	if(!isliving(victim))
-		return
-	victim.adjustBruteLoss(-2.4 * seconds_per_tick, updating_health = FALSE, forced = TRUE)
-	victim.adjustFireLoss(-2 * seconds_per_tick, updating_health = FALSE, forced = TRUE)
-	victim.adjustOxyLoss(-3 * seconds_per_tick, updating_health = FALSE, forced = TRUE)
-	victim.adjustToxLoss(-0.8 * seconds_per_tick, forced = TRUE)
-	victim.adjustStaminaLoss(-6 * seconds_per_tick, updating_stamina = FALSE)
-	victim.updatehealth()
-	victim.update_stamina()
 
 /obj/structure/changeling_chorus_cocoon/proc/add_occupant(mob/living/victim)
 	if(length(buckled_mobs) >= max_buckled_mobs)
@@ -119,6 +144,7 @@
 	cocooned_mobs |= victim
 	victim.SetInvisibility(INVISIBILITY_MAXIMUM, id = REF(src))
 	ADD_TRAIT(victim, TRAIT_HANDS_BLOCKED, REF(src))
+	victim.apply_status_effect(/datum/status_effect/changeling_chorus_stasis, src)
 
 /obj/structure/changeling_chorus_cocoon/proc/remove_cocoon_effects(mob/living/victim)
 	if(!isliving(victim))
@@ -127,6 +153,8 @@
 	cocooned_mobs -= victim
 	victim.RemoveInvisibility(REF(src))
 	REMOVE_TRAIT(victim, TRAIT_HANDS_BLOCKED, REF(src))
+	if(victim.has_status_effect(/datum/status_effect/changeling_chorus_stasis))
+		victim.remove_status_effect(/datum/status_effect/changeling_chorus_stasis)
 
 /obj/structure/changeling_chorus_cocoon/attack_hand(mob/user, list/modifiers)
 	. = ..()
