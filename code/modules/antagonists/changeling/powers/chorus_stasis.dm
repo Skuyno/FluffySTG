@@ -114,7 +114,7 @@
 	if(!istype(victim))
 		return
 	victim.SetInvisibility(INVISIBILITY_MAXIMUM, id = REF(src))
-	victim.Extinguish()
+	victim.extinguish_mob()
 	victim.add_traits(list(TRAIT_HANDS_BLOCKED, TRAIT_IMMOBILIZED, TRAIT_STASIS, TRAIT_ANALGESIA), REF(src))
 
 /obj/structure/changeling_chorus_cocoon/proc/remove_cocoon_effects(mob/living/victim)
@@ -142,7 +142,7 @@
 	victim.adjustToxLoss(-4 * heal_scale, forced = TRUE)
 	victim.adjustOxyLoss(-8 * heal_scale, updating_health = FALSE, forced = TRUE)
 	victim.adjust_drowsiness(-5 * heal_scale)
-	victim.Extinguish()
+	victim.extinguish_mob()
 	if(iscarbon(victim))
 		var/mob/living/carbon/carbon_victim = victim
 		if(carbon_victim.blood_volume && carbon_victim.blood_volume < BLOOD_VOLUME_NORMAL)
