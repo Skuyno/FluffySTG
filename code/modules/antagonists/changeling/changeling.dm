@@ -679,7 +679,7 @@
 	if(!matrix_graviton_ripsaw_active)
 		COOLDOWN_RESET(src, matrix_graviton_ripsaw_grapple_cooldown)
 
-#define GRAVITON_RIPSAW_GRAPPLE_RANGE 9
+#define GRAVITON_RIPSAW_GRAPPLE_RANGE 7
 #define GRAVITON_RIPSAW_GRAPPLE_COOLDOWN (2 SECONDS)
 
 /datum/antagonist/changeling/proc/try_matrix_graviton_ripsaw_grapple(atom/grapple_target, mob/living/user)
@@ -723,10 +723,17 @@
 	if(destination == user_turf)
 		user.balloon_alert(user, "no clear path!")
 		return ITEM_INTERACT_BLOCKING
-	var/distance_to_destination = max(1, get_dist(user_turf, destination))
+	var/distance_to_destination = clamp(get_dist(user_turf, destination), 1, GRAVITON_RIPSAW_GRAPPLE_RANGE)
 	COOLDOWN_START(src, matrix_graviton_ripsaw_grapple_cooldown, GRAVITON_RIPSAW_GRAPPLE_COOLDOWN)
 	user.setDir(get_dir(user_turf, destination))
-	user.Beam(destination, icon = 'icons/obj/weapons/changeling_items.dmi', icon_state = "tentacle", time = 0.5 SECONDS, emissive = FALSE)
+	user.Beam(
+		destination,
+		icon_state = "zipline_hook",
+		time = 0.5 SECONDS,
+		emissive = FALSE,
+		maxdistance = GRAVITON_RIPSAW_GRAPPLE_RANGE,
+		layer = BELOW_MOB_LAYER
+	)
 	playsound(user, 'sound/effects/splat.ogg', 40, TRUE)
 	user.throw_at(destination, distance_to_destination, 1, user, spin = FALSE, gentle = TRUE)
 	return ITEM_INTERACT_SUCCESS
