@@ -1174,44 +1174,52 @@
 /datum/antagonist/changeling/proc/handle_chorus_stasis_activation(mob/living/user, mob/living/target)
 	if(!matrix_chorus_stasis_active || !istype(user))
 		return FALSE
-	var/obj/structure/changeling_chorus_cocoon/current = get_active_chorus_cocoon()
-	if(current)
-		current.detonate(user)
-		return TRUE
-	var/turf/location = get_turf(user)
-	if(!istype(location) || location.is_blocked_turf(TRUE, source_atom = user))
+	var/mob/living/chorus_target = (istype(target) && target != user) ? target : null
+	if(chorus_target && !user.Adjacent(chorus_target))
+		user.balloon_alert(user, "too far")
+		chorus_target = null
+	var/turf/original_location = get_turf(user)
+	if(!istype(original_location) || original_location.is_blocked_turf(TRUE, source_atom = user))
 		user.balloon_alert(user, "bad turf")
 		return FALSE
-	var/mob/living/chorus_target = (istype(target) && target != user) ? target : null
-	if(!do_after(user, 4 SECONDS, target = location, extra_checks = CALLBACK(src, PROC_REF(can_continue_chorus_stasis), user, location)))
+	var/turf/target_location = get_turf(chorus_target || user)
+	if(!istype(target_location) || target_location.is_blocked_turf(TRUE, source_atom = chorus_target || user))
+		user.balloon_alert(user, "bad turf")
+		return FALSE
+	if(!do_after(user, 4 SECONDS, target = target_location, extra_checks = CALLBACK(src, PROC_REF(can_continue_chorus_stasis), user, original_location, chorus_target)))
 		return FALSE
 	if(!matrix_chorus_stasis_active || !istype(user))
 		return FALSE
-	if(get_active_chorus_cocoon())
-		return FALSE
-	location = get_turf(user)
-	if(!istype(location) || location.is_blocked_turf(TRUE, source_atom = user))
+	if(chorus_target && (QDELETED(chorus_target) || !user.Adjacent(chorus_target)))
+		user.balloon_alert(user, "lost target")
+		chorus_target = null
+	target_location = get_turf(chorus_target || user)
+	if(!istype(target_location) || target_location.is_blocked_turf(TRUE, source_atom = chorus_target || user))
 		user.balloon_alert(user, "bad turf")
 		return FALSE
-	if(chorus_target && (QDELETED(chorus_target) || !user.Adjacent(chorus_target)))
-		chorus_target = null
-	var/mob/living/occupant = chorus_target || user
-	var/obj/structure/changeling_chorus_cocoon/cocoon = new(location, src)
-	if(cocoon)
-		cocoon.changeling_ref = WEAKREF(src)
-	if(!cocoon.add_occupant(occupant))
-		qdel(cocoon)
-		return FALSE
+	clear_chorus_cocoon()
+	var/obj/structure/changeling_chorus_cocoon/cocoon = new(target_location, src)
+	cocoon.bind_to_changeling(src)
 	matrix_chorus_cocoon_ref = WEAKREF(cocoon)
-	if(occupant == user)
-		user.visible_message(
-			span_warning("[user] weaves a muffled cocoon of tendrils around [user.p_them()]self!"),
-			span_changeling("We spin a chorus cocoon to hide and recover."),
-		)
+	var/mob/living/occupant = chorus_target || user
+	var/occupant_added = FALSE
+	if(istype(occupant))
+		occupant_added = cocoon.accept_occupant(occupant)
+	if(occupant_added)
+		if(occupant == user)
+			user.visible_message(
+				span_warning("[user] folds [user.p_them()]self into a humming cocoon!"),
+				span_changeling("We settle into our chorus cocoon to recover."),
+			)
+		else
+			user.visible_message(
+				span_warning("[user] cocoons [occupant] in resonant flesh!"),
+				span_changeling("We secure [occupant] within our chorus cocoon."),
+			)
 	else
 		user.visible_message(
-			span_warning("[user] lashes [occupant] into a muffled cocoon of tendrils!"),
-			span_changeling("We bind [occupant] within a chorus cocoon."),
+			span_warning("[user] spins a patient chorus cocoon from rippling tendrils!"),
+			span_changeling("We weave a chorus cocoon, ready for whoever needs rest."),
 		)
 	return TRUE
 
@@ -1229,12 +1237,10 @@
 			return cocoon
 	return null
 
-/datum/antagonist/changeling/proc/can_continue_chorus_stasis(mob/living/user, turf/original_location)
+/datum/antagonist/changeling/proc/can_continue_chorus_stasis(mob/living/user, turf/original_location, mob/living/original_target)
 	if(QDELETED(user) || !matrix_chorus_stasis_active)
 		return FALSE
 	if(user.stat >= UNCONSCIOUS)
-		return FALSE
-	if(get_active_chorus_cocoon())
 		return FALSE
 	if(!original_location)
 		return FALSE
@@ -1243,12 +1249,19 @@
 		return FALSE
 	if(current_location.is_blocked_turf(TRUE, source_atom = user))
 		return FALSE
+	if(original_target)
+		if(QDELETED(original_target) || !user.Adjacent(original_target))
+			return FALSE
 	return TRUE
 
-/datum/antagonist/changeling/proc/chorus_cocoon_detonated(mob/living/user)
-	matrix_chorus_cocoon_ref = null
-	if(istype(user))
-		to_chat(user, span_changeling("We rupture the cocoon in a wash of soporific spores."))
+/datum/antagonist/changeling/proc/notify_chorus_cocoon_removed(obj/structure/changeling_chorus_cocoon/cocoon)
+	var/obj/structure/changeling_chorus_cocoon/current = matrix_chorus_cocoon_ref?.resolve()
+	var/lost_active = FALSE
+	if(!current || current == cocoon)
+		matrix_chorus_cocoon_ref = null
+		lost_active = TRUE
+	if(lost_active && owner?.current)
+		to_chat(owner.current, span_changeling("Our chorus cocoon collapses, its healing chorus fading away."))
 
 /datum/antagonist/changeling/proc/clear_chorus_cocoon(obj/structure/changeling_chorus_cocoon/ignore)
 	var/obj/structure/changeling_chorus_cocoon/current = get_active_chorus_cocoon()
