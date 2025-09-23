@@ -69,26 +69,30 @@
 		victim.forceMove(get_turf(src))
 
 /obj/structure/changeling_chorus_cocoon/post_buckle_mob(mob/living/buckled_mob)
-	. = ..()
-	if(QDELETED(src))
-		return
-	set_current_occupant(buckled_mob)
-	refresh_visual_state()
-	if(istype(buckled_mob))
-		buckled_mob.visible_message(
-			span_warning("[buckled_mob] is wrapped in [src]!"),
-			span_notice("The cocoon folds shut, filling your ears with calming chords."),
-		)
+        . = ..()
+        if(QDELETED(src))
+                return
+        set_current_occupant(buckled_mob)
+        if(buckled_mob?.loc != src)
+                buckled_mob.forceMove(src)
+        refresh_visual_state()
+        if(istype(buckled_mob))
+                buckled_mob.visible_message(
+                        span_warning("[buckled_mob] is wrapped in [src]!"),
+                        span_notice("The cocoon folds shut, filling your ears with calming chords."),
+                )
 
 /obj/structure/changeling_chorus_cocoon/post_unbuckle_mob(mob/living/unbuckled_mob)
-	. = ..()
-	if(unbuckled_mob == current_occupant)
-		set_current_occupant(null)
-	refresh_visual_state()
+        . = ..()
+        if(unbuckled_mob == current_occupant)
+                set_current_occupant(null)
+        if(unbuckled_mob?.loc == src)
+                unbuckled_mob.forceMove(get_turf(src))
+        refresh_visual_state()
 
 /obj/structure/changeling_chorus_cocoon/proc/set_current_occupant(mob/living/new_occupant)
-	if(current_occupant == new_occupant)
-		return
+        if(current_occupant == new_occupant)
+                return
 	if(current_occupant)
 		remove_cocoon_effects(current_occupant)
 	current_occupant = null
@@ -98,20 +102,24 @@
 	apply_cocoon_effects(current_occupant)
 
 /obj/structure/changeling_chorus_cocoon/proc/apply_cocoon_effects(mob/living/victim)
-	if(!istype(victim))
-		return
-	victim.extinguish_mob()
-	victim.add_traits(list(TRAIT_ANALGESIA), REF(src))
-	victim.SetSleeping(2 SECONDS)
+        if(!istype(victim))
+                return
+        victim.extinguish_mob()
+        var/list/traits_to_add = list(TRAIT_ANALGESIA)
+        var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
+        var/mob/living/changeling_owner = changeling_data?.owner?.current
+        if(!changeling_owner || changeling_owner != victim)
+                traits_to_add += TRAIT_RESTRAINED
+        victim.add_traits(traits_to_add, REF(src))
 
 /obj/structure/changeling_chorus_cocoon/proc/remove_cocoon_effects(mob/living/victim)
-	if(!istype(victim))
-		return
-	victim.remove_traits(list(TRAIT_ANALGESIA), REF(src))
-	victim.SetSleeping(0)
+        if(!istype(victim))
+                return
+        victim.remove_traits(list(TRAIT_ANALGESIA, TRAIT_RESTRAINED), REF(src))
+        victim.SetSleeping(0)
 
 /obj/structure/changeling_chorus_cocoon/proc/refresh_visual_state()
-	icon_state = length(buckled_mobs) ? "flesh_pod" : "flesh_pod_open"
+        icon_state = length(buckled_mobs) ? "flesh_pod" : "flesh_pod_open"
 
 /obj/structure/changeling_chorus_cocoon/process(seconds_per_tick)
 	var/mob/living/occupant = locate(/mob/living) in buckled_mobs
@@ -124,13 +132,12 @@
 	maintain_occupant(occupant, seconds_per_tick)
 
 /obj/structure/changeling_chorus_cocoon/proc/maintain_occupant(mob/living/victim, seconds_between_ticks)
-	if(!istype(victim))
-		return
-	if(victim.stat != DEAD)
-		heal_occupant(victim, seconds_between_ticks)
-	if(!HAS_TRAIT(victim, TRAIT_ANALGESIA))
-		apply_cocoon_effects(victim)
-	victim.SetSleeping(2 SECONDS)
+        if(!istype(victim))
+                return
+        if(victim.stat != DEAD)
+                heal_occupant(victim, seconds_between_ticks)
+        if(!HAS_TRAIT(victim, TRAIT_ANALGESIA))
+                apply_cocoon_effects(victim)
 
 /obj/structure/changeling_chorus_cocoon/proc/heal_occupant(mob/living/victim, seconds_between_ticks)
 	var/heal_scale = max(seconds_between_ticks, 0)
