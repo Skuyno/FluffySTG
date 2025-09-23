@@ -1174,7 +1174,7 @@
 /datum/antagonist/changeling/proc/handle_chorus_stasis_activation(mob/living/user, mob/living/target)
 	if(!matrix_chorus_stasis_active || !istype(user))
 		return FALSE
-	var/obj/structure/changeling_chorus_cocoon/current = matrix_chorus_cocoon_ref?.resolve()
+	var/obj/structure/changeling_chorus_cocoon/current = get_active_chorus_cocoon()
 	if(current)
 		current.detonate(user)
 		return TRUE
@@ -1187,7 +1187,7 @@
 		return FALSE
 	if(!matrix_chorus_stasis_active || !istype(user))
 		return FALSE
-	if(matrix_chorus_cocoon_ref?.resolve())
+	if(get_active_chorus_cocoon())
 		return FALSE
 	location = get_turf(user)
 	if(!istype(location) || location.is_blocked_turf(TRUE, source_atom = user))
@@ -1213,12 +1213,26 @@
 		)
 	return TRUE
 
+/datum/antagonist/changeling/proc/get_active_chorus_cocoon()
+	var/obj/structure/changeling_chorus_cocoon/current = matrix_chorus_cocoon_ref?.resolve()
+	if(current)
+		return current
+	for(var/obj/structure/changeling_chorus_cocoon/cocoon as anything in GLOB.changeling_chorus_cocoons.Copy())
+		if(QDELETED(cocoon))
+			GLOB.changeling_chorus_cocoons -= cocoon
+			continue
+		var/datum/antagonist/changeling/owner = cocoon.changeling_ref?.resolve()
+		if(owner == src)
+			matrix_chorus_cocoon_ref = WEAKREF(cocoon)
+			return cocoon
+	return null
+
 /datum/antagonist/changeling/proc/can_continue_chorus_stasis(mob/living/user, turf/original_location)
 	if(QDELETED(user) || !matrix_chorus_stasis_active)
 		return FALSE
 	if(user.stat >= UNCONSCIOUS)
 		return FALSE
-	if(matrix_chorus_cocoon_ref?.resolve())
+	if(get_active_chorus_cocoon())
 		return FALSE
 	if(!original_location)
 		return FALSE
@@ -1235,7 +1249,7 @@
 		to_chat(user, span_changeling("We rupture the cocoon in a wash of soporific spores."))
 
 /datum/antagonist/changeling/proc/clear_chorus_cocoon(obj/structure/changeling_chorus_cocoon/ignore)
-	var/obj/structure/changeling_chorus_cocoon/current = matrix_chorus_cocoon_ref?.resolve()
+	var/obj/structure/changeling_chorus_cocoon/current = get_active_chorus_cocoon()
 	if(current && (!ignore || ignore != current))
 		qdel(current)
 	matrix_chorus_cocoon_ref = null
