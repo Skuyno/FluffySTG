@@ -44,8 +44,10 @@
 	return .
 
 /obj/structure/changeling_chorus_cocoon/Destroy()
-	for(var/mob/living/occupant in buckled_mobs.Copy())
-		unbuckle_mob(occupant, force = TRUE, can_fall = FALSE)
+	var/list/occupants = buckled_mobs ? buckled_mobs.Copy() : null
+	if(length(occupants))
+		for(var/mob/living/occupant in occupants)
+			unbuckle_mob(occupant, force = TRUE, can_fall = FALSE)
 	set_current_occupant(null)
 	STOP_PROCESSING(SSobj, src)
 	GLOB.changeling_chorus_cocoons -= src
@@ -177,9 +179,11 @@
 		span_danger("[src] ruptures in a wave of soporific gas!"),
 		span_notice("We unravel the cocoon, flooding the area with muting spores."),
 	)
-	for(var/mob/living/occupant in buckled_mobs.Copy())
-		unbuckle_mob(occupant, force = TRUE, can_fall = FALSE)
-		occupant.Knockdown(2 SECONDS)
+	var/list/occupants = buckled_mobs ? buckled_mobs.Copy() : null
+	if(length(occupants))
+		for(var/mob/living/occupant in occupants)
+			unbuckle_mob(occupant, force = TRUE, can_fall = FALSE)
+			occupant.Knockdown(2 SECONDS)
 	for(var/mob/living/target in range(3, src))
 		if(target.stat == DEAD || IS_CHANGELING(target))
 			continue
