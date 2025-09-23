@@ -122,8 +122,6 @@
 	var/matrix_chitin_courier_active = FALSE
 	/// Whether the spore node matrix module is active.
 	var/matrix_spore_node_active = FALSE
-	/// Whether the chorus stasis matrix module is active.
-	var/matrix_chorus_stasis_active = FALSE
 	/// Mob currently registered for predator's sinew hit hooks.
 	var/mob/living/matrix_predator_sinew_bound_mob
 	/// Mob currently registered for anaerobic reservoir stamina interception.
@@ -144,12 +142,8 @@
 	var/datum/action/changeling/chitin_courier/matrix_chitin_courier_action
 	/// Matrix-provided spore node action instance.
 	var/datum/action/changeling/spore_node/matrix_spore_node_action
-	/// Matrix-provided chorus stasis action instance.
-	var/datum/action/changeling/chorus_stasis/matrix_chorus_stasis_action
 	/// Weak reference to an active spore node structure.
 	var/datum/weakref/matrix_spore_node_ref
-	/// Weak reference to an active chorus cocoon.
-	var/datum/weakref/matrix_chorus_cocoon_ref
 	/// Container for a stored item from chitin courier.
 	var/obj/effect/abstract/changeling_chitin_cache/matrix_chitin_courier_cache
 	/// Stored item within the chitin courier cache.
@@ -227,8 +221,6 @@
 	clear_chitin_courier_cache(drop_item = TRUE)
 	remove_matrix_spore_node_action()
 	clear_spore_node()
-	remove_matrix_chorus_stasis_action()
-	clear_chorus_cocoon()
 	remove_matrix_abyssal_slip_traits()
 	unbind_abyssal_slip_signals()
 	clear_matrix_echo_cascade_timers()
@@ -461,7 +453,6 @@
 	update_matrix_neuro_sap_effect("matrix_neuro_sap" in active_ids)
 	update_matrix_chitin_courier_effect("matrix_chitin_courier" in active_ids)
 	update_matrix_spore_node_effect("matrix_spore_node" in active_ids)
-	update_matrix_chorus_stasis_effect("matrix_chorus_stasis" in active_ids)
 	update_matrix_passive_effects(active_ids)
 
 /datum/antagonist/changeling/proc/is_genetic_matrix_module_active(module_identifier)
@@ -1078,29 +1069,6 @@
 		matrix_spore_node_action.Remove(owner.current)
 	QDEL_NULL(matrix_spore_node_action)
 
-/datum/antagonist/changeling/proc/update_matrix_chorus_stasis_effect(is_active)
-	matrix_chorus_stasis_active = !!is_active
-	if(!matrix_chorus_stasis_active)
-		remove_matrix_chorus_stasis_action()
-		clear_chorus_cocoon()
-		return
-	ensure_matrix_chorus_stasis_action()
-
-/datum/antagonist/changeling/proc/ensure_matrix_chorus_stasis_action()
-	if(!matrix_chorus_stasis_active)
-		return
-	if(!matrix_chorus_stasis_action)
-		matrix_chorus_stasis_action = new
-	if(owner?.current)
-		matrix_chorus_stasis_action.Grant(owner.current)
-
-/datum/antagonist/changeling/proc/remove_matrix_chorus_stasis_action()
-	if(!matrix_chorus_stasis_action)
-		return
-	if(owner?.current)
-		matrix_chorus_stasis_action.Remove(owner.current)
-	QDEL_NULL(matrix_chorus_stasis_action)
-
 /datum/antagonist/changeling/proc/stash_chitin_courier_item(obj/item/held_item, mob/living/user)
 	if(!matrix_chitin_courier_active || !istype(held_item))
 		return FALSE
@@ -1177,91 +1145,6 @@
 	if(current && (!ignore || ignore != current))
 		qdel(current)
 	matrix_spore_node_ref = null
-
-/datum/antagonist/changeling/proc/handle_chorus_stasis_activation(mob/living/user, mob/living/target)
-	if(!matrix_chorus_stasis_active || !istype(user))
-		return FALSE
-	var/obj/structure/changeling_chorus_cocoon/current = get_active_chorus_cocoon()
-	if(current)
-		current.detonate(user)
-		return TRUE
-	var/turf/location = get_turf(user)
-	if(!istype(location) || location.is_blocked_turf(TRUE, source_atom = user))
-		user.balloon_alert(user, "bad turf")
-		return FALSE
-	var/mob/living/chorus_target = (istype(target) && target != user) ? target : null
-	if(!do_after(user, 4 SECONDS, target = location, extra_checks = CALLBACK(src, PROC_REF(can_continue_chorus_stasis), user, location)))
-		return FALSE
-	if(!matrix_chorus_stasis_active || !istype(user))
-		return FALSE
-	if(get_active_chorus_cocoon())
-		return FALSE
-	location = get_turf(user)
-	if(!istype(location) || location.is_blocked_turf(TRUE, source_atom = user))
-		user.balloon_alert(user, "bad turf")
-		return FALSE
-	if(chorus_target && (QDELETED(chorus_target) || !user.Adjacent(chorus_target)))
-		chorus_target = null
-	var/mob/living/occupant = chorus_target || user
-	var/obj/structure/changeling_chorus_cocoon/cocoon = new(location, src)
-	if(cocoon)
-		cocoon.changeling_ref = WEAKREF(src)
-	if(!cocoon.add_occupant(occupant))
-		qdel(cocoon)
-		return FALSE
-	matrix_chorus_cocoon_ref = WEAKREF(cocoon)
-	if(occupant == user)
-		user.visible_message(
-			span_warning("[user] weaves a muffled cocoon of tendrils around [user.p_them()]self!"),
-			span_changeling("We spin a chorus cocoon to hide and recover."),
-		)
-	else
-		user.visible_message(
-			span_warning("[user] lashes [occupant] into a muffled cocoon of tendrils!"),
-			span_changeling("We bind [occupant] within a chorus cocoon."),
-		)
-	return TRUE
-
-/datum/antagonist/changeling/proc/get_active_chorus_cocoon()
-	var/obj/structure/changeling_chorus_cocoon/current = matrix_chorus_cocoon_ref?.resolve()
-	if(current)
-		return current
-	for(var/obj/structure/changeling_chorus_cocoon/cocoon as anything in GLOB.changeling_chorus_cocoons.Copy())
-		if(QDELETED(cocoon))
-			GLOB.changeling_chorus_cocoons -= cocoon
-			continue
-		var/datum/antagonist/changeling/owner = cocoon.changeling_ref?.resolve()
-		if(owner == src)
-			matrix_chorus_cocoon_ref = WEAKREF(cocoon)
-			return cocoon
-	return null
-
-/datum/antagonist/changeling/proc/can_continue_chorus_stasis(mob/living/user, turf/original_location)
-	if(QDELETED(user) || !matrix_chorus_stasis_active)
-		return FALSE
-	if(user.stat >= UNCONSCIOUS)
-		return FALSE
-	if(get_active_chorus_cocoon())
-		return FALSE
-	if(!original_location)
-		return FALSE
-	var/turf/current_location = get_turf(user)
-	if(!current_location || current_location != original_location)
-		return FALSE
-	if(current_location.is_blocked_turf(TRUE, source_atom = user))
-		return FALSE
-	return TRUE
-
-/datum/antagonist/changeling/proc/chorus_cocoon_detonated(mob/living/user)
-	matrix_chorus_cocoon_ref = null
-	if(istype(user))
-		to_chat(user, span_changeling("We rupture the cocoon in a wash of soporific spores."))
-
-/datum/antagonist/changeling/proc/clear_chorus_cocoon(obj/structure/changeling_chorus_cocoon/ignore)
-	var/obj/structure/changeling_chorus_cocoon/current = get_active_chorus_cocoon()
-	if(current && (!ignore || ignore != current))
-		qdel(current)
-	matrix_chorus_cocoon_ref = null
 
 /datum/antagonist/changeling/proc/clear_matrix_passive_effects()
 	if(matrix_passive_effects_bound_mob)
