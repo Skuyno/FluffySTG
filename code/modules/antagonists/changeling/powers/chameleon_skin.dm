@@ -12,14 +12,14 @@
 	if(!istype(cling)) // req_human could be done in can_sting stuff.
 		return
 	..()
-        if(cling.dna.get_mutation(/datum/mutation/chameleon/changeling))
-                cling.dna.remove_mutation(/datum/mutation/chameleon/changeling, MUTATION_SOURCE_CHANGELING)
-        else
-                cling.dna.add_mutation(/datum/mutation/chameleon/changeling, MUTATION_SOURCE_CHANGELING)
-        return TRUE
+	if(cling.dna.get_mutation(/datum/mutation/chameleon/changeling))
+		cling.dna.remove_mutation(/datum/mutation/chameleon/changeling, MUTATION_SOURCE_CHANGELING)
+	else
+		cling.dna.add_mutation(/datum/mutation/chameleon/changeling, MUTATION_SOURCE_CHANGELING)
+	return TRUE
 
 /datum/action/changeling/chameleon_skin/Remove(mob/user)
-        if(user.has_dna())
-                var/mob/living/carbon/cling = user
-                cling.dna.remove_mutation(/datum/mutation/chameleon/changeling, MUTATION_SOURCE_CHANGELING)
-        ..()
+	if(user.has_dna())
+		var/mob/living/carbon/cling = user
+		cling.dna.remove_mutation(/datum/mutation/chameleon/changeling, MUTATION_SOURCE_CHANGELING)
+	..()
