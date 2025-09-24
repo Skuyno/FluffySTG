@@ -82,10 +82,8 @@
 	var/matrix_predatory_howl_active = FALSE
 	/// Whether the symbiotic overgrowth matrix module is active.
 	var/matrix_symbiotic_overgrowth_active = FALSE
-	/// Whether the feathered veil matrix module is active.
-	var/matrix_feathered_veil_active = FALSE
-	/// Whether the predator sinew matrix module is active.
-	var/matrix_predator_sinew_active = FALSE
+        /// Whether the predator sinew matrix module is active.
+        var/matrix_predator_sinew_active = FALSE
 	/// Whether the void carapace matrix module is active.
 	var/matrix_void_carapace_active = FALSE
 	/// Whether the adrenal spike matrix module is active.
@@ -317,9 +315,8 @@
 	handle_clown_mutation(living_mob, removing = FALSE)
 	UnregisterSignal(living_mob, list(COMSIG_MOB_LOGIN, COMSIG_LIVING_LIFE, COMSIG_LIVING_POST_FULLY_HEAL, COMSIG_MOB_GET_STATUS_TAB_ITEMS, COMSIG_MOB_MIDDLECLICKON, COMSIG_MOB_ALTCLICKON))
 	REMOVE_TRAIT(living_mob, TRAIT_FAKE_SOULLESS, CHANGELING_TRAIT)
-	remove_matrix_feathered_veil_status()
-	unbind_predator_sinew_signals()
-	unbind_anaerobic_reservoir_signals()
+        unbind_predator_sinew_signals()
+        unbind_anaerobic_reservoir_signals()
 
 	if(living_mob.hud_used)
 		var/datum/hud/hud_used = living_mob.hud_used
@@ -438,8 +435,7 @@
 	current_matrix_module_ids = active_ids
 	update_matrix_predatory_howl("matrix_predatory_howl" in active_ids)
 	update_matrix_symbiotic_overgrowth("matrix_symbiotic_overgrowth" in active_ids)
-	update_matrix_feathered_veil_effect("matrix_feathered_veil" in active_ids)
-	update_matrix_predator_sinew_effect("matrix_predator_sinew" in active_ids)
+        update_matrix_predator_sinew_effect("matrix_predator_sinew" in active_ids)
 	update_matrix_void_carapace_effect("matrix_void_carapace" in active_ids)
 	update_matrix_adrenal_spike_effect("matrix_adrenal_spike" in active_ids)
 	update_matrix_aether_drake_effect("matrix_aether_drake_mantle" in active_ids)
@@ -483,36 +479,9 @@
 /datum/antagonist/changeling/proc/update_matrix_symbiotic_overgrowth(is_active)
 	matrix_symbiotic_overgrowth_active = !!is_active
 
-/datum/antagonist/changeling/proc/update_matrix_feathered_veil_effect(is_active)
-	matrix_feathered_veil_active = !!is_active
-	if(is_active)
-		ensure_matrix_feathered_veil_status()
-	else
-		remove_matrix_feathered_veil_status()
-
-/datum/antagonist/changeling/proc/ensure_matrix_feathered_veil_status()
-	if(!matrix_feathered_veil_active)
-		remove_matrix_feathered_veil_status()
-		return
-	var/mob/living/living_owner = owner?.current
-	if(!living_owner)
-		return
-	if(!HAS_TRAIT(living_owner, TRAIT_CHAMELEON_SKIN))
-		remove_matrix_feathered_veil_status()
-		return
-	var/datum/status_effect/changeling_feathered_veil/existing = living_owner.has_status_effect(/datum/status_effect/changeling_feathered_veil)
-	if(existing)
-		existing.update_sources(src)
-	else
-		living_owner.apply_status_effect(/datum/status_effect/changeling_feathered_veil, src)
-
-/datum/antagonist/changeling/proc/remove_matrix_feathered_veil_status()
-	var/mob/living/living_owner = owner?.current
-	living_owner?.remove_status_effect(/datum/status_effect/changeling_feathered_veil)
-
 /datum/antagonist/changeling/proc/update_matrix_predator_sinew_effect(is_active)
-	matrix_predator_sinew_active = !!is_active
-	if(!matrix_predator_sinew_active)
+        matrix_predator_sinew_active = !!is_active
+        if(!matrix_predator_sinew_active)
 		unbind_predator_sinew_signals()
 		return
 	bind_predator_sinew_signals(owner?.current)
@@ -784,27 +753,14 @@
 	matrix_abyssal_slip_bound_mob = null
 
 /datum/antagonist/changeling/proc/on_abyssal_slip_moved(atom/movable/source, atom/old_loc, move_dir, forced, list/atom/old_locs)
-	SIGNAL_HANDLER
-	if(!matrix_abyssal_slip_active || source != matrix_abyssal_slip_bound_mob)
-		return
-	var/mob/living/living_owner = matrix_abyssal_slip_bound_mob
-	if(!HAS_TRAIT(living_owner, TRAIT_CHAMELEON_SKIN))
-		return
-	var/turf/current_turf = get_turf(living_owner)
-	if(!istype(current_turf))
-		return
-	var/should_blend = current_turf.get_lumcount() <= LIGHTING_TILE_IS_DARK
-	if(!should_blend)
-		for(var/dir in GLOB.cardinals)
-			var/turf/adjacent = get_step(current_turf, dir)
-			if(!istype(adjacent))
-				continue
-			if(adjacent.density || adjacent.is_blocked_turf(TRUE, source_atom = living_owner))
-				should_blend = TRUE
-				break
-	if(!should_blend)
-		return
-	living_owner.alpha = min(living_owner.alpha, 170)
+        SIGNAL_HANDLER
+        if(!matrix_abyssal_slip_active || source != matrix_abyssal_slip_bound_mob)
+                return
+        var/mob/living/living_owner = matrix_abyssal_slip_bound_mob
+        if(!living_owner)
+                return
+        var/datum/status_effect/darkness_adapted/adaptation = living_owner.has_status_effect(/datum/status_effect/darkness_adapted)
+        adaptation?.update_invis()
 
 /datum/antagonist/changeling/proc/update_matrix_crystalline_buffer_effect(is_active)
 	matrix_crystalline_buffer_active = !!is_active
@@ -1174,15 +1130,14 @@
 	genetic_matrix_effect_cache = changeling_get_default_matrix_effects()
 
 /datum/antagonist/changeling/proc/update_matrix_passive_effects(list/active_ids)
-	var/static/list/multiplicative_effect_keys = list(
-		"stamina_use_mult",
-		"stamina_regen_time_mult",
-		"fleshmend_heal_mult",
-		"biodegrade_timer_mult",
-		"feathered_veil_cooldown_mult",
-		"resonant_shriek_confusion_mult",
-		"dissonant_shriek_structure_mult",
-	)
+        var/static/list/multiplicative_effect_keys = list(
+                "stamina_use_mult",
+                "stamina_regen_time_mult",
+                "fleshmend_heal_mult",
+                "biodegrade_timer_mult",
+                "resonant_shriek_confusion_mult",
+                "dissonant_shriek_structure_mult",
+        )
 	var/list/effect_totals = changeling_get_default_matrix_effects()
 	if(islist(active_ids))
 		for(var/module_id in active_ids)
