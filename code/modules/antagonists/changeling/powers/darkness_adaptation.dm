@@ -94,7 +94,33 @@
 	return istype(owner_turf) ? owner_turf.get_lumcount() : 1
 
 /datum/status_effect/darkness_adapted/proc/get_alpha()
-	return clamp(65 + ((get_darkness() - LIGHTING_TILE_IS_DARK) * 255), 65, 255)
+        var/wall_alpha = get_wall_blend_alpha()
+        if(!isnull(wall_alpha))
+                return wall_alpha
+        return clamp(65 + ((get_darkness() - LIGHTING_TILE_IS_DARK) * 255), 65, 255)
+
+/datum/status_effect/darkness_adapted/proc/get_wall_blend_alpha()
+        if(!should_wall_blend())
+                return null
+        return 65
+
+/datum/status_effect/darkness_adapted/proc/should_wall_blend()
+        var/mob/living/living_owner = owner
+        if(!living_owner)
+                return FALSE
+        var/datum/antagonist/changeling/changeling_data = living_owner.mind?.has_antag_datum(/datum/antagonist/changeling)
+        if(!changeling_data?.matrix_abyssal_slip_active)
+                return FALSE
+        var/turf/current_turf = get_turf(living_owner)
+        if(!istype(current_turf))
+                return FALSE
+        for(var/dir in GLOB.cardinals)
+                var/turf/adjacent = get_step(current_turf, dir)
+                if(!istype(adjacent))
+                        continue
+                if(adjacent.density || adjacent.is_blocked_turf(TRUE, source_atom = living_owner))
+                        return TRUE
+        return FALSE
 
 /datum/status_effect/darkness_adapted/proc/get_eye_strength()
 	return clamp(LIGHTING_CUTOFF_MEDIUM - ((get_darkness() - LIGHTING_TILE_IS_DARK) * LIGHTING_CUTOFF_MEDIUM + 5), LIGHTING_CUTOFF_REAL_LOW, LIGHTING_CUTOFF_MEDIUM + 5)
