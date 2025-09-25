@@ -1,8 +1,8 @@
-/// Passive: Abyssal Slip — threads shadekin chromatophores for silent, shadow-hugging movement.
+/// Passive: Abyssal Slip — braids teshari sprint tendons, fox pads, and mothroach clingers for silent, shadow-hugging movement.
 /datum/changeling_genetic_matrix_recipe/abyssal_slip
 	id = "matrix_abyssal_slip"
 	name = "Abyssal Slip"
-	description = "Fuse Teshari sprint tendons with shadekin film to melt into station shadows and walls."
+	description = "Fuse Teshari sprint tendons with fox pads and mothroach clingers to melt into station shadows and walls."
 	module = list(
 		"id" = "matrix_abyssal_slip",
 		"name" = "Abyssal Slip",
@@ -16,7 +16,8 @@
 	)
 	required_cells = list(
 		CHANGELING_CELL_ID_TESHARI,
-		CHANGELING_CELL_ID_SHADEKIN,
+		CHANGELING_CELL_ID_FOX,
+		CHANGELING_CELL_ID_MOTHROACH,
 	)
 	required_abilities = list(
 		/datum/action/changeling/darkness_adaptation,

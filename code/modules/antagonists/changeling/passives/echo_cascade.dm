@@ -1,9 +1,9 @@
 
-/// Upgrade: Echo Cascade — layers resonant harmonics for delayed sonic aftershocks and EMP rebounds.
+/// Upgrade: Echo Cascade — layers teshari overtones, parrot mimic chords, and butterfly wing chimes for delayed sonic aftershocks and EMP rebounds.
 /datum/changeling_genetic_matrix_recipe/echo_cascade
 	id = "matrix_echo_cascade"
 	name = "Echo Cascade"
-	description = "Anchor ethereal resonators into our shrieks so echoes ripple after the initial blast."
+	description = "Stack Teshari overtones, parrot mimic chords, and butterfly wing chimes into our shriek for delayed echoes and EMP rebounds."
 	module = list(
 			"id" = "matrix_echo_cascade",
 			"name" = "Echo Cascade",
@@ -14,8 +14,9 @@
 			"button_icon_state" = "resonant_shriek",
 	)
 	required_cells = list(
-			CHANGELING_CELL_ID_ETHEREAL,
-			CHANGELING_CELL_ID_REVENANT,
+		CHANGELING_CELL_ID_TESHARI,
+		CHANGELING_CELL_ID_PARROT,
+		CHANGELING_CELL_ID_BUTTERFLY,
 	)
 	required_abilities = list(
 			/datum/action/changeling/resonant_shriek,

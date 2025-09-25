@@ -1,8 +1,8 @@
-/// Passive: Predatory Howl — refines the dissonant shriek into an execution note that ruptures skulls and machinery alike.
+/// Passive: Predatory Howl — refines the dissonant shriek with vulpkanin hunting howls, nightmare shadow lungs, and corgi pack calls into an execution note that ruptures skulls and machinery alike.
 /datum/changeling_genetic_matrix_recipe/predatory_howl
 	id = "matrix_predatory_howl"
 	name = "Predatory Howl"
-	description = "Refocuses our dissonant shriek into a devastating execution note."
+	description = "Refocuses our dissonant shriek with vulpkanin hunting howls, nightmare shadow lungs, and corgi pack calls into a devastating execution note."
 	module = list(
 		"id" = "matrix_predatory_howl",
 		"name" = "Predatory Howl",
@@ -15,8 +15,9 @@
 		"button_icon_state" = "dissonant_shriek",
 	)
 	required_cells = list(
-		CHANGELING_CELL_ID_VOX,
-		CHANGELING_CELL_ID_TAJARAN,
+		CHANGELING_CELL_ID_VULPKANIN,
+		CHANGELING_CELL_ID_NIGHTMARE,
+		CHANGELING_CELL_ID_CORGI,
 	)
 	required_abilities = list(
 		/datum/action/changeling/dissonant_shriek,

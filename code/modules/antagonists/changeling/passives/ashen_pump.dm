@@ -1,9 +1,9 @@
 
-/// Upgrade: Ashen Pump — superheats Gene Stim into a plasma bleed that shields against burn and scorches the ground.
+/// Upgrade: Ashen Pump — superheats Gene Stim with tajaran heat glands, ash drake embers, and Bubblegum furnace bile.
 /datum/changeling_genetic_matrix_recipe/ashen_pump
 	id = "matrix_ashen_pump"
 	name = "Ashen Pump"
-	description = "Graft ash drake vents and plasmaman sacs into Gene Stim for fiery overdrive."
+	description = "Superheat Gene Stim with Tajaran heat glands, ash drake embers, and Bubblegum furnace bile."
 	module = list(
 			"id" = "matrix_ashen_pump",
 			"name" = "Ashen Pump",
@@ -15,8 +15,9 @@
 			"button_icon_state" = "adrenaline",
 	)
 	required_cells = list(
-			CHANGELING_CELL_ID_ASH_DRAKE,
-			CHANGELING_CELL_ID_PLASMAMAN,
+		CHANGELING_CELL_ID_TAJARAN,
+		CHANGELING_CELL_ID_ASH_DRAKE,
+		CHANGELING_CELL_ID_BUBBLEGUM,
 	)
 	required_abilities = list(
 			/datum/action/changeling/adrenaline,

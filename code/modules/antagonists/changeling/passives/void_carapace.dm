@@ -1,8 +1,8 @@
-/// Passive: Void Carapace — condenses void-touched armor that surges during hazard exposure.
+/// Passive: Void Carapace — condenses teshari void instincts, goliath stone plates, and watcher frost cores into armor that surges during hazard exposure.
 /datum/changeling_genetic_matrix_recipe/void_carapace
 	id = "matrix_void_carapace"
 	name = "Void Carapace"
-	description = "Crystallize void-borne armor across our frame without permanent penalties."
+	description = "Crystallize void-borne armor from Teshari void instincts, goliath stone plates, and watcher frost cores across our frame without permanent penalties."
 	module = list(
 		"id" = "matrix_void_carapace",
 		"name" = "Void Carapace",
@@ -14,8 +14,9 @@
 		"button_icon_state" = null,
 	)
 	required_cells = list(
-		CHANGELING_CELL_ID_VOX,
-		CHANGELING_CELL_ID_COLOSSUS,
+		CHANGELING_CELL_ID_TESHARI,
+		CHANGELING_CELL_ID_GOLIATH,
+		CHANGELING_CELL_ID_WATCHER,
 	)
 	required_abilities = list(
 		/datum/action/changeling/void_adaption,

@@ -30,6 +30,18 @@
 #define CHANGELING_CELL_ID_CHICKEN "chicken"
 #define CHANGELING_CELL_ID_COW "cow"
 #define CHANGELING_CELL_ID_GOAT "goat"
+#define CHANGELING_CELL_ID_PARROT "parrot"
+#define CHANGELING_CELL_ID_BUTTERFLY "butterfly"
+#define CHANGELING_CELL_ID_CAT "cat"
+#define CHANGELING_CELL_ID_CORGI "corgi"
+#define CHANGELING_CELL_ID_SHEEP "sheep"
+#define CHANGELING_CELL_ID_PIG "pig"
+#define CHANGELING_CELL_ID_PONY "pony"
+#define CHANGELING_CELL_ID_CRAB "crab"
+#define CHANGELING_CELL_ID_FOX "fox"
+#define CHANGELING_CELL_ID_RABBIT "rabbit"
+#define CHANGELING_CELL_ID_MOTHROACH "mothroach"
+#define CHANGELING_CELL_ID_PUG "pug"
 #define CHANGELING_CELL_ID_COLOSSUS "colossus"
 #define CHANGELING_CELL_ID_SPACE_CARP "space_carp"
 #define CHANGELING_CELL_ID_GIANT_SPIDER "giant_spider"
@@ -193,6 +205,73 @@ GLOBAL_LIST_INIT(changeling_cell_registry, list(
                 CHANGELING_CELL_REGISTRY_NAME = "Goat",
                 CHANGELING_CELL_REGISTRY_DESC = "Stubborn grazer tissues ideal for endurance grafts.",
                 CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/goat),
+        ),
+        CHANGELING_CELL_ID_PARROT = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Parrot",
+                CHANGELING_CELL_REGISTRY_DESC = "Polyglottal cords and mimic neurons sourced from cargo parrots.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/parrot),
+        ),
+        CHANGELING_CELL_ID_BUTTERFLY = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Butterfly",
+                CHANGELING_CELL_REGISTRY_DESC = "Gossamer wing fibers and powder glands taken from decorative butterflies.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/butterfly),
+        ),
+        CHANGELING_CELL_ID_CAT = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Cat",
+                CHANGELING_CELL_REGISTRY_DESC = "Responsive domestic feline musculature delivered in pet crates.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(
+                        /mob/living/basic/pet/cat,
+                        /mob/living/basic/pet/cat/_proc,
+                ),
+        ),
+        CHANGELING_CELL_ID_CORGI = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Corgi",
+                CHANGELING_CELL_REGISTRY_DESC = "Compact herding dog sinew and loyalty pheromones from cargo corgis.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(
+                        /mob/living/basic/pet/dog/corgi,
+                        /mob/living/basic/pet/dog/corgi/lisa,
+                        /mob/living/basic/pet/dog/corgi/exoticcorgi,
+                ),
+        ),
+        CHANGELING_CELL_ID_SHEEP = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Sheep",
+                CHANGELING_CELL_REGISTRY_DESC = "Wool-rich musculature and insulating fat layers from docile sheep.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/sheep),
+        ),
+        CHANGELING_CELL_ID_PIG = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Pig",
+                CHANGELING_CELL_REGISTRY_DESC = "Dense farm-grown myofibers and hardy organs cultured from pigs.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/pig),
+        ),
+        CHANGELING_CELL_ID_PONY = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Pony",
+                CHANGELING_CELL_REGISTRY_DESC = "Sturdy equine tendons and balance nodes harvested from cargo ponies.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/pony),
+        ),
+        CHANGELING_CELL_ID_CRAB = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Crab",
+                CHANGELING_CELL_REGISTRY_DESC = "Armored crustacean plating and pincers from the famed crab rocket.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/crab),
+        ),
+        CHANGELING_CELL_ID_FOX = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Fox",
+                CHANGELING_CELL_REGISTRY_DESC = "Sly scavenger reflexes and scent trackers sourced from fox deliveries.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/pet/fox),
+        ),
+        CHANGELING_CELL_ID_RABBIT = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Rabbit",
+                CHANGELING_CELL_REGISTRY_DESC = "Rapid-fire twitch muscle and burrow instincts from shipping rabbits.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/rabbit),
+        ),
+        CHANGELING_CELL_ID_MOTHROACH = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Mothroach",
+                CHANGELING_CELL_REGISTRY_DESC = "Hybrid dust glands and clinging hairs gathered from novelty mothroaches.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/mothroach),
+        ),
+        CHANGELING_CELL_ID_PUG = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Pug",
+                CHANGELING_CELL_REGISTRY_DESC = "Squashed canine snouts and stubborn loyalty tissue packaged with cargo pugs.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/pet/dog/pug),
         ),
         CHANGELING_CELL_ID_COLOSSUS = list(
                 CHANGELING_CELL_REGISTRY_NAME = "Colossus",
