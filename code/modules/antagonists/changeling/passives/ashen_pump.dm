@@ -1,5 +1,8 @@
 
 /// Upgrade: Ashen Pump — superheats Gene Stim with tajaran heat glands, ash drake embers, and Bubblegum furnace bile.
+/datum/changeling_genetic_module/upgrade/ashen_pump
+	passive_effects = list()
+
 /datum/changeling_genetic_matrix_recipe/ashen_pump
 	id = "matrix_ashen_pump"
 	name = "Ashen Pump"
@@ -10,6 +13,7 @@
 			"desc" = "Gene Stim leaves a plasma flare trail, reduces burn damage, and extends its rush at extra chem cost.",
 			"category" = GENETIC_MATRIX_CATEGORY_UPGRADE,
 			"slotType" = BIO_INCUBATOR_SLOT_FLEX,
+		"moduleType" = /datum/changeling_genetic_module/upgrade/ashen_pump,
 			"tags" = list("gene_stim", "burn"),
 			"exclusiveTags" = list("gene_stim"),
 			"button_icon_state" = "adrenaline",

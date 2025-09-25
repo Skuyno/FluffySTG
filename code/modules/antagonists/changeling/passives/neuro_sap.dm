@@ -1,5 +1,8 @@
 
 /// Upgrade: Neuro Sap — steeps Panacea with slimeperson buffer gel, bee toxin filters, and Legion null-masks that harden us against toxins and radiation.
+/datum/changeling_genetic_module/upgrade/neuro_sap
+	passive_effects = list()
+
 /datum/changeling_genetic_matrix_recipe/neuro_sap
 	id = "matrix_neuro_sap"
 	name = "Neuro Sap"
@@ -10,6 +13,7 @@
 			"desc" = "Panacea leaves a regenerative film that shrugs toxins, slows radiation, and boosts chem recharge.",
 			"category" = GENETIC_MATRIX_CATEGORY_UPGRADE,
 			"slotType" = BIO_INCUBATOR_SLOT_FLEX,
+		"moduleType" = /datum/changeling_genetic_module/upgrade/neuro_sap,
 			"tags" = list("panacea", "chemicals"),
 			"exclusiveTags" = list("panacea"),
 			"button_icon_state" = "panacea",

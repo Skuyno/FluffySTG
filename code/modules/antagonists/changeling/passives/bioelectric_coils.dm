@@ -1,4 +1,11 @@
 /// Passive: Bioelectric Coils — weaves slimeperson conduits, glockroach capacitors, and space carp charge sinks to supercharge every stride while shrugging off fatigue.
+/datum/changeling_genetic_module/passive/bioelectric_coils
+	passive_effects = list(
+		"move_speed_slowdown" = -0.04,
+		"stamina_use_mult" = 0.8,
+		"stamina_regen_time_mult" = 0.7,
+	)
+
 /datum/changeling_genetic_matrix_recipe/bioelectric_coils
 	id = "matrix_bioelectric_coils"
 	name = "Bioelectric Coils"
@@ -10,6 +17,7 @@
 		"helptext" = "Too potent for flex slots; occupies a key conduit.",
 		"category" = GENETIC_MATRIX_CATEGORY_PASSIVE,
 		"slotType" = BIO_INCUBATOR_SLOT_KEY,
+		"moduleType" = /datum/changeling_genetic_module/passive/bioelectric_coils,
 		"tags" = list("mobility", "stamina"),
 		"exclusiveTags" = list("key_speed"),
 		"button_icon_state" = null,
