@@ -2,6 +2,7 @@
 #define GENETIC_MATRIX_CATEGORY_PASSIVE "passive"
 #define GENETIC_MATRIX_CATEGORY_UPGRADE "upgrade"
 
+GLOBAL_LIST_EMPTY(changeling_genetic_module_types)
 GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, setup_changeling_genetic_matrix_recipes())
 
 /// Movespeed modifier used for genetic matrix passive bonuses.
@@ -19,6 +20,8 @@ GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, setup_changeling_genetic_mat
         var/description = ""
         /// Metadata describing the crafted module.
         var/list/module = list()
+        /// The module type spawned when crafting this recipe.
+        var/module_type
         /// Cells required to craft the recipe.
         var/list/required_cells = list()
         /// Abilities required to unlock the recipe.
@@ -36,6 +39,8 @@ GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, setup_changeling_genetic_mat
                 block["name"] = name
         if(!block["desc"])
                 block["desc"] = description
+        if(module_type && !block["moduleType"])
+                block["moduleType"] = module_type
         if(islist(block["effects"]))
                 block["effects"] = block["effects"].Copy()
         return block
@@ -60,6 +65,7 @@ GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, setup_changeling_genetic_mat
 /// Assemble the genetic matrix recipe catalog from all defined recipes.
 /proc/setup_changeling_genetic_matrix_recipes()
         var/list/output = list()
+        GLOB.changeling_genetic_module_types = list()
         for(var/recipe_type as anything in subtypesof(/datum/changeling_genetic_matrix_recipe))
                 if(recipe_type == /datum/changeling_genetic_matrix_recipe)
                         continue
@@ -74,6 +80,11 @@ GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, setup_changeling_genetic_mat
                         qdel(recipe)
                         continue
                 output[recipe_id] = data
+                var/list/module_data = data["module"]
+                if(islist(module_data))
+                        var/module_type = module_data["moduleType"]
+                        if(ispath(module_type, /datum/changeling_genetic_module))
+                                GLOB.changeling_genetic_module_types[recipe_id] = module_type
                 qdel(recipe)
         return output
 

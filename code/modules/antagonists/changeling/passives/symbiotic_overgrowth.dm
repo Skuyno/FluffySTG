@@ -1,4 +1,7 @@
 /// Passive: Symbiotic Overgrowth — cultivates human scar meshes, goat stamina fibers, and sheep mitotic layers that regenerate slowly and prime Regenerate for deeper healing bursts.
+/datum/changeling_genetic_module/passive/symbiotic_overgrowth
+	passive_effects = list()
+
 /datum/changeling_genetic_matrix_recipe/symbiotic_overgrowth
 	id = "matrix_symbiotic_overgrowth"
 	name = "Symbiotic Overgrowth"
@@ -9,6 +12,7 @@
 		"desc" = "Grants a slow baseline regeneration and improves the potency of the Regenerate ability.",
 		"category" = GENETIC_MATRIX_CATEGORY_PASSIVE,
 		"slotType" = BIO_INCUBATOR_SLOT_FLEX,
+		"moduleType" = /datum/changeling_genetic_module/passive/symbiotic_overgrowth,
 		"tags" = list("healing", "sustain"),
 		"exclusiveTags" = list("healing"),
 		"button_icon_state" = "regenerate",

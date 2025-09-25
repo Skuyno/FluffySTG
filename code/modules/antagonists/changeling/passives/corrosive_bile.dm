@@ -1,4 +1,10 @@
 /// Upgrade: Corrosive Bile — distills slimeperson acid bladders, morph solvent sacs, and giant spider venoms to melt restraints in moments with less expenditure.
+/datum/changeling_genetic_module/upgrade/corrosive_bile
+	passive_effects = list(
+		"biodegrade_timer_mult" = 0.4,
+		"biodegrade_chem_discount" = 16,
+	)
+
 /datum/changeling_genetic_matrix_recipe/corrosive_bile
 	id = "matrix_corrosive_bile"
 	name = "Corrosive Bile"
@@ -9,6 +15,7 @@
 		"desc" = "Speeds up Biodegrade reactions while shaving their chemical costs.",
 		"category" = GENETIC_MATRIX_CATEGORY_UPGRADE,
 		"slotType" = BIO_INCUBATOR_SLOT_FLEX,
+		"moduleType" = /datum/changeling_genetic_module/upgrade/corrosive_bile,
 		"tags" = list("acid", "escape"),
 		"exclusiveTags" = list("biodegrade_upgrade"),
 		"button_icon_state" = "biodegrade",

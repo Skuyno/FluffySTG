@@ -1,4 +1,7 @@
 /// Passive: Crystalline Buffer — suspends human riot plating, colossus prism shards, and watcher frost cores as ablative, chem-feeding barrier charges.
+/datum/changeling_genetic_module/passive/crystalline_buffer
+	passive_effects = list()
+
 /datum/changeling_genetic_matrix_recipe/crystalline_buffer
 	id = "matrix_crystalline_buffer"
 	name = "Crystalline Buffer"
@@ -9,6 +12,7 @@
 		"desc" = "Stores four refueling prism charges that negate incoming stuns before erupting in a blinding flash.",
 		"category" = GENETIC_MATRIX_CATEGORY_PASSIVE,
 		"slotType" = BIO_INCUBATOR_SLOT_FLEX,
+		"moduleType" = /datum/changeling_genetic_module/passive/crystalline_buffer,
 		"tags" = list("defense", "chemicals"),
 		"exclusiveTags" = list("shield"),
 	)

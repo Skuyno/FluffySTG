@@ -1,4 +1,7 @@
 /// Passive: Predatory Howl — refines the dissonant shriek with vulpkanin hunting howls, nightmare shadow lungs, and corgi pack calls into an execution note that ruptures skulls and machinery alike.
+/datum/changeling_genetic_module/key/predatory_howl
+	passive_effects = list()
+
 /datum/changeling_genetic_matrix_recipe/predatory_howl
 	id = "matrix_predatory_howl"
 	name = "Predatory Howl"
@@ -10,6 +13,7 @@
 		"helptext" = "Stacks with resonant shriek bonuses; incompatible with other key actives.",
 		"category" = GENETIC_MATRIX_CATEGORY_KEY,
 		"slotType" = BIO_INCUBATOR_SLOT_KEY,
+		"moduleType" = /datum/changeling_genetic_module/key/predatory_howl,
 		"tags" = list("sonic", "offense"),
 		"exclusiveTags" = list("key_active"),
 		"button_icon_state" = "dissonant_shriek",

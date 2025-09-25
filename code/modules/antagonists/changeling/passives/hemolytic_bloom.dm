@@ -1,5 +1,8 @@
 
 /// Upgrade: Hemolytic Bloom — seeds the arm blade with hemophage blooms, glockroach charge sacs, and slaughter demon gore anchors that harvest blood and detonate caustic spores.
+/datum/changeling_genetic_module/upgrade/hemolytic_bloom
+	passive_effects = list()
+
 /datum/changeling_genetic_matrix_recipe/hemolytic_bloom
 	id = "matrix_hemolytic_bloom"
 	name = "Hemolytic Bloom"
@@ -10,6 +13,7 @@
 			"desc" = "Arm Blade strikes intensify bleeding, refund chems, and slain victims erupt into caustic spores.",
 			"category" = GENETIC_MATRIX_CATEGORY_UPGRADE,
 			"slotType" = BIO_INCUBATOR_SLOT_FLEX,
+		"moduleType" = /datum/changeling_genetic_module/upgrade/hemolytic_bloom,
 			"tags" = list("arm_blade", "sustain"),
 			"button_icon_state" = "armblade",
 	)
