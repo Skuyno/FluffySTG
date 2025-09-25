@@ -13,7 +13,7 @@
                 "exclusiveTags" = list("speed_boost"),
                 "button_icon_state" = null,
                 "effects" = list(
-                        "move_speed_slowdown" = -0.12,
+                        "move_speed_slowdown" = -0.03,
                         "stamina_regen_time_mult" = 0.8,
                 ),
         )

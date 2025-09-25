@@ -14,7 +14,7 @@
                 "exclusiveTags" = list("key_speed"),
                 "button_icon_state" = null,
                 "effects" = list(
-                        "move_speed_slowdown" = -0.2,
+                        "move_speed_slowdown" = -0.04,
                         "stamina_use_mult" = 0.8,
                         "stamina_regen_time_mult" = 0.7,
                 ),
