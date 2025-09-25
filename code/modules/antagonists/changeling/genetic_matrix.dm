@@ -29,7 +29,7 @@
 		UnregisterSignal(listened_incubator, COMSIG_CHANGELING_BIO_INCUBATOR_UPDATED)
 		listened_incubator = null
 
-/datum/genetic_matrix/proc/on_bio_incubator_updated(datum/changeling_bio_incubator/incubator, update_flags)
+/datum/genetic_matrix/proc/on_bio_incubator_updated(datum/changeling_bio_incubator/incubator, update_flags, list/module_changes)
 	SIGNAL_HANDLER
 	if(QDELETED(src))
 		return

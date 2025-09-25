@@ -22,8 +22,8 @@
 	var/list/crafted_modules = list()
 	/// Stored build presets.
 	var/list/datum/changeling_bio_incubator/build/builds = list()
-	/// Currently applied module identifiers indexed by slot.
-	var/list/active_module_ids = list()
+	/// Currently applied module instances indexed by slot.
+	var/list/datum/changeling_genetic_module/active_modules = list()
 
 /datum/changeling_bio_incubator/New(datum/antagonist/changeling/changeling)
 	. = ..()
@@ -36,7 +36,13 @@
 	crafted_modules = null
 	QDEL_LIST(builds)
 	builds = null
-	active_module_ids = null
+	if(LAZYLEN(active_modules))
+		for(var/i in 1 to active_modules.len)
+			var/datum/changeling_genetic_module/module = active_modules[i]
+			if(!module)
+				continue
+			deactivate_module_instance(i, module)
+	active_modules = null
 	changeling = null
 	return ..()
 
@@ -69,7 +75,13 @@
 	if(primary)
 		primary.ensure_slot_capacity()
 	ensure_active_capacity()
-	if(!active_module_ids.len)
+	var/has_active_modules = FALSE
+	for(var/datum/changeling_genetic_module/module as anything in active_modules)
+		if(!module)
+			continue
+		has_active_modules = TRUE
+		break
+	if(!has_active_modules)
 		apply_build_configuration(primary, notify = FALSE)
 	else
 		sanitize_active_modules()
@@ -252,6 +264,14 @@
 	data_copy["category"] = sanitize_category(data_copy["category"])
 	data_copy["tags"] = sanitize_tag_list(data_copy["tags"])
 	data_copy["exclusiveTags"] = sanitize_tag_list(data_copy["exclusiveTags"])
+	var/module_type = data_copy["moduleType"]
+	if(istext(module_type))
+		module_type = text2path(module_type)
+	if(!ispath(module_type, /datum/changeling_genetic_module))
+		module_type = GLOB.changeling_genetic_module_types?[module_id]
+	if(ispath(module_type, /datum/changeling_genetic_module))
+		data_copy["moduleType"] = module_type
+		data_copy["moduleTypePath"] = module_type
 	if(!data_copy["source"])
 		data_copy["source"] = "crafted"
 	crafted_modules[module_id] = data_copy
@@ -265,14 +285,17 @@
 	del crafted_modules[module_id]
 	ensure_active_capacity()
 	var/changed = FALSE
-	for(var/i in 1 to active_module_ids.len)
-		if(active_module_ids[i] != module_id)
+	var/list/deactivated = list()
+	for(var/i in 1 to active_modules.len)
+		var/datum/changeling_genetic_module/module = active_modules[i]
+		if(!module || module.id != module_id)
 			continue
-		active_module_ids[i] = null
+		deactivate_module_instance(i, module, deactivated)
 		changed = TRUE
+	var/list/module_changes = build_module_change_payload(null, deactivated)
 	if(changed)
-		notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
-	notify_update(BIO_INCUBATOR_UPDATE_MODULES | BIO_INCUBATOR_UPDATE_BUILDS)
+		notify_update(BIO_INCUBATOR_UPDATE_BUILDS, module_changes)
+	notify_update(BIO_INCUBATOR_UPDATE_MODULES | BIO_INCUBATOR_UPDATE_BUILDS, module_changes)
 	return TRUE
 
 /datum/changeling_bio_incubator/proc/has_module(module_id)
@@ -281,11 +304,24 @@
 
 /datum/changeling_bio_incubator/proc/get_crafted_module_catalog()
 	var/list/catalog = list()
+	var/list/datum/changeling_genetic_module/active_instances = get_active_modules()
 	for(var/module_id in crafted_modules)
 		var/list/entry = crafted_modules[module_id]
 		if(!islist(entry))
 			continue
-		catalog += list(entry.Copy())
+		var/list/copy = entry.Copy()
+		var/is_active = FALSE
+		var/slot_index = null
+		for(var/i in 1 to active_instances.len)
+			var/datum/changeling_genetic_module/module = active_instances[i]
+			if(!module || module.id != module_id)
+				continue
+			is_active = TRUE
+			slot_index = i
+			break
+		copy["active"] = is_active
+		copy["slot"] = slot_index
+		catalog += list(copy)
 	return catalog
 
 /datum/changeling_bio_incubator/proc/get_module_data(module_id)
@@ -299,19 +335,101 @@
 
 /datum/changeling_bio_incubator/proc/ensure_active_capacity()
 	var/max_slots = get_max_slots()
-	if(!islist(active_module_ids))
-		active_module_ids = list()
+	if(!islist(active_modules))
+		active_modules = list()
 	if(max_slots <= 0)
-		active_module_ids.Cut()
+		if(active_modules.len)
+			for(var/i in 1 to active_modules.len)
+				var/datum/changeling_genetic_module/module = active_modules[i]
+				if(!module)
+					continue
+				deactivate_module_instance(i, module)
+		active_modules.Cut()
 		return
-	while(active_module_ids.len < max_slots)
-		active_module_ids += null
-	if(active_module_ids.len > max_slots)
-		active_module_ids.Cut(max_slots + 1, active_module_ids.len + 1)
+	while(active_modules.len < max_slots)
+		active_modules += null
+	if(active_modules.len > max_slots)
+		for(var/i in max_slots + 1 to active_modules.len)
+			var/datum/changeling_genetic_module/module = active_modules[i]
+			if(!module)
+				continue
+			deactivate_module_instance(i, module)
+		active_modules.Cut(max_slots + 1, active_modules.len + 1)
+
+/datum/changeling_bio_incubator/proc/get_active_modules()
+	ensure_active_capacity()
+	return active_modules.Copy()
 
 /datum/changeling_bio_incubator/proc/get_active_module_ids()
 	ensure_active_capacity()
-	return active_module_ids.Copy()
+	var/list/ids = list()
+	for(var/i in 1 to active_modules.len)
+		var/datum/changeling_genetic_module/module = active_modules[i]
+		ids += list(module ? module.id : null)
+	return ids
+
+/datum/changeling_bio_incubator/proc/find_module_instance(module_identifier)
+	var/id_text = sanitize_module_id(module_identifier)
+	if(!id_text)
+		return null
+	ensure_active_capacity()
+	for(var/datum/changeling_genetic_module/module as anything in active_modules)
+		if(!module)
+			continue
+		if(module.id != id_text)
+			continue
+		return module
+	return null
+
+/datum/changeling_bio_incubator/proc/create_module_instance(module_id)
+	if(isnull(module_id))
+		return null
+	var/list/entry = crafted_modules?[module_id]
+	var/module_type = null
+	if(islist(entry))
+		module_type = entry["moduleTypePath"]
+		if(isnull(module_type))
+			module_type = entry["moduleType"]
+		if(istext(module_type))
+			module_type = text2path(module_type)
+	if(!ispath(module_type, /datum/changeling_genetic_module))
+		module_type = GLOB.changeling_genetic_module_types?[module_id]
+	if(istext(module_type))
+		module_type = text2path(module_type)
+	var/datum/changeling_genetic_module/module
+	if(ispath(module_type, /datum/changeling_genetic_module))
+		module = new module_type()
+	else
+		module = new_module_for_id(module_id, changeling)
+	if(!module)
+		return null
+	module.id = module_id
+	module.assign_owner(changeling)
+	return module
+
+/datum/changeling_bio_incubator/proc/deactivate_module_instance(slot, datum/changeling_genetic_module/module, list/deactivated = null)
+	if(!module)
+		return
+	if(slot && active_modules.len >= slot && active_modules[slot] == module)
+		active_modules[slot] = null
+	module.on_deactivate()
+	module.assign_owner(null)
+	if(islist(deactivated) && module.id)
+		deactivated += list(list(
+			"id" = module.id,
+			"slot" = slot,
+		))
+	qdel(module)
+
+/datum/changeling_bio_incubator/proc/build_module_change_payload(list/activated = null, list/deactivated = null)
+	var/list/payload = list()
+	if(LAZYLEN(activated))
+		payload["activated"] = activated.Copy()
+	if(LAZYLEN(deactivated))
+		payload["deactivated"] = deactivated.Copy()
+	if(!payload.len)
+		return null
+	return payload
 
 /datum/changeling_bio_incubator/proc/is_module_active(module_identifier)
 	if(isnull(module_identifier))
@@ -320,8 +438,8 @@
 	var/id_text = sanitize_module_id(module_identifier)
 	if(!id_text)
 		return FALSE
-	for(var/module_id in active_module_ids)
-		if(module_id != id_text)
+	for(var/datum/changeling_genetic_module/module as anything in active_modules)
+		if(!module || module.id != id_text)
 			continue
 		return TRUE
 	return FALSE
@@ -332,26 +450,42 @@
 	ensure_active_capacity()
 	build.ensure_slot_capacity()
 	var/max_slots = get_max_slots()
-	var/list/new_active = list()
-	for(var/i in 1 to max_slots)
-		var/module_id = null
-		if(i <= build.module_ids.len)
-			module_id = sanitize_module_id(build.module_ids[i])
-		if(module_id && (!has_module(module_id) || !module_slot_allowed(module_id, i)))
-			module_id = null
-		new_active += module_id
+	var/list/activated = list()
+	var/list/deactivated = list()
 	var/changed = FALSE
-	if(active_module_ids.len != new_active.len)
-		changed = TRUE
-	else
-		for(var/i in 1 to new_active.len)
-			if(active_module_ids[i] == new_active[i])
-				continue
+	for(var/i in 1 to max_slots)
+		var/desired_id = null
+		if(i <= build.module_ids.len)
+			desired_id = sanitize_module_id(build.module_ids[i])
+		if(desired_id && (!has_module(desired_id) || !module_slot_allowed(desired_id, i)))
+			desired_id = null
+		var/datum/changeling_genetic_module/current = active_modules.len >= i ? active_modules[i] : null
+		if(current && (!desired_id || current.id != desired_id))
+			deactivate_module_instance(i, current, deactivated)
 			changed = TRUE
-			break
-	active_module_ids = new_active
+			current = null
+		if(!desired_id)
+			continue
+		if(current)
+			current.assign_owner(changeling)
+			continue
+		var/datum/changeling_genetic_module/new_module = create_module_instance(desired_id)
+		if(!new_module)
+			continue
+		active_modules[i] = new_module
+		changed = TRUE
+		var/activation_result = new_module.on_activate()
+		if(!activation_result)
+			deactivate_module_instance(i, new_module)
+			continue
+		if(new_module.id)
+			activated += list(list(
+				"id" = new_module.id,
+				"slot" = i,
+			))
+	var/list/module_changes = build_module_change_payload(activated, deactivated)
 	if(changed && notify)
-		notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
+		notify_update(BIO_INCUBATOR_UPDATE_BUILDS, module_changes)
 	else if(!changed)
 		ensure_active_capacity()
 	return TRUE
@@ -359,15 +493,19 @@
 /datum/changeling_bio_incubator/proc/sanitize_active_modules()
 	ensure_active_capacity()
 	var/changed = FALSE
-	for(var/i in 1 to active_module_ids.len)
-		var/module_id = active_module_ids[i]
-		if(!module_id)
+	var/list/deactivated = list()
+	for(var/i in 1 to active_modules.len)
+		var/datum/changeling_genetic_module/module = active_modules[i]
+		if(!module)
 			continue
-		if(!has_module(module_id) || !module_slot_allowed(module_id, i))
-			active_module_ids[i] = null
-			changed = TRUE
+		var/module_id = module.id
+		if(module_id && has_module(module_id) && module_slot_allowed(module_id, i))
+			continue
+		deactivate_module_instance(i, module, deactivated)
+		changed = TRUE
 	if(changed)
-		notify_update(BIO_INCUBATOR_UPDATE_BUILDS)
+		var/list/module_changes = build_module_change_payload(null, deactivated)
+		notify_update(BIO_INCUBATOR_UPDATE_BUILDS, module_changes)
 	return changed
 
 /datum/changeling_bio_incubator/proc/add_cell(cell_identifier)
@@ -439,8 +577,8 @@
 		))
 	return output
 
-/datum/changeling_bio_incubator/proc/notify_update(update_flags = BIO_INCUBATOR_UPDATE_ALL)
-	SEND_SIGNAL(src, COMSIG_CHANGELING_BIO_INCUBATOR_UPDATED, update_flags)
+/datum/changeling_bio_incubator/proc/notify_update(update_flags = BIO_INCUBATOR_UPDATE_ALL, list/module_changes = null)
+	SEND_SIGNAL(src, COMSIG_CHANGELING_BIO_INCUBATOR_UPDATED, update_flags, module_changes)
 	if(changeling?.genetic_matrix)
 		SStgui.update_uis(changeling.genetic_matrix)
 
@@ -491,6 +629,7 @@
 	)
 	ensure_slot_capacity()
 	var/list/active_ids = bio_incubator?.get_active_module_ids() || list()
+	var/list/datum/changeling_genetic_module/active_instances = bio_incubator?.get_active_modules() || list()
 	data["activeModuleIds"] = active_ids.Copy()
 	var/list/module_data = list()
 	for(var/i in 1 to module_ids.len)
@@ -505,7 +644,12 @@
 			continue
 		entry = entry.Copy()
 		entry["slot"] = i
-		entry["active"] = (i <= active_ids.len) && active_ids[i] == module_id
+		var/is_active = FALSE
+		if(i <= active_instances.len)
+			var/datum/changeling_genetic_module/active_module = active_instances[i]
+			if(active_module?.id == module_id)
+				is_active = TRUE
+		entry["active"] = is_active
 		module_data += list(entry)
 	data["modules"] = module_data
 	return data
