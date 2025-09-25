@@ -9,9 +9,13 @@
 			"name" = "Aether Drake Mantle",
 			"desc" = "Remixes Void Adaption with manual EVA bursts, space mobility traits, and reinforced resistances.",
 			"category" = GENETIC_MATRIX_CATEGORY_PASSIVE,
-			"slotType" = BIO_INCUBATOR_SLOT_FLEX,
-			"tags" = list("mobility", "environment"),
-			"exclusiveTags" = list("adaptation"),
+		"slotType" = BIO_INCUBATOR_SLOT_FLEX,
+		"tags" = list("mobility", "environment"),
+		"exclusiveTags" = list("adaptation"),
+		"effects" = list(
+			"incoming_brute_damage_mult" = 0.7,
+			"incoming_burn_damage_mult" = 0.7,
+		),
 	)
 	required_cells = list(
 		CHANGELING_CELL_ID_VULPKANIN,

@@ -128,8 +128,6 @@
 	var/matrix_adrenal_spike_shockwave_timer
 	/// Cached mob registered for abyssal slip movement hooks.
 	var/mob/living/matrix_abyssal_slip_bound_mob
-	/// Cached resistance bonus granted by the aether drake mantle.
-	var/matrix_aether_drake_resist_bonus = 0
 	/// Whether aether drake mantle traits are currently applied.
 	var/matrix_aether_drake_traits_applied = FALSE
 	/// Pending timers spawned by echo cascade.
@@ -164,6 +162,10 @@
 	var/matrix_current_chem_rate_bonus = 0
 	/// Cached sting range bonus from passive effects.
 	var/matrix_current_sting_range_bonus = 0
+	/// Cached brute damage multiplier from passive effects.
+	var/matrix_current_brute_damage_mult = 1
+	/// Cached burn damage multiplier from passive effects.
+	var/matrix_current_burn_damage_mult = 1
 
 	/// UI displaying how many chems we have
 	var/atom/movable/screen/ling/chems/lingchemdisplay
@@ -612,27 +614,11 @@
 	if(!matrix_aether_drake_traits_applied)
 		living_owner.add_traits(list(TRAIT_SPACEWALK, TRAIT_FREE_HYPERSPACE_MOVEMENT), CHANGELING_TRAIT)
 		matrix_aether_drake_traits_applied = TRUE
-	if(istype(living_owner, /mob/living/carbon/human))
-		var/mob/living/carbon/human/human_owner = living_owner
-		var/datum/physiology/phys = human_owner.physiology
-		if(phys && !matrix_aether_drake_resist_bonus)
-			var/bonus = 0.3
-			phys.brute_mod *= (1 - bonus)
-			phys.burn_mod *= (1 - bonus)
-			matrix_aether_drake_resist_bonus = bonus
 
 /datum/antagonist/changeling/proc/remove_matrix_aether_drake_traits()
 	if(matrix_aether_drake_traits_applied && owner?.current)
 		owner.current.remove_traits(list(TRAIT_SPACEWALK, TRAIT_FREE_HYPERSPACE_MOVEMENT), CHANGELING_TRAIT)
 		matrix_aether_drake_traits_applied = FALSE
-	if(matrix_aether_drake_resist_bonus && ishuman(owner?.current))
-		var/mob/living/carbon/human/human_owner = owner.current
-		var/datum/physiology/phys = human_owner?.physiology
-		if(phys)
-			var/bonus = matrix_aether_drake_resist_bonus
-			phys.brute_mod /= max(1 - bonus, 0.01)
-			phys.burn_mod /= max(1 - bonus, 0.01)
-		matrix_aether_drake_resist_bonus = 0
 
 /datum/antagonist/changeling/proc/update_matrix_graviton_ripsaw_effect(is_active)
 	matrix_graviton_ripsaw_active = !!is_active
@@ -1109,8 +1095,13 @@
 		if(istype(living_owner, /mob/living/carbon/human))
 			var/mob/living/carbon/human/human_owner = living_owner
 			var/datum/physiology/phys = human_owner.physiology
-			if(phys && matrix_current_stamina_use_mult != 1)
-				phys.stamina_mod /= matrix_current_stamina_use_mult
+              if(phys)
+                      if(matrix_current_stamina_use_mult != 1)
+                              phys.stamina_mod /= matrix_current_stamina_use_mult
+                      if(matrix_current_brute_damage_mult != 1)
+                              phys.brute_mod /= matrix_current_brute_damage_mult
+                      if(matrix_current_burn_damage_mult != 1)
+                              phys.burn_mod /= matrix_current_burn_damage_mult
 		if(matrix_current_stamina_regen_mult != 1)
 			living_owner.stamina_regen_time /= matrix_current_stamina_regen_mult
 		if(matrix_current_max_stamina_bonus)
@@ -1127,6 +1118,8 @@
 	matrix_current_max_stamina_bonus = 0
 	matrix_current_chem_rate_bonus = 0
 	matrix_current_sting_range_bonus = 0
+	matrix_current_brute_damage_mult = 1
+	matrix_current_burn_damage_mult = 1
 	genetic_matrix_effect_cache = changeling_get_default_matrix_effects()
 
 /datum/antagonist/changeling/proc/update_matrix_passive_effects(list/active_ids)
@@ -1137,6 +1130,8 @@
 		"biodegrade_timer_mult",
 		"resonant_shriek_confusion_mult",
 		"dissonant_shriek_structure_mult",
+		"incoming_brute_damage_mult",
+		"incoming_burn_damage_mult",
 	)
 	var/list/effect_totals = changeling_get_default_matrix_effects()
 	if(islist(active_ids))
@@ -1174,6 +1169,10 @@
 	var/max_bonus = round(totals["max_stamina_add"])
 	var/chem_bonus = totals["chem_recharge_rate_add"]
 	var/sting_bonus = round(totals["sting_range_add"])
+      var/brute_damage_mult = isnum(totals["incoming_brute_damage_mult"]) ? totals["incoming_brute_damage_mult"] : 1
+      var/burn_damage_mult = isnum(totals["incoming_burn_damage_mult"]) ? totals["incoming_burn_damage_mult"] : 1
+      brute_damage_mult = max(brute_damage_mult, 0.0001)
+      burn_damage_mult = max(burn_damage_mult, 0.0001)
 
 	matrix_current_movespeed_slowdown = move_slowdown
 	matrix_current_stamina_use_mult = stamina_mult
@@ -1181,6 +1180,8 @@
 	matrix_current_max_stamina_bonus = max_bonus
 	matrix_current_chem_rate_bonus = chem_bonus
 	matrix_current_sting_range_bonus = sting_bonus
+	matrix_current_brute_damage_mult = brute_damage_mult
+	matrix_current_burn_damage_mult = burn_damage_mult
 
 	if(chem_bonus)
 		chem_recharge_rate += chem_bonus
@@ -1199,8 +1200,13 @@
 	if(istype(living_owner, /mob/living/carbon/human))
 		var/mob/living/carbon/human/human_owner = living_owner
 		var/datum/physiology/phys = human_owner.physiology
-		if(phys && stamina_mult != 1)
-			phys.stamina_mod *= stamina_mult
+              if(phys)
+                      if(stamina_mult != 1)
+                              phys.stamina_mod *= stamina_mult
+                      if(brute_damage_mult != 1)
+                              phys.brute_mod *= brute_damage_mult
+                      if(burn_damage_mult != 1)
+                              phys.burn_mod *= burn_damage_mult
 	if(regen_mult != 1)
 		living_owner.stamina_regen_time *= regen_mult
 	if(max_bonus)

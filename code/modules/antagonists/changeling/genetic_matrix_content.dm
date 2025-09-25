@@ -96,4 +96,6 @@ GLOBAL_LIST_INIT(changeling_genetic_matrix_recipes, setup_changeling_genetic_mat
                 "resonant_shriek_confusion_mult" = 1,
                 "dissonant_shriek_emp_range_add" = 0,
                 "dissonant_shriek_structure_mult" = 1,
+                "incoming_brute_damage_mult" = 1,
+                "incoming_burn_damage_mult" = 1,
         )
