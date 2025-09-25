@@ -3365,6 +3365,7 @@
 #include "code\modules\antagonists\changeling\fallen_changeling.dm"
 #include "code\modules\antagonists\changeling\genetic_matrix.dm"
 #include "code\modules\antagonists\changeling\genetic_matrix_content.dm"
+#include "code\modules\antagonists\changeling\modules\_module.dm"
 #include "code\modules\antagonists\changeling\headslug_eggs.dm"
 #include "code\modules\antagonists\changeling\passives\abyssal_slip.dm"
 #include "code\modules\antagonists\changeling\passives\adrenal_spike.dm"
