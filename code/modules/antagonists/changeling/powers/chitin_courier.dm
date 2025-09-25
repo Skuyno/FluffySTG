@@ -11,7 +11,7 @@
 
 /datum/action/changeling/chitin_courier/sting_action(mob/living/user)
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
-	if(!changeling_data?.matrix_chitin_courier_active)
+	if(!changeling_data?.is_genetic_matrix_module_active("matrix_chitin_courier"))
 		user.balloon_alert(user, "needs courier")
 		return FALSE
 	if(changeling_data.retrieve_chitin_courier_item(user))

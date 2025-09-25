@@ -53,7 +53,7 @@
 		stacks++
 
 		var/stamina_penalty = stacks * 1.3
-		if(changeling_data?.matrix_predator_sinew_active)
+		if(changeling_data?.is_genetic_matrix_module_active("matrix_predator_sinew"))
 			stamina_penalty *= 0.3
 		user.adjustStaminaLoss(stamina_penalty) //At first the changeling may regenerate stamina fast enough to nullify fatigue, but it will stack
 
