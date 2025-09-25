@@ -1,3 +1,7 @@
+#ifndef CHANGELING_MODULE_ACTIVE_FLAG
+#define CHANGELING_MODULE_ACTIVE_FLAG "__changeling_module_active__"
+#endif
+
 #define BIO_INCUBATOR_MAX_MODULE_SLOTS 4
 #define BIO_INCUBATOR_MAX_BUILDS 6
 
@@ -413,6 +417,7 @@
 	if(slot && active_modules.len >= slot && active_modules[slot] == module)
 		active_modules[slot] = null
 	module.on_deactivate()
+	module.vars[CHANGELING_MODULE_ACTIVE_FLAG] = FALSE
 	module.assign_owner(null)
 	if(islist(deactivated) && module.id)
 		deactivated += list(list(
@@ -478,6 +483,7 @@
 		if(!activation_result)
 			deactivate_module_instance(i, new_module)
 			continue
+		new_module.vars[CHANGELING_MODULE_ACTIVE_FLAG] = TRUE
 		if(new_module.id)
 			activated += list(list(
 				"id" = new_module.id,

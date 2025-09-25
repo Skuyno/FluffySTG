@@ -76,50 +76,18 @@
 	var/datum/changeling_bio_incubator/bio_incubator
 	/// Whether the changeling is currently rewriting their genetic matrix.
 	var/genetic_matrix_reconfiguring = FALSE
-	/// Cached identifiers for currently active genetic matrix modules.
-	var/list/current_matrix_module_ids = list()
-	/// Whether the predatory howl matrix module is active.
-	var/matrix_predatory_howl_active = FALSE
-	/// Whether the symbiotic overgrowth matrix module is active.
-	var/matrix_symbiotic_overgrowth_active = FALSE
-	/// Whether the predator sinew matrix module is active.
-	var/matrix_predator_sinew_active = FALSE
-	/// Whether the void carapace matrix module is active.
-	var/matrix_void_carapace_active = FALSE
-	/// Whether the adrenal spike matrix module is active.
-	var/matrix_adrenal_spike_active = FALSE
-	/// Whether the aether drake mantle matrix module is active.
-	var/matrix_aether_drake_active = FALSE
-	/// Whether the graviton ripsaw matrix module is active.
-	var/matrix_graviton_ripsaw_active = FALSE
+	/// Active genetic matrix modules keyed by identifier.
+	var/list/modules_by_id = list()
 	/// Cooldown tracker for graviton ripsaw's tether launch.
 	COOLDOWN_DECLARE(matrix_graviton_ripsaw_grapple_cooldown)
-	/// Whether the hemolytic bloom matrix module is active.
-	var/matrix_hemolytic_bloom_active = FALSE
-	/// Whether the echo cascade matrix module is active.
-	var/matrix_echo_cascade_active = FALSE
-	/// Whether the abyssal slip matrix module is active.
-	var/matrix_abyssal_slip_active = FALSE
-	/// Whether the crystalline buffer matrix module is active.
-	var/matrix_crystalline_buffer_active = FALSE
-	/// Whether the anaerobic reservoir matrix module is active.
-	var/matrix_anaerobic_reservoir_active = FALSE
 	/// Temporary stamina cushion granted by the anaerobic reservoir surge.
 	var/matrix_anaerobic_reservoir_guard = 0
 	/// Whether we've already messaged about the current anaerobic guard soaking a hit.
 	var/matrix_anaerobic_reservoir_guard_feedback = FALSE
 	/// Cooldown tracker for anaerobic reservoir surges.
 	COOLDOWN_DECLARE(matrix_anaerobic_reservoir_cooldown)
-	/// Whether the ashen pump matrix module is active.
-	var/matrix_ashen_pump_active = FALSE
-	/// Whether the neuro sap matrix module is active.
-	var/matrix_neuro_sap_active = FALSE
 	/// Whether the neuro sap chemical bonus is currently applied.
 	var/matrix_neuro_sap_bonus_applied = FALSE
-	/// Whether the chitin courier matrix module is active.
-	var/matrix_chitin_courier_active = FALSE
-	/// Whether the spore node matrix module is active.
-	var/matrix_spore_node_active = FALSE
 	/// Mob currently registered for predator's sinew hit hooks.
 	var/mob/living/matrix_predator_sinew_bound_mob
 	/// Mob currently registered for anaerobic reservoir stamina interception.
@@ -215,6 +183,11 @@
 
 /datum/antagonist/changeling/Destroy()
 	clear_matrix_passive_effects()
+	if(modules_by_id)
+		for(var/id in modules_by_id.Copy())
+			var/datum/changeling_genetic_module/module = modules_by_id[id]
+			deactivate_genetic_matrix_module(id, module)
+		modules_by_id.Cut()
 	remove_matrix_aether_burst_action()
 	remove_matrix_aether_drake_traits()
 	remove_matrix_chitin_courier_action()
@@ -273,6 +246,7 @@
 
 	make_brain_decoy(living_mob)
 	apply_genetic_matrix_effects()
+	notify_matrix_module_owner_changed(null, living_mob)
 
 /datum/antagonist/changeling/proc/make_brain_decoy(mob/living/ling)
 	var/obj/item/organ/brain/our_ling_brain = ling.get_organ_slot(ORGAN_SLOT_BRAIN)
@@ -319,6 +293,7 @@
 	REMOVE_TRAIT(living_mob, TRAIT_FAKE_SOULLESS, CHANGELING_TRAIT)
 	unbind_predator_sinew_signals()
 	unbind_anaerobic_reservoir_signals()
+	notify_matrix_module_owner_changed(living_mob, null)
 
 	if(living_mob.hud_used)
 		var/datum/hud/hud_used = living_mob.hud_used
@@ -422,48 +397,175 @@
 	update_genetic_matrix_unlocks()
 	apply_genetic_matrix_effects()
 
+/**
+ * Synchronises the changeling's active genetic matrix modules with the bio incubator.
+ */
 /datum/antagonist/changeling/proc/apply_genetic_matrix_effects()
-	var/list/active_ids = list()
-	if(bio_incubator)
-		var/list/incubator_ids = bio_incubator.get_active_module_ids()
-		for(var/module_id in incubator_ids)
-			if(isnull(module_id))
-				continue
-			var/id_text = bio_incubator.sanitize_module_id(module_id)
-			if(isnull(id_text))
-				id_text = "[module_id]"
-			if(!(id_text in active_ids))
-				active_ids += id_text
-	current_matrix_module_ids = active_ids
-	update_matrix_predatory_howl("matrix_predatory_howl" in active_ids)
-	update_matrix_symbiotic_overgrowth("matrix_symbiotic_overgrowth" in active_ids)
-	update_matrix_predator_sinew_effect("matrix_predator_sinew" in active_ids)
-	update_matrix_void_carapace_effect("matrix_void_carapace" in active_ids)
-	update_matrix_adrenal_spike_effect("matrix_adrenal_spike" in active_ids)
-	update_matrix_aether_drake_effect("matrix_aether_drake_mantle" in active_ids)
-	update_matrix_graviton_ripsaw_effect("matrix_graviton_ripsaw" in active_ids)
-	update_matrix_hemolytic_bloom_effect("matrix_hemolytic_bloom" in active_ids)
-	update_matrix_echo_cascade_effect("matrix_echo_cascade" in active_ids)
-	update_matrix_abyssal_slip_effect("matrix_abyssal_slip" in active_ids)
-	update_matrix_crystalline_buffer_effect("matrix_crystalline_buffer" in active_ids)
-	update_matrix_anaerobic_reservoir_effect("matrix_anaerobic_reservoir" in active_ids)
-	update_matrix_ashen_pump_effect("matrix_ashen_pump" in active_ids)
-	update_matrix_neuro_sap_effect("matrix_neuro_sap" in active_ids)
-	update_matrix_chitin_courier_effect("matrix_chitin_courier" in active_ids)
-	update_matrix_spore_node_effect("matrix_spore_node" in active_ids)
-	update_matrix_passive_effects(active_ids)
+	if(!modules_by_id)
+		modules_by_id = list()
+	var/list/datum/changeling_genetic_module/active_instances = bio_incubator?.get_active_modules() || list()
+	var/list/new_map = list()
+	for(var/datum/changeling_genetic_module/instance as anything in active_instances)
+		if(!instance || QDELETED(instance))
+			continue
+		var/id_text = get_module_id_text(instance.id)
+		if(isnull(id_text))
+			continue
+		if(new_map[id_text])
+			continue
+		new_map[id_text] = instance
+	var/list/previous_modules = modules_by_id.Copy()
+	for(var/id in previous_modules)
+		var/datum/changeling_genetic_module/old_module = previous_modules[id]
+		var/datum/changeling_genetic_module/current_module = new_map[id]
+		if(old_module && current_module && old_module == current_module)
+			continue
+		modules_by_id -= id
+		deactivate_genetic_matrix_module(id, old_module)
+	for(var/id in new_map)
+		var/datum/changeling_genetic_module/module = new_map[id]
+		if(previous_modules[id] == module)
+			modules_by_id[id] = module
+			continue
+		activate_genetic_matrix_module(id, module)
+	update_matrix_passive_effects()
 
 /datum/antagonist/changeling/proc/is_genetic_matrix_module_active(module_identifier)
-	if(isnull(module_identifier))
-		return FALSE
-	var/id_text
-	if(istext(module_identifier))
-		id_text = module_identifier
-	else if(bio_incubator)
-		id_text = bio_incubator.sanitize_module_id(module_identifier)
+	return !!get_module(module_identifier)
+
+/datum/antagonist/changeling/proc/get_module(module_identifier)
+	var/id_text = get_module_id_text(module_identifier)
 	if(isnull(id_text))
-		id_text = "[module_identifier]"
-	return id_text in current_matrix_module_ids
+		return null
+	return modules_by_id?[id_text]
+
+/datum/antagonist/changeling/proc/get_active_modules()
+	if(!modules_by_id)
+		return list()
+	return modules_by_id.Copy()
+
+/datum/antagonist/changeling/proc/get_module_id_text(module_identifier)
+	if(isnull(module_identifier))
+		return null
+	if(istext(module_identifier))
+		return module_identifier
+	if(bio_incubator)
+		var/id_text = bio_incubator.sanitize_module_id(module_identifier)
+		if(id_text)
+			return id_text
+	return "[module_identifier]"
+
+/datum/antagonist/changeling/proc/activate_genetic_matrix_module(module_identifier, datum/changeling_genetic_module/module)
+	if(!module || QDELETED(module))
+		return
+	var/id_text = get_module_id_text(module_identifier)
+	if(isnull(id_text))
+		return
+	if(module.owner != src)
+		module.assign_owner(src)
+	var/already_active = module.vars?[CHANGELING_MODULE_ACTIVE_FLAG]
+	if(!already_active)
+		var/activation_result = module.on_activate()
+		if(!activation_result)
+			module.on_deactivate()
+			module.assign_owner(null)
+			module.vars[CHANGELING_MODULE_ACTIVE_FLAG] = FALSE
+			return
+	module.vars[CHANGELING_MODULE_ACTIVE_FLAG] = TRUE
+	modules_by_id[id_text] = module
+	module.on_owner_changed(null, owner?.current)
+	on_matrix_module_activated(module)
+
+/datum/antagonist/changeling/proc/deactivate_genetic_matrix_module(module_identifier, datum/changeling_genetic_module/module)
+	var/id_text = get_module_id_text(module_identifier)
+	if(isnull(id_text))
+		id_text = null
+	if(module && !QDELETED(module))
+		var/mob/living/old_holder = module.get_owner_mob()
+		if(module.vars?[CHANGELING_MODULE_ACTIVE_FLAG])
+			module.on_deactivate()
+		module.vars[CHANGELING_MODULE_ACTIVE_FLAG] = FALSE
+		module.on_owner_changed(old_holder, null)
+		if(module.owner == src)
+			module.assign_owner(null)
+	if(id_text && modules_by_id)
+		modules_by_id -= id_text
+	on_matrix_module_deactivated(module_identifier, module)
+
+/datum/antagonist/changeling/proc/on_matrix_module_activated(datum/changeling_genetic_module/module)
+	if(!module)
+		return
+	switch(get_module_id_text(module.id))
+		if("matrix_predator_sinew")
+			update_matrix_predator_sinew_effect()
+		if("matrix_void_carapace")
+			update_matrix_void_carapace_effect()
+		if("matrix_adrenal_spike")
+			update_matrix_adrenal_spike_effect()
+		if("matrix_aether_drake_mantle")
+			update_matrix_aether_drake_effect()
+		if("matrix_graviton_ripsaw")
+			update_matrix_graviton_ripsaw_effect()
+		if("matrix_hemolytic_bloom")
+			update_matrix_hemolytic_bloom_effect()
+		if("matrix_echo_cascade")
+			update_matrix_echo_cascade_effect()
+		if("matrix_abyssal_slip")
+			update_matrix_abyssal_slip_effect()
+		if("matrix_crystalline_buffer")
+			update_matrix_crystalline_buffer_effect()
+		if("matrix_anaerobic_reservoir")
+			update_matrix_anaerobic_reservoir_effect()
+		if("matrix_ashen_pump")
+			update_matrix_ashen_pump_effect()
+		if("matrix_neuro_sap")
+			update_matrix_neuro_sap_effect()
+		if("matrix_chitin_courier")
+			update_matrix_chitin_courier_effect()
+		if("matrix_spore_node")
+			update_matrix_spore_node_effect()
+
+/datum/antagonist/changeling/proc/on_matrix_module_deactivated(module_identifier, datum/changeling_genetic_module/module)
+	switch(get_module_id_text(module_identifier))
+		if("matrix_predator_sinew")
+			update_matrix_predator_sinew_effect()
+		if("matrix_void_carapace")
+			update_matrix_void_carapace_effect()
+		if("matrix_adrenal_spike")
+			update_matrix_adrenal_spike_effect()
+		if("matrix_aether_drake_mantle")
+			update_matrix_aether_drake_effect()
+		if("matrix_graviton_ripsaw")
+			update_matrix_graviton_ripsaw_effect()
+		if("matrix_hemolytic_bloom")
+			update_matrix_hemolytic_bloom_effect()
+		if("matrix_echo_cascade")
+			update_matrix_echo_cascade_effect()
+		if("matrix_abyssal_slip")
+			update_matrix_abyssal_slip_effect()
+		if("matrix_crystalline_buffer")
+			update_matrix_crystalline_buffer_effect()
+		if("matrix_anaerobic_reservoir")
+			update_matrix_anaerobic_reservoir_effect()
+		if("matrix_ashen_pump")
+			update_matrix_ashen_pump_effect()
+		if("matrix_neuro_sap")
+			update_matrix_neuro_sap_effect()
+		if("matrix_chitin_courier")
+			update_matrix_chitin_courier_effect()
+		if("matrix_spore_node")
+			update_matrix_spore_node_effect()
+
+/datum/antagonist/changeling/proc/notify_matrix_module_owner_changed(mob/living/old_holder, mob/living/new_holder)
+	if(!modules_by_id)
+		return
+	for(var/id in modules_by_id)
+		var/datum/changeling_genetic_module/module = modules_by_id[id]
+		if(!module || QDELETED(module))
+			continue
+		module.on_owner_changed(old_holder, new_holder)
+		if(new_holder)
+			on_matrix_module_activated(module)
 
 /datum/antagonist/changeling/proc/get_changeling_power_instance(power_path)
 	if(!ispath(power_path, /datum/action/changeling))
@@ -475,15 +577,8 @@
 			return power
 	return null
 
-/datum/antagonist/changeling/proc/update_matrix_predatory_howl(is_active)
-	matrix_predatory_howl_active = !!is_active
-
-/datum/antagonist/changeling/proc/update_matrix_symbiotic_overgrowth(is_active)
-	matrix_symbiotic_overgrowth_active = !!is_active
-
-/datum/antagonist/changeling/proc/update_matrix_predator_sinew_effect(is_active)
-	matrix_predator_sinew_active = !!is_active
-	if(!matrix_predator_sinew_active)
+/datum/antagonist/changeling/proc/update_matrix_predator_sinew_effect()
+	if(!is_genetic_matrix_module_active("matrix_predator_sinew"))
 		unbind_predator_sinew_signals()
 		return
 	bind_predator_sinew_signals(owner?.current)
@@ -492,7 +587,7 @@
 	if(matrix_predator_sinew_bound_mob == new_host)
 		return
 	unbind_predator_sinew_signals()
-	if(!matrix_predator_sinew_active || !isliving(new_host))
+	if(!is_genetic_matrix_module_active("matrix_predator_sinew") || !isliving(new_host))
 		return
 	RegisterSignal(new_host, COMSIG_MOB_ITEM_ATTACK, PROC_REF(on_predator_sinew_item_attack))
 	RegisterSignal(new_host, COMSIG_LIVING_UNARMED_ATTACK, PROC_REF(on_predator_sinew_unarmed_attack))
@@ -514,7 +609,7 @@
 		handle_predator_sinew_knockdown(target)
 
 /datum/antagonist/changeling/proc/handle_predator_sinew_knockdown(mob/living/target)
-	if(!matrix_predator_sinew_active)
+	if(!is_genetic_matrix_module_active("matrix_predator_sinew"))
 		return
 	var/mob/living/carbon/user = owner?.current
 	if(!istype(user) || user != matrix_predator_sinew_bound_mob)
@@ -537,26 +632,26 @@
 		span_hear("You hear a heavy impact and a body hitting the ground."),
 	)
 
-/datum/antagonist/changeling/proc/update_matrix_void_carapace_effect(is_active)
-	matrix_void_carapace_active = !!is_active
+/datum/antagonist/changeling/proc/update_matrix_void_carapace_effect()
 	var/datum/action/changeling/void_adaption/adaption = get_changeling_power_instance(/datum/action/changeling/void_adaption)
 	adaption?.sync_module_state(src)
 
-/datum/antagonist/changeling/proc/update_matrix_adrenal_spike_effect(is_active)
-	matrix_adrenal_spike_active = !!is_active
-	if(!matrix_adrenal_spike_active)
+/datum/antagonist/changeling/proc/update_matrix_adrenal_spike_effect()
+	if(!is_genetic_matrix_module_active("matrix_adrenal_spike"))
 		if(matrix_adrenal_spike_shockwave_timer)
 			deltimer(matrix_adrenal_spike_shockwave_timer)
 			matrix_adrenal_spike_shockwave_timer = null
 		owner?.current?.remove_status_effect(/datum/status_effect/changeling_adrenal_overdrive)
+		return
+	ensure_matrix_adrenal_overdrive_action(owner?.current)
 
 /datum/antagonist/changeling/proc/apply_matrix_adrenal_overdrive(mob/living/carbon/user)
-	if(!matrix_adrenal_spike_active || !istype(user))
+	if(!is_genetic_matrix_module_active("matrix_adrenal_spike") || !istype(user))
 		return
 	user.apply_status_effect(/datum/status_effect/changeling_adrenal_overdrive, src)
 
 /datum/antagonist/changeling/proc/schedule_adrenal_spike_shockwave(mob/living/carbon/user)
-	if(!matrix_adrenal_spike_active || !istype(user))
+	if(!is_genetic_matrix_module_active("matrix_adrenal_spike") || !istype(user))
 		return
 	if(matrix_adrenal_spike_shockwave_timer)
 		deltimer(matrix_adrenal_spike_shockwave_timer)
@@ -564,7 +659,7 @@
 
 /datum/antagonist/changeling/proc/adrenal_spike_shockwave(mob/living/carbon/user)
 	matrix_adrenal_spike_shockwave_timer = null
-	if(!matrix_adrenal_spike_active || !istype(user) || user.stat == DEAD)
+	if(!is_genetic_matrix_module_active("matrix_adrenal_spike") || !istype(user) || user.stat == DEAD)
 		return
 	var/turf/user_turf = get_turf(user)
 	if(user_turf)
@@ -579,11 +674,12 @@
 		nearby.Knockdown(3 SECONDS)
 		nearby.adjustStaminaLoss(20)
 
-/datum/antagonist/changeling/proc/update_matrix_aether_drake_effect(is_active)
-	matrix_aether_drake_active = !!is_active
-	if(!matrix_aether_drake_active)
+/datum/antagonist/changeling/proc/update_matrix_aether_drake_effect()
+	if(!is_genetic_matrix_module_active("matrix_aether_drake_mantle"))
 		remove_matrix_aether_burst_action()
 		remove_matrix_aether_drake_traits()
+		var/datum/action/changeling/void_adaption/adaption = get_changeling_power_instance(/datum/action/changeling/void_adaption)
+		adaption?.sync_module_state(src)
 		return
 	ensure_matrix_aether_burst_action()
 	apply_matrix_aether_drake_traits()
@@ -591,7 +687,7 @@
 	adaption?.sync_module_state(src)
 
 /datum/antagonist/changeling/proc/ensure_matrix_aether_burst_action()
-	if(!matrix_aether_drake_active)
+	if(!is_genetic_matrix_module_active("matrix_aether_drake_mantle"))
 		return
 	if(!matrix_aether_burst_action)
 		matrix_aether_burst_action = new
@@ -606,7 +702,7 @@
 	QDEL_NULL(matrix_aether_burst_action)
 
 /datum/antagonist/changeling/proc/apply_matrix_aether_drake_traits()
-	if(!matrix_aether_drake_active)
+	if(!is_genetic_matrix_module_active("matrix_aether_drake_mantle"))
 		return
 	var/mob/living/living_owner = owner?.current
 	if(!isliving(living_owner))
@@ -620,16 +716,15 @@
 		owner.current.remove_traits(list(TRAIT_SPACEWALK, TRAIT_FREE_HYPERSPACE_MOVEMENT), CHANGELING_TRAIT)
 		matrix_aether_drake_traits_applied = FALSE
 
-/datum/antagonist/changeling/proc/update_matrix_graviton_ripsaw_effect(is_active)
-	matrix_graviton_ripsaw_active = !!is_active
-	if(!matrix_graviton_ripsaw_active)
+/datum/antagonist/changeling/proc/update_matrix_graviton_ripsaw_effect()
+	if(!is_genetic_matrix_module_active("matrix_graviton_ripsaw"))
 		COOLDOWN_RESET(src, matrix_graviton_ripsaw_grapple_cooldown)
 
 #define GRAVITON_RIPSAW_GRAPPLE_RANGE 7
 #define GRAVITON_RIPSAW_GRAPPLE_COOLDOWN (2 SECONDS)
 
 /datum/antagonist/changeling/proc/try_matrix_graviton_ripsaw_grapple(atom/grapple_target, mob/living/user)
-	if(!matrix_graviton_ripsaw_active || owner?.current != user)
+	if(!is_genetic_matrix_module_active("matrix_graviton_ripsaw") || owner?.current != user)
 		return NONE
 	if(!istype(user))
 		return ITEM_INTERACT_BLOCKING
@@ -687,14 +782,12 @@
 #undef GRAVITON_RIPSAW_GRAPPLE_RANGE
 #undef GRAVITON_RIPSAW_GRAPPLE_COOLDOWN
 
-/datum/antagonist/changeling/proc/update_matrix_hemolytic_bloom_effect(is_active)
-	matrix_hemolytic_bloom_active = !!is_active
-	if(!matrix_hemolytic_bloom_active)
+/datum/antagonist/changeling/proc/update_matrix_hemolytic_bloom_effect()
+	if(!is_genetic_matrix_module_active("matrix_hemolytic_bloom"))
 		matrix_hemolytic_seeded.Cut()
 
-/datum/antagonist/changeling/proc/update_matrix_echo_cascade_effect(is_active)
-	matrix_echo_cascade_active = !!is_active
-	if(!matrix_echo_cascade_active)
+/datum/antagonist/changeling/proc/update_matrix_echo_cascade_effect()
+	if(!is_genetic_matrix_module_active("matrix_echo_cascade"))
 		clear_matrix_echo_cascade_timers()
 
 /datum/antagonist/changeling/proc/clear_matrix_echo_cascade_timers()
@@ -704,9 +797,8 @@
 		deltimer(timer_id)
 	matrix_echo_cascade_pending.Cut()
 
-/datum/antagonist/changeling/proc/update_matrix_abyssal_slip_effect(is_active)
-	matrix_abyssal_slip_active = !!is_active
-	if(!matrix_abyssal_slip_active)
+/datum/antagonist/changeling/proc/update_matrix_abyssal_slip_effect()
+	if(!is_genetic_matrix_module_active("matrix_abyssal_slip"))
 		remove_matrix_abyssal_slip_traits()
 		unbind_abyssal_slip_signals()
 		return
@@ -714,7 +806,7 @@
 	bind_abyssal_slip_signals(owner?.current)
 
 /datum/antagonist/changeling/proc/apply_matrix_abyssal_slip_traits()
-	if(!matrix_abyssal_slip_active || !owner?.current)
+	if(!is_genetic_matrix_module_active("matrix_abyssal_slip") || !owner?.current)
 		return
 	owner.current.add_traits(list(TRAIT_SILENT_FOOTSTEPS, TRAIT_LIGHT_STEP), CHANGELING_TRAIT)
 
@@ -727,7 +819,7 @@
 	if(matrix_abyssal_slip_bound_mob == new_host)
 		return
 	unbind_abyssal_slip_signals()
-	if(!matrix_abyssal_slip_active || !isliving(new_host))
+	if(!is_genetic_matrix_module_active("matrix_abyssal_slip") || !isliving(new_host))
 		return
 	RegisterSignal(new_host, COMSIG_MOVABLE_MOVED, PROC_REF(on_abyssal_slip_moved))
 	matrix_abyssal_slip_bound_mob = new_host
@@ -740,7 +832,7 @@
 
 /datum/antagonist/changeling/proc/on_abyssal_slip_moved(atom/movable/source, atom/old_loc, move_dir, forced, list/atom/old_locs)
 	SIGNAL_HANDLER
-	if(!matrix_abyssal_slip_active || source != matrix_abyssal_slip_bound_mob)
+	if(!is_genetic_matrix_module_active("matrix_abyssal_slip") || source != matrix_abyssal_slip_bound_mob)
 		return
 	var/mob/living/living_owner = matrix_abyssal_slip_bound_mob
 	if(!living_owner)
@@ -748,19 +840,17 @@
 	var/datum/status_effect/darkness_adapted/adaptation = living_owner.has_status_effect(/datum/status_effect/darkness_adapted)
 	adaptation?.update_invis()
 
-/datum/antagonist/changeling/proc/update_matrix_crystalline_buffer_effect(is_active)
-	matrix_crystalline_buffer_active = !!is_active
+/datum/antagonist/changeling/proc/update_matrix_crystalline_buffer_effect()
 	var/mob/living/living_owner = owner?.current
 	if(!living_owner)
 		return
-	if(matrix_crystalline_buffer_active)
+	if(is_genetic_matrix_module_active("matrix_crystalline_buffer"))
 		living_owner.apply_status_effect(/datum/status_effect/changeling_crystalline_buffer, src)
 	else
 		living_owner.remove_status_effect(/datum/status_effect/changeling_crystalline_buffer)
 
-/datum/antagonist/changeling/proc/update_matrix_anaerobic_reservoir_effect(is_active)
-	matrix_anaerobic_reservoir_active = !!is_active
-	if(!matrix_anaerobic_reservoir_active)
+/datum/antagonist/changeling/proc/update_matrix_anaerobic_reservoir_effect()
+	if(!is_genetic_matrix_module_active("matrix_anaerobic_reservoir"))
 		matrix_anaerobic_reservoir_guard = 0
 		matrix_anaerobic_reservoir_guard_feedback = FALSE
 		COOLDOWN_RESET(src, matrix_anaerobic_reservoir_cooldown)
@@ -772,7 +862,7 @@
 	if(matrix_anaerobic_reservoir_bound_mob == new_host)
 		return
 	unbind_anaerobic_reservoir_signals()
-	if(!matrix_anaerobic_reservoir_active || !isliving(new_host))
+	if(!is_genetic_matrix_module_active("matrix_anaerobic_reservoir") || !isliving(new_host))
 		return
 	RegisterSignal(new_host, COMSIG_LIVING_ADJUST_STAMINA_DAMAGE, PROC_REF(on_anaerobic_reservoir_stamina_damage))
 	matrix_anaerobic_reservoir_bound_mob = new_host
@@ -791,7 +881,7 @@
 #define ANAEROBIC_RESERVOIR_COOLDOWN (20 SECONDS)
 
 /datum/antagonist/changeling/proc/try_matrix_anaerobic_reservoir_surge(mob/living/living_owner)
-	if(!matrix_anaerobic_reservoir_active || !isliving(living_owner))
+	if(!is_genetic_matrix_module_active("matrix_anaerobic_reservoir") || !isliving(living_owner))
 		return
 	bind_anaerobic_reservoir_signals(living_owner)
 	if(living_owner.stat == DEAD)
@@ -811,7 +901,7 @@
 
 /datum/antagonist/changeling/proc/on_anaerobic_reservoir_stamina_damage(mob/living/source, damage_type, amount, forced)
 	SIGNAL_HANDLER
-	if(!matrix_anaerobic_reservoir_active || source != matrix_anaerobic_reservoir_bound_mob)
+	if(!is_genetic_matrix_module_active("matrix_anaerobic_reservoir") || source != matrix_anaerobic_reservoir_bound_mob)
 		return NONE
 	if(amount <= 0 || matrix_anaerobic_reservoir_guard <= 0)
 		return NONE
@@ -833,27 +923,24 @@
 #undef ANAEROBIC_RESERVOIR_GUARD_AMOUNT
 #undef ANAEROBIC_RESERVOIR_COOLDOWN
 
-/datum/antagonist/changeling/proc/update_matrix_ashen_pump_effect(is_active)
-	matrix_ashen_pump_active = !!is_active
-	if(!matrix_ashen_pump_active && owner?.current)
+/datum/antagonist/changeling/proc/update_matrix_ashen_pump_effect()
+	if(!is_genetic_matrix_module_active("matrix_ashen_pump") && owner?.current)
 		owner.current.remove_status_effect(/datum/status_effect/changeling_ashen_pump)
 
-/datum/antagonist/changeling/proc/update_matrix_neuro_sap_effect(is_active)
-	matrix_neuro_sap_active = !!is_active
-	if(!matrix_neuro_sap_active && owner?.current)
+/datum/antagonist/changeling/proc/update_matrix_neuro_sap_effect()
+	if(!is_genetic_matrix_module_active("matrix_neuro_sap") && owner?.current)
 		owner.current.remove_status_effect(/datum/status_effect/changeling_neuro_sap)
 	remove_neuro_sap_bonus()
 
-/datum/antagonist/changeling/proc/update_matrix_chitin_courier_effect(is_active)
-	matrix_chitin_courier_active = !!is_active
-	if(!matrix_chitin_courier_active)
+/datum/antagonist/changeling/proc/update_matrix_chitin_courier_effect()
+	if(!is_genetic_matrix_module_active("matrix_chitin_courier"))
 		remove_matrix_chitin_courier_action()
 		clear_chitin_courier_cache(drop_item = TRUE)
 		return
 	ensure_matrix_chitin_courier_action()
 
 /datum/antagonist/changeling/proc/ensure_matrix_chitin_courier_action()
-	if(!matrix_chitin_courier_active)
+	if(!is_genetic_matrix_module_active("matrix_chitin_courier"))
 		return
 	if(!matrix_chitin_courier_action)
 		matrix_chitin_courier_action = new
@@ -880,7 +967,7 @@
 	matrix_neuro_sap_bonus_applied = FALSE
 
 /datum/antagonist/changeling/proc/schedule_resonant_echo(mob/living/user, range, confusion_mult)
-	if(!matrix_echo_cascade_active || !istype(user))
+	if(!is_genetic_matrix_module_active("matrix_echo_cascade") || !istype(user))
 		return
 	var/id_one = addtimer(CALLBACK(src, PROC_REF(perform_resonant_echo), user, range, confusion_mult, 1), 1.2 SECONDS, TIMER_STOPPABLE)
 	var/id_two = addtimer(CALLBACK(src, PROC_REF(perform_resonant_echo), user, max(range - 1, 0), confusion_mult, 2), 2.4 SECONDS, TIMER_STOPPABLE)
@@ -890,7 +977,7 @@
 		matrix_echo_cascade_pending += id_two
 
 /datum/antagonist/changeling/proc/perform_resonant_echo(mob/living/user, range, confusion_mult, echo_index)
-	if(!matrix_echo_cascade_active || !istype(user) || user.stat == DEAD)
+	if(!is_genetic_matrix_module_active("matrix_echo_cascade") || !istype(user) || user.stat == DEAD)
 		return
 	var/turf/user_turf = get_turf(user)
 	if(user_turf)
@@ -909,7 +996,7 @@
 			target.Paralyze(10)
 
 /datum/antagonist/changeling/proc/schedule_dissonant_echo(mob/living/user, heavy_range, light_range)
-	if(!matrix_echo_cascade_active || !istype(user))
+	if(!is_genetic_matrix_module_active("matrix_echo_cascade") || !istype(user))
 		return
 	var/id_one = addtimer(CALLBACK(src, PROC_REF(perform_dissonant_echo), user, heavy_range, light_range, 1), 1.2 SECONDS, TIMER_STOPPABLE)
 	var/id_two = addtimer(CALLBACK(src, PROC_REF(perform_dissonant_echo), user, max(heavy_range - 1, 0), max(light_range - 1, 0), 2), 2.4 SECONDS, TIMER_STOPPABLE)
@@ -919,7 +1006,7 @@
 		matrix_echo_cascade_pending += id_two
 
 /datum/antagonist/changeling/proc/perform_dissonant_echo(mob/living/user, heavy_range, light_range, echo_index)
-	if(!matrix_echo_cascade_active || !istype(user) || user.stat == DEAD)
+	if(!is_genetic_matrix_module_active("matrix_echo_cascade") || !istype(user) || user.stat == DEAD)
 		return
 	var/turf/user_turf = get_turf(user)
 	if(user_turf)
@@ -934,7 +1021,7 @@
 			target.adjustStaminaLoss(16)
 
 /datum/antagonist/changeling/proc/handle_graviton_ripsaw_hit(atom/target, mob/living/user)
-	if(!matrix_graviton_ripsaw_active || !istype(user))
+	if(!is_genetic_matrix_module_active("matrix_graviton_ripsaw") || !istype(user))
 		return
 	if(!isliving(target))
 		return
@@ -944,7 +1031,7 @@
 	living_target.apply_status_effect(/datum/status_effect/changeling_gravitic_pull, user)
 
 /datum/antagonist/changeling/proc/handle_hemolytic_bloom_hit(atom/target, mob/living/user)
-	if(!matrix_hemolytic_bloom_active || !isliving(target) || !istype(user))
+	if(!is_genetic_matrix_module_active("matrix_hemolytic_bloom") || !isliving(target) || !istype(user))
 		return
 	var/mob/living/living_target = target
 	if(isliving(user))
@@ -969,7 +1056,7 @@
 			spawn_hemolytic_seed(living_target)
 
 /datum/antagonist/changeling/proc/spawn_hemolytic_seed(mob/living/victim)
-	if(!matrix_hemolytic_bloom_active || !istype(victim))
+	if(!is_genetic_matrix_module_active("matrix_hemolytic_bloom") || !istype(victim))
 		return
 	var/turf/location = get_turf(victim)
 	if(!istype(location))
@@ -978,26 +1065,25 @@
 	new /obj/effect/temp_visual/changeling_hemolytic_seed(location, victim, src)
 
 /datum/antagonist/changeling/proc/on_gene_stim_used(mob/living/carbon/user)
-	if(!matrix_ashen_pump_active || !istype(user))
+	if(!is_genetic_matrix_module_active("matrix_ashen_pump") || !istype(user))
 		return
 	user.apply_status_effect(/datum/status_effect/changeling_ashen_pump, src)
 	adjust_chemicals(-3)
 
 /datum/antagonist/changeling/proc/on_panacea_used(mob/living/carbon/user)
-	if(!matrix_neuro_sap_active || !istype(user))
+	if(!is_genetic_matrix_module_active("matrix_neuro_sap") || !istype(user))
 		return
 	user.apply_status_effect(/datum/status_effect/changeling_neuro_sap, src)
 
-/datum/antagonist/changeling/proc/update_matrix_spore_node_effect(is_active)
-	matrix_spore_node_active = !!is_active
-	if(!matrix_spore_node_active)
+/datum/antagonist/changeling/proc/update_matrix_spore_node_effect()
+	if(!is_genetic_matrix_module_active("matrix_spore_node"))
 		remove_matrix_spore_node_action()
 		clear_spore_node()
 		return
 	ensure_matrix_spore_node_action()
 
 /datum/antagonist/changeling/proc/ensure_matrix_spore_node_action()
-	if(!matrix_spore_node_active)
+	if(!is_genetic_matrix_module_active("matrix_spore_node"))
 		return
 	if(!matrix_spore_node_action)
 		matrix_spore_node_action = new
@@ -1012,7 +1098,7 @@
 	QDEL_NULL(matrix_spore_node_action)
 
 /datum/antagonist/changeling/proc/stash_chitin_courier_item(obj/item/held_item, mob/living/user)
-	if(!matrix_chitin_courier_active || !istype(held_item))
+	if(!is_genetic_matrix_module_active("matrix_chitin_courier") || !istype(held_item))
 		return FALSE
 	if(matrix_chitin_courier_item)
 		clear_chitin_courier_cache(drop_item = TRUE)
@@ -1057,7 +1143,7 @@
 	QDEL_NULL(matrix_chitin_courier_cache)
 
 /datum/antagonist/changeling/proc/place_spore_node(turf/location, mob/living/user)
-	if(!matrix_spore_node_active || !istype(location))
+	if(!is_genetic_matrix_module_active("matrix_spore_node") || !istype(location))
 		return FALSE
 	clear_spore_node()
 	var/obj/structure/changeling_spore_node/node = new(location, src)
@@ -1095,13 +1181,13 @@
 		if(istype(living_owner, /mob/living/carbon/human))
 			var/mob/living/carbon/human/human_owner = living_owner
 			var/datum/physiology/phys = human_owner.physiology
-              if(phys)
-                      if(matrix_current_stamina_use_mult != 1)
-                              phys.stamina_mod /= matrix_current_stamina_use_mult
-                      if(matrix_current_brute_damage_mult != 1)
-                              phys.brute_mod /= matrix_current_brute_damage_mult
-                      if(matrix_current_burn_damage_mult != 1)
-                              phys.burn_mod /= matrix_current_burn_damage_mult
+			if(phys)
+				if(matrix_current_stamina_use_mult != 1)
+					phys.stamina_mod /= matrix_current_stamina_use_mult
+				if(matrix_current_brute_damage_mult != 1)
+					phys.brute_mod /= matrix_current_brute_damage_mult
+				if(matrix_current_burn_damage_mult != 1)
+					phys.burn_mod /= matrix_current_burn_damage_mult
 		if(matrix_current_stamina_regen_mult != 1)
 			living_owner.stamina_regen_time /= matrix_current_stamina_regen_mult
 		if(matrix_current_max_stamina_bonus)
@@ -1122,7 +1208,7 @@
 	matrix_current_burn_damage_mult = 1
 	genetic_matrix_effect_cache = changeling_get_default_matrix_effects()
 
-/datum/antagonist/changeling/proc/update_matrix_passive_effects(list/active_ids)
+/datum/antagonist/changeling/proc/update_matrix_passive_effects()
 	var/static/list/multiplicative_effect_keys = list(
 		"stamina_use_mult",
 		"stamina_regen_time_mult",
@@ -1134,15 +1220,12 @@
 		"incoming_burn_damage_mult",
 	)
 	var/list/effect_totals = changeling_get_default_matrix_effects()
-	if(islist(active_ids))
-		for(var/module_id in active_ids)
-			var/list/recipe = GLOB.changeling_genetic_matrix_recipes[module_id]
-			if(!islist(recipe))
+	if(modules_by_id)
+		for(var/id in modules_by_id)
+			var/datum/changeling_genetic_module/module = modules_by_id[id]
+			if(!module || QDELETED(module))
 				continue
-			var/list/module_data = recipe["module"]
-			if(!islist(module_data))
-				continue
-			var/list/module_effects = module_data["effects"]
+			var/list/module_effects = module.get_passive_effects()
 			if(!islist(module_effects))
 				continue
 			for(var/effect_key in module_effects)
@@ -1169,10 +1252,10 @@
 	var/max_bonus = round(totals["max_stamina_add"])
 	var/chem_bonus = totals["chem_recharge_rate_add"]
 	var/sting_bonus = round(totals["sting_range_add"])
-      var/brute_damage_mult = isnum(totals["incoming_brute_damage_mult"]) ? totals["incoming_brute_damage_mult"] : 1
-      var/burn_damage_mult = isnum(totals["incoming_burn_damage_mult"]) ? totals["incoming_burn_damage_mult"] : 1
-      brute_damage_mult = max(brute_damage_mult, 0.0001)
-      burn_damage_mult = max(burn_damage_mult, 0.0001)
+	var/brute_damage_mult = isnum(totals["incoming_brute_damage_mult"]) ? totals["incoming_brute_damage_mult"] : 1
+	var/burn_damage_mult = isnum(totals["incoming_burn_damage_mult"]) ? totals["incoming_burn_damage_mult"] : 1
+	brute_damage_mult = max(brute_damage_mult, 0.0001)
+	burn_damage_mult = max(burn_damage_mult, 0.0001)
 
 	matrix_current_movespeed_slowdown = move_slowdown
 	matrix_current_stamina_use_mult = stamina_mult
@@ -1200,13 +1283,13 @@
 	if(istype(living_owner, /mob/living/carbon/human))
 		var/mob/living/carbon/human/human_owner = living_owner
 		var/datum/physiology/phys = human_owner.physiology
-              if(phys)
-                      if(stamina_mult != 1)
-                              phys.stamina_mod *= stamina_mult
-                      if(brute_damage_mult != 1)
-                              phys.brute_mod *= brute_damage_mult
-                      if(burn_damage_mult != 1)
-                              phys.burn_mod *= burn_damage_mult
+			if(phys)
+				if(stamina_mult != 1)
+					phys.stamina_mod *= stamina_mult
+				if(brute_damage_mult != 1)
+					phys.brute_mod *= brute_damage_mult
+				if(burn_damage_mult != 1)
+					phys.burn_mod *= burn_damage_mult
 	if(regen_mult != 1)
 		living_owner.stamina_regen_time *= regen_mult
 	if(max_bonus)
@@ -1249,6 +1332,7 @@
 
 	regain_powers()
 	apply_genetic_matrix_effects()
+	notify_matrix_module_owner_changed(null, owner?.current)
 
 /**
 	* Signal proc for [COMSIG_LIVING_LIFE].
@@ -1270,7 +1354,7 @@
 	else
 		adjust_chemicals((chem_recharge_rate - chem_recharge_slowdown) * delta_time)
 
-	if(matrix_symbiotic_overgrowth_active && living_owner?.stat != DEAD)
+	if(is_genetic_matrix_module_active("matrix_symbiotic_overgrowth") && living_owner?.stat != DEAD)
 		var/seconds = seconds_per_tick
 		var/needs_update = FALSE
 		if(living_owner && !living_owner.on_fire)
@@ -1285,6 +1369,12 @@
 			living_owner.updatehealth()
 
 	try_matrix_anaerobic_reservoir_surge(living_owner)
+	if(modules_by_id)
+		for(var/id in modules_by_id)
+			var/datum/changeling_genetic_module/module = modules_by_id[id]
+			if(!module || QDELETED(module))
+				continue
+			module.on_tick(delta_time)
 
 /**
 	* Signal proc for [COMSIG_LIVING_POST_FULLY_HEAL]

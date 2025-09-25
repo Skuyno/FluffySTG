@@ -66,7 +66,7 @@
 		L.break_light_tube()
 	stoplag()
 
-	if(changeling_data?.matrix_predatory_howl_active)
+	if(changeling_data?.is_genetic_matrix_module_active("matrix_predatory_howl"))
 		var/lethal_range = max(2 + emp_range_bonus, 0)
 		var/structure_mult = changeling_data?.get_genetic_matrix_effect("dissonant_shriek_structure_mult", 1) || 1
 		for(var/mob/living/victim in get_hearers_in_view(lethal_range, user))

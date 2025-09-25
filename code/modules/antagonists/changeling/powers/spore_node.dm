@@ -11,7 +11,7 @@
 
 /datum/action/changeling/spore_node/sting_action(mob/living/user)
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
-	if(!changeling_data?.matrix_spore_node_active)
+	if(!changeling_data?.is_genetic_matrix_module_active("matrix_spore_node"))
 		user.balloon_alert(user, "needs node module")
 		return FALSE
 	if(changeling_data.detonate_spore_node(user))
@@ -23,7 +23,7 @@
 	if(!do_after(user, 4 SECONDS, target = placement, extra_checks = CALLBACK(src, PROC_REF(can_continue_spore_node), user, placement)))
 		return FALSE
 	changeling_data = IS_CHANGELING(user)
-	if(!changeling_data?.matrix_spore_node_active)
+	if(!changeling_data?.is_genetic_matrix_module_active("matrix_spore_node"))
 		return FALSE
 	if(changeling_data.matrix_spore_node_ref?.resolve())
 		return FALSE
@@ -43,7 +43,7 @@
 	if(placement.is_blocked_turf(TRUE, source_atom = user))
 		return FALSE
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
-	if(!changeling_data?.matrix_spore_node_active)
+	if(!changeling_data?.is_genetic_matrix_module_active("matrix_spore_node"))
 		return FALSE
 	if(changeling_data.matrix_spore_node_ref?.resolve())
 		return FALSE
