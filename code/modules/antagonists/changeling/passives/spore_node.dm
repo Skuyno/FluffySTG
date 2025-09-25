@@ -1,9 +1,9 @@
 
-/// Key Active: Spore Node — plants a pheromone sensor node that can be detonated into restraining spores.
+/// Key Active: Spore Node — plants a pheromone sensor node spun from slimeperson gel, bee swarm instincts, and mothroach lattice that can be detonated into restraining spores.
 /datum/changeling_genetic_matrix_recipe/spore_node
 	id = "matrix_spore_node"
 	name = "Spore Node"
-	description = "Grow a stationary bio-beacon that scouts and can burst into slowing spores on command."
+	description = "Spin slimeperson gel, bee swarm instincts, and mothroach lattice into a sensor node that can be detonated into restraining spores."
 	module = list(
 			"id" = "matrix_spore_node",
 			"name" = "Spore Node",
@@ -15,6 +15,7 @@
 			"exclusiveTags" = list("key_active"),
 	)
 	required_cells = list(
-			CHANGELING_CELL_ID_PODWEAK,
-			CHANGELING_CELL_ID_BEE,
+		CHANGELING_CELL_ID_SLIMEPERSON,
+		CHANGELING_CELL_ID_BEE,
+		CHANGELING_CELL_ID_MOTHROACH,
 	)

@@ -1,9 +1,9 @@
 
-/// Upgrade: Graviton Ripsaw — braids voidwalker muscle into our arm blade for gravitational sweeps.
+/// Upgrade: Graviton Ripsaw — braids tajaran pounce tendons, voidwalker gravity shears, and space carp momentum fins into our armblade for gravitational sweeps.
 /datum/changeling_genetic_matrix_recipe/graviton_ripsaw
 	id = "matrix_graviton_ripsaw"
 	name = "Graviton Ripsaw"
-	description = "Channel voidwalker tendons through our arm blade to lash out with gravitational tendrils."
+	description = "Fuse Tajaran pounce tendons with voidwalker gravity shears and space carp momentum fins to turn the armblade into a gravitic saw."
 	module = list(
 		"id" = "matrix_graviton_ripsaw",
 		"name" = "Graviton Ripsaw",
@@ -14,9 +14,10 @@
 		"button_icon_state" = "armblade",
 )
 	required_cells = list(
+		CHANGELING_CELL_ID_TAJARAN,
 		CHANGELING_CELL_ID_VOIDWALKER,
 		CHANGELING_CELL_ID_SPACE_CARP,
-)
+	)
 	required_abilities = list(
 		/datum/action/changeling/weapon/arm_blade,
 	)

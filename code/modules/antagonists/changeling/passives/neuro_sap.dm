@@ -1,9 +1,9 @@
 
-/// Upgrade: Neuro Sap — steeps Panacea with ghoul enzymes that harden us against toxins and radiation.
+/// Upgrade: Neuro Sap — steeps Panacea with slimeperson buffer gel, bee toxin filters, and Legion null-masks that harden us against toxins and radiation.
 /datum/changeling_genetic_matrix_recipe/neuro_sap
 	id = "matrix_neuro_sap"
 	name = "Neuro Sap"
-	description = "Condense neuro-reactive sap so Panacea grants lingering immunity and chemical momentum."
+	description = "Steep Panacea with slimeperson buffer gel, bee toxin filters, and Legion null-masks to harden us against toxins and radiation."
 	module = list(
 			"id" = "matrix_neuro_sap",
 			"name" = "Neuro Sap",
@@ -15,8 +15,9 @@
 			"button_icon_state" = "panacea",
 	)
 	required_cells = list(
-			CHANGELING_CELL_ID_GHOUL,
-			CHANGELING_CELL_ID_PLASMAMAN,
+		CHANGELING_CELL_ID_SLIMEPERSON,
+		CHANGELING_CELL_ID_BEE,
+		CHANGELING_CELL_ID_LEGION,
 	)
 	required_abilities = list(
 			/datum/action/changeling/panacea,

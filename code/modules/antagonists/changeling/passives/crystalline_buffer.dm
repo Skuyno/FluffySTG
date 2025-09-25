@@ -1,8 +1,8 @@
-/// Passive: Crystalline Buffer — suspends colossus prisms as ablative, chem-feeding barrier charges.
+/// Passive: Crystalline Buffer — suspends human riot plating, colossus prism shards, and watcher frost cores as ablative, chem-feeding barrier charges.
 /datum/changeling_genetic_matrix_recipe/crystalline_buffer
 	id = "matrix_crystalline_buffer"
 	name = "Crystalline Buffer"
-	description = "Mount watcher lenses across our hide to absorb the first blows and flashback energy."
+	description = "Mount human riot plating, colossus prism shards, and watcher frost cores across our hide to absorb the first blows and flash back energy."
 	module = list(
 		"id" = "matrix_crystalline_buffer",
 		"name" = "Crystalline Buffer",
@@ -13,6 +13,7 @@
 		"exclusiveTags" = list("shield"),
 	)
 	required_cells = list(
+		CHANGELING_CELL_ID_HUMAN,
 		CHANGELING_CELL_ID_COLOSSUS,
 		CHANGELING_CELL_ID_WATCHER,
 	)
