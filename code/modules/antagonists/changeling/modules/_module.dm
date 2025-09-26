@@ -1,41 +1,8 @@
 /**
-	* Base class for changeling genetic matrix modules and registry helpers.
+	* Base class for changeling genetic matrix modules.
 	*/
 
 #define CHANGELING_MODULE_ACTIVE_FLAG "__changeling_module_active__"
-
-GLOBAL_LIST_EMPTY(changeling_genetic_module_registry)
-
-/proc/changeling_module_registry_key(module_identifier)
-	if(isnull(module_identifier))
-		return null
-	if(istext(module_identifier))
-		return module_identifier
-	return "[module_identifier]"
-
-/proc/register_changeling_module(module_identifier, datum_type)
-	var/id_key = changeling_module_registry_key(module_identifier)
-	if(!istext(id_key) || !length(id_key))
-		CRASH("Attempted to register changeling module with invalid id [module_identifier]")
-	if(!ispath(datum_type, /datum/changeling_genetic_module))
-		CRASH("Attempted to register changeling module [id_key] with invalid type [datum_type]")
-	if(GLOB.changeling_genetic_module_registry[id_key])
-		CRASH("Duplicate changeling module id registration for [id_key]")
-	GLOB.changeling_genetic_module_registry[id_key] = datum_type
-	return TRUE
-
-/proc/new_module_for_id(module_identifier, datum/antagonist/changeling/changeling_datum)
-	var/id_key = changeling_module_registry_key(module_identifier)
-	if(isnull(id_key))
-		return null
-	var/module_type = GLOB.changeling_genetic_module_registry[id_key]
-	if(!module_type)
-		return null
-	var/datum/changeling_genetic_module/module = new module_type()
-	module.id = id_key
-	if(changeling_datum)
-		module.assign_owner(changeling_datum)
-	return module
 
 /datum/changeling_genetic_module
 	/// Unique identifier for this module instance.
