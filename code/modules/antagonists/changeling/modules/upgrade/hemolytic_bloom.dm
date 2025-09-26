@@ -110,8 +110,8 @@
 	if(!LAZYLEN(seeded_corpses))
 		return
 	for(var/datum/weakref/ref in seeded_corpses.Copy())
-			if(!ref?.resolve())
-				seeded_corpses -= ref
+		if(!ref?.resolve())
+			seeded_corpses -= ref
 
 /datum/changeling_genetic_module/upgrade/hemolytic_bloom/proc/spawn_seed(mob/living/victim)
 	if(!is_active() || !istype(victim))

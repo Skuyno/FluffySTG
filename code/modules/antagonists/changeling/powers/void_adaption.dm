@@ -44,7 +44,7 @@
 	SIGNAL_HANDLER
 
 	var/list/active_reasons = list()
-   var/has_carapace = linked_changeling?.module_manager?.is_module_active("matrix_void_carapace")
+	var/has_carapace = linked_changeling?.module_manager?.is_module_active("matrix_void_carapace")
 
 	var/datum/gas_mixture/environment = void_adapted.loc.return_air()
 	if (!isnull(environment))
@@ -109,7 +109,7 @@
 	else if(owner)
 		linked_changeling = IS_CHANGELING(owner)
 	var/target_slowdown = base_recharge_slowdown
-   var/has_carapace = linked_changeling?.module_manager?.is_module_active("matrix_void_carapace")
+	var/has_carapace = linked_changeling?.module_manager?.is_module_active("matrix_void_carapace")
 	if(has_carapace)
 		target_slowdown = module_recharge_slowdown
 	if(recharge_slowdown == target_slowdown)

@@ -51,12 +51,12 @@
 /datum/changeling_genetic_module/passive/anaerobic_reservoir/on_owner_changed(mob/living/old_holder, mob/living/new_holder)
 	. = ..()
 	if(old_holder && old_holder == bound_host)
-			unbind_host()
+		unbind_host()
 	if(new_holder)
-			bind_host(new_holder)
+		bind_host(new_holder)
 	else
-			guard_amount = 0
-			guard_feedback = FALSE
+		guard_amount = 0
+		guard_feedback = FALSE
 
 /datum/changeling_genetic_module/passive/anaerobic_reservoir/on_tick(seconds_between_ticks)
 	. = ..()

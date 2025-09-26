@@ -12,9 +12,9 @@
 /datum/action/changeling/resonant_shriek/sting_action(mob/user)
 	..()
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
-   var/range_bonus = round(changeling_data?.module_manager?.get_genetic_matrix_effect("resonant_shriek_range_add", 0))
+	var/range_bonus = round(changeling_data?.module_manager?.get_genetic_matrix_effect("resonant_shriek_range_add", 0))
 	var/effective_range = max(4 + range_bonus, 0)
-   var/confusion_mult = changeling_data?.module_manager?.get_genetic_matrix_effect("resonant_shriek_confusion_mult", 1) || 1
+	var/confusion_mult = changeling_data?.module_manager?.get_genetic_matrix_effect("resonant_shriek_confusion_mult", 1) || 1
 	if(user.movement_type & VENTCRAWLING)
 		user.balloon_alert(user, "can't shriek in pipes!")
 		return FALSE
@@ -40,7 +40,7 @@
 		L.on = TRUE
 		L.break_light_tube()
 	stoplag()
-   var/datum/changeling_genetic_module/upgrade/echo_cascade/echo_module = changeling_data?.module_manager?.get_module("matrix_echo_cascade")
+	var/datum/changeling_genetic_module/upgrade/echo_cascade/echo_module = changeling_data?.module_manager?.get_module("matrix_echo_cascade")
 	echo_module?.schedule_resonant_echo(user, effective_range, confusion_mult)
 	return TRUE
 
@@ -58,7 +58,7 @@
 		user.balloon_alert(user, "can't shriek in pipes!")
 		return FALSE
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
-   var/emp_range_bonus = round(changeling_data?.module_manager?.get_genetic_matrix_effect("dissonant_shriek_emp_range_add", 0))
+	var/emp_range_bonus = round(changeling_data?.module_manager?.get_genetic_matrix_effect("dissonant_shriek_emp_range_add", 0))
 	var/heavy_range = max(2 + emp_range_bonus, 0)
 	var/light_range = max(5 + emp_range_bonus, 0)
 	empulse(get_turf(user), heavy_range, light_range, 1)
@@ -67,9 +67,9 @@
 		L.break_light_tube()
 	stoplag()
 
-   if(changeling_data?.module_manager?.is_module_active("matrix_predatory_howl"))
+	if(changeling_data?.module_manager?.is_module_active("matrix_predatory_howl"))
 		var/lethal_range = max(2 + emp_range_bonus, 0)
-           var/structure_mult = changeling_data?.module_manager?.get_genetic_matrix_effect("dissonant_shriek_structure_mult", 1) || 1
+		var/structure_mult = changeling_data?.module_manager?.get_genetic_matrix_effect("dissonant_shriek_structure_mult", 1) || 1
 		for(var/mob/living/victim in get_hearers_in_view(lethal_range, user))
 			if(victim == user || IS_CHANGELING(victim))
 				continue
@@ -87,6 +87,6 @@
 				continue
 			O.take_damage(round(80 * structure_mult), BRUTE, MELEE, TRUE, get_dir(O, user))
 
-   var/datum/changeling_genetic_module/upgrade/echo_cascade/echo_module = changeling_data?.module_manager?.get_module("matrix_echo_cascade")
+	var/datum/changeling_genetic_module/upgrade/echo_cascade/echo_module = changeling_data?.module_manager?.get_module("matrix_echo_cascade")
 	echo_module?.schedule_dissonant_echo(user, heavy_range, light_range)
 	return TRUE

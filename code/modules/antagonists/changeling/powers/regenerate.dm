@@ -18,7 +18,7 @@
 	var/got_limbs_back = length(carbon_user.get_missing_limbs()) >= 1
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
 	carbon_user.fully_heal(HEAL_BODY)
-   if(changeling_data?.module_manager?.is_module_active("matrix_symbiotic_overgrowth"))
+	if(changeling_data?.module_manager?.is_module_active("matrix_symbiotic_overgrowth"))
 		var/needs_update = FALSE
 		needs_update |= carbon_user.adjustBruteLoss(-50, updating_health = FALSE, forced = TRUE)
 		needs_update |= carbon_user.adjustFireLoss(-50, updating_health = FALSE, forced = TRUE)
