@@ -437,18 +437,16 @@ const MatrixTab = ({
     act('craft_module', { recipe: selectedRecipe.id });
   }, [act, selectedRecipe]);
 
-  const assignedModuleIds = useMemo(() => {
-    if (!selectedBuild) {
-      return new Set<string>();
+  const assignedModuleIds = new Set<string>();
+  if (selectedBuild) {
+    for (const moduleEntry of selectedBuild.modules ?? []) {
+      if (moduleEntry) {
+        assignedModuleIds.add(moduleEntry.id);
+      }
     }
-    return new Set(
-      selectedBuild.modules
-        .filter((entry): entry is ModuleEntry => Boolean(entry))
-        .map((entry) => entry.id),
-    );
-  }, [selectedBuild]);
+  }
 
-  const hasPendingChanges = useMemo(() => {
+  const hasPendingChanges = (() => {
     if (!selectedBuild) {
       return false;
     }
@@ -457,7 +455,11 @@ const MatrixTab = ({
     const slotCount = Math.max(maxModuleSlots, modulesList.length, activeIds.length);
     for (let index = 0; index < slotCount; index += 1) {
       const moduleEntry = modulesList[index] ?? null;
-      if (moduleEntry?.active === false) {
+      if (
+        moduleEntry &&
+        moduleEntry.active !== undefined &&
+        !asBoolean(moduleEntry.active)
+      ) {
         return true;
       }
       const assignedId = moduleEntry?.id ?? null;
@@ -467,7 +469,7 @@ const MatrixTab = ({
       }
     }
     return false;
-  }, [maxModuleSlots, selectedBuild]);
+  })();
 
   const commitDisabledReason = !selectedBuild
     ? 'We lack a genetic configuration to edit.'
