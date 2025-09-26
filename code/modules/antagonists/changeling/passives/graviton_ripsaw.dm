@@ -1,8 +1,4 @@
 
-/// Upgrade: Graviton Ripsaw — braids tajaran pounce tendons, voidwalker gravity shears, and space carp momentum fins into our armblade for gravitational sweeps.
-/datum/changeling_genetic_module/upgrade/graviton_ripsaw
-	passive_effects = list()
-
 /datum/changeling_genetic_matrix_recipe/graviton_ripsaw
 	id = "matrix_graviton_ripsaw"
 	name = "Graviton Ripsaw"

@@ -1,11 +1,4 @@
 
-/// Passive: Aether Drake Mantle — weaves vulpkanin cold coats, space dragon plasma scales, and ash drake furnace plates into resilient void plating.
-/datum/changeling_genetic_module/passive/aether_drake_mantle
-	passive_effects = list(
-		"incoming_brute_damage_mult" = 0.7,
-		"incoming_burn_damage_mult" = 0.7,
-	)
-
 /datum/changeling_genetic_matrix_recipe/aether_drake_mantle
 	id = "matrix_aether_drake_mantle"
 	name = "Aether Drake Mantle"

@@ -1,10 +1,3 @@
-/// Passive: Hypermetabolic Drive — splices teshari twitch muscle, rabbit sprint tendons, and space carp charge fins for relentless pace.
-/datum/changeling_genetic_module/passive/hypermetabolic_drive
-	passive_effects = list(
-		"move_speed_slowdown" = -0.03,
-		"stamina_regen_time_mult" = 0.8,
-	)
-
 /datum/changeling_genetic_matrix_recipe/hypermetabolic_drive
 	id = "matrix_hypermetabolic_drive"
 	name = "Hypermetabolic Drive"

@@ -1,6 +1,6 @@
 /*
- * Don't use the apostrophe in name or desc. Causes script errors.//probably no longer true
- */
+	* Don't use the apostrophe in name or desc. Causes script errors.//probably no longer true
+	*/
 
 /datum/action/changeling
 	name = "Prototype Sting - Debug button, ahelp this"
@@ -12,11 +12,11 @@
 	/// How many changeling chems it costs to use
 	var/chemical_cost = 0
 	/**
-	 * Cost of the ability in dna points, negative values are not valid
-	 *
-	 * Special numbers include [CHANGELING_POWER_INNATE], which are given to changeling for free without bring prompted
-	 * and [CHANGELING_POWER_UNOBTAINABLE], which are not available for purchase in the changeling emporium
-	 */
+	* Cost of the ability in dna points, negative values are not valid
+	*
+	* Special numbers include [CHANGELING_POWER_INNATE], which are given to changeling for free without bring prompted
+	* and [CHANGELING_POWER_UNOBTAINABLE], which are not available for purchase in the changeling emporium
+	*/
 	var/dna_cost = CHANGELING_POWER_UNOBTAINABLE
 	/// Amount of dna needed to use this ability. Note, changelings always have atleast 1
 	var/req_dna = 0
@@ -51,15 +51,15 @@ the same goes for Remove(). if you override Remove(), call parent or else your p
 	try_to_sting(user)
 
 /**
- *Contrary to the name, this proc isn't just used by changeling stings. It handles the activation of the action and the deducation of its cost.
- *The order of the proc chain is:
- *can_sting(). Should this fail, the process gets aborted early.
- *sting_action(). This proc usually handles the actual effect of the action.
- *Should sting_action succeed the following will be done:
- *sting_feedback(). Produces feedback on the performed action. Don't ask me why this isn't handled in sting_action()
- *The deduction of the cost of this power.
- *Returns TRUE on a successful activation.
- */
+	*Contrary to the name, this proc isn't just used by changeling stings. It handles the activation of the action and the deducation of its cost.
+	*The order of the proc chain is:
+	*can_sting(). Should this fail, the process gets aborted early.
+	*sting_action(). This proc usually handles the actual effect of the action.
+	*Should sting_action succeed the following will be done:
+	*sting_feedback(). Produces feedback on the performed action. Don't ask me why this isn't handled in sting_action()
+	*The deduction of the cost of this power.
+	*Returns TRUE on a successful activation.
+	*/
 /datum/action/changeling/proc/try_to_sting(mob/living/user, mob/living/target)
 	if(!can_sting(user, target))
 		return FALSE

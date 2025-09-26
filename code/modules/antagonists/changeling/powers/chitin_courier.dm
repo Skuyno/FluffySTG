@@ -11,10 +11,11 @@
 
 /datum/action/changeling/chitin_courier/sting_action(mob/living/user)
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
-	if(!changeling_data?.is_genetic_matrix_module_active("matrix_chitin_courier"))
+	var/datum/changeling_genetic_module/passive/chitin_courier/courier_module = changeling_data?.get_module("matrix_chitin_courier")
+	if(!courier_module?.is_active())
 		user.balloon_alert(user, "needs courier")
 		return FALSE
-	if(changeling_data.retrieve_chitin_courier_item(user))
+	if(courier_module.retrieve_item(user))
 		return TRUE
 	var/obj/item/held = user.get_active_held_item()
 	if(!held)
@@ -26,7 +27,7 @@
 	if(!user.temporarilyRemoveItemFromInventory(held))
 		user.balloon_alert(user, "cannot stash")
 		return FALSE
-	changeling_data.stash_chitin_courier_item(held, user)
+	courier_module.stash_item(held, user)
 	return TRUE
 
 /obj/effect/abstract/changeling_chitin_cache

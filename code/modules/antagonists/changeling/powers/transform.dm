@@ -144,8 +144,8 @@
 	user.set_hud_image_state(ID_HUD, hud_icon)
 
 /**
- * Returns cached flat icon of the ID, creates one if there is not one already cached
- */
+	* Returns cached flat icon of the ID, creates one if there is not one already cached
+	*/
 /obj/item/changeling/id/proc/get_cached_flat_icon()
 	if(!cached_flat_icon)
 		cached_flat_icon = getFlatIcon(src)
@@ -173,8 +173,8 @@
 	return TRUE
 
 /**
- * Gives a changeling a list of all possible dnas in their profiles to choose from and returns profile containing their chosen dna
- */
+	* Gives a changeling a list of all possible dnas in their profiles to choose from and returns profile containing their chosen dna
+	*/
 /datum/antagonist/changeling/proc/select_dna()
 	var/mob/living/carbon/user = owner.current
 	if(!istype(user))
@@ -205,11 +205,11 @@
 	return prof
 
 /**
- * Checks if we are allowed to interact with a radial menu
- *
- * Arguments:
- * * user The carbon mob interacting with the menu
- */
+	* Checks if we are allowed to interact with a radial menu
+	*
+	* Arguments:
+	* * user The carbon mob interacting with the menu
+	*/
 /datum/antagonist/changeling/proc/check_menu(mob/living/carbon/user)
 	if(!istype(user))
 		return FALSE

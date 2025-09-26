@@ -11,10 +11,11 @@
 
 /datum/action/changeling/spore_node/sting_action(mob/living/user)
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
-	if(!changeling_data?.is_genetic_matrix_module_active("matrix_spore_node"))
+	var/datum/changeling_genetic_module/key/spore_node/spore_module = changeling_data?.get_module("matrix_spore_node")
+	if(!spore_module?.is_active())
 		user.balloon_alert(user, "needs node module")
 		return FALSE
-	if(changeling_data.detonate_spore_node(user))
+	if(spore_module.detonate_node(user))
 		return TRUE
 	var/turf/placement = get_turf(user)
 	if(!placement || placement.is_blocked_turf(TRUE, source_atom = user))
@@ -23,14 +24,15 @@
 	if(!do_after(user, 4 SECONDS, target = placement, extra_checks = CALLBACK(src, PROC_REF(can_continue_spore_node), user, placement)))
 		return FALSE
 	changeling_data = IS_CHANGELING(user)
-	if(!changeling_data?.is_genetic_matrix_module_active("matrix_spore_node"))
+	spore_module = changeling_data?.get_module("matrix_spore_node")
+	if(!spore_module?.is_active())
 		return FALSE
-	if(changeling_data.matrix_spore_node_ref?.resolve())
+	if(spore_module.node_ref?.resolve())
 		return FALSE
 	placement = get_turf(user)
 	if(!placement || placement.is_blocked_turf(TRUE, source_atom = user))
 		return FALSE
-	return changeling_data.place_spore_node(placement, user)
+	return spore_module.place_node(placement, user)
 
 /datum/action/changeling/spore_node/proc/can_continue_spore_node(mob/living/user, turf/placement)
 	if(QDELETED(src) || QDELETED(user) || user.stat >= UNCONSCIOUS)
@@ -43,9 +45,10 @@
 	if(placement.is_blocked_turf(TRUE, source_atom = user))
 		return FALSE
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
-	if(!changeling_data?.is_genetic_matrix_module_active("matrix_spore_node"))
+	var/datum/changeling_genetic_module/key/spore_node/spore_module = changeling_data?.get_module("matrix_spore_node")
+	if(!spore_module?.is_active())
 		return FALSE
-	if(changeling_data.matrix_spore_node_ref?.resolve())
+	if(spore_module.node_ref?.resolve())
 		return FALSE
 	return TRUE
 
@@ -59,29 +62,33 @@
 	obj_flags = CAN_BE_HIT
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 	max_integrity = 80
-	/// Cached changeling maintaining the node.
-	var/datum/weakref/changeling_ref
+	/// Cached module maintaining the node.
+	var/datum/weakref/module_ref
 	/// Tracks recently pinged mobs to avoid spam.
 	var/list/tracked_refs = list()
 
-/obj/structure/changeling_spore_node/Initialize(mapload, datum/antagonist/changeling/changeling_data)
+/obj/structure/changeling_spore_node/Initialize(mapload, datum/changeling_genetic_module/key/spore_node/spore_module)
 	. = ..()
-	if(changeling_data)
-		changeling_ref = WEAKREF(changeling_data)
+	if(spore_module)
+		module_ref = WEAKREF(spore_module)
 	START_PROCESSING(SSobj, src)
 	return .
 
 /obj/structure/changeling_spore_node/Destroy()
 	STOP_PROCESSING(SSobj, src)
 	tracked_refs.Cut()
-	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
-	changeling_data?.clear_spore_node(src)
-	changeling_ref = null
+	var/datum/changeling_genetic_module/key/spore_node/spore_module = module_ref?.resolve()
+	spore_module?.clear_node(src)
+	module_ref = null
 	return ..()
 
 /obj/structure/changeling_spore_node/process(seconds_per_tick)
-	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
-	if(!changeling_data || changeling_data.owner?.current?.stat == DEAD)
+	var/datum/changeling_genetic_module/key/spore_node/spore_module = module_ref?.resolve()
+	if(!spore_module)
+		qdel(src)
+		return
+	var/mob/living/module_owner = spore_module.get_owner_mob()
+	if(module_owner?.stat == DEAD)
 		qdel(src)
 		return
 	var/list/current_refs = list()
@@ -96,10 +103,8 @@
 	tracked_refs = current_refs
 
 /obj/structure/changeling_spore_node/proc/notify_changeling(mob/living/victim)
-	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
-	if(!changeling_data)
-		return
-	var/mob/living/owner = changeling_data.owner?.current
+	var/datum/changeling_genetic_module/key/spore_node/spore_module = module_ref?.resolve()
+	var/mob/living/owner = spore_module?.get_owner_mob()
 	if(!owner)
 		return
 	owner.balloon_alert(owner, "spore ping: [victim]")
@@ -118,6 +123,6 @@
 		target.adjustStaminaLoss(40)
 		target.Knockdown(2 SECONDS)
 		target.apply_status_effect(/datum/status_effect/dazed, 6 SECONDS)
+	var/datum/changeling_genetic_module/key/spore_node/spore_module = module_ref?.resolve()
 	qdel(src)
-	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
-	changeling_data?.spore_node_detonated(user)
+	spore_module?.node_detonated(user)

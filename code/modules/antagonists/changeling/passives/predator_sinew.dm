@@ -1,7 +1,3 @@
-/// Upgrade: Predator's Sinew — fuses tajaran pounce fibers, space carp launch fins, and fox pack tendons to steady Strained Muscles with a reactive tackle.
-/datum/changeling_genetic_module/upgrade/predator_sinew
-	passive_effects = list()
-
 /datum/changeling_genetic_matrix_recipe/predator_sinew
 	id = "matrix_predator_sinew"
 	name = "Predator's Sinew"

@@ -253,14 +253,15 @@
 			opening.open(BYPASS_DOOR_CHECKS)
 
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
-	changeling_data?.handle_graviton_ripsaw_hit(target, user)
-	changeling_data?.handle_hemolytic_bloom_hit(target, user)
+	var/datum/changeling_genetic_module/upgrade/graviton_ripsaw/graviton_module = changeling_data?.get_module("matrix_graviton_ripsaw")
+	graviton_module?.handle_hit(target, user)
+	var/datum/changeling_genetic_module/upgrade/hemolytic_bloom/bloom_module = changeling_data?.get_module("matrix_hemolytic_bloom")
+	bloom_module?.handle_hit(target, user)
 
 /obj/item/melee/arm_blade/ranged_interact_with_atom_secondary(atom/interacting_with, mob/living/user, list/modifiers)
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
-	if(!changeling_data?.is_genetic_matrix_module_active("matrix_graviton_ripsaw"))
-		return ..()
-	var/result = changeling_data.try_matrix_graviton_ripsaw_grapple(interacting_with, user)
+	var/datum/changeling_genetic_module/upgrade/graviton_ripsaw/graviton_module = changeling_data?.get_module("matrix_graviton_ripsaw")
+	var/result = graviton_module?.try_grapple(interacting_with, user)
 	if(result)
 		return result
 	return ..()

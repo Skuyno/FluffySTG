@@ -1,8 +1,4 @@
 
-/// Passive: Chitin Courier — folds slimeperson cytogel, mothroach clingers, and cargo crab plating into a hidden subdermal cargo pocket.
-/datum/changeling_genetic_module/passive/chitin_courier
-	passive_effects = list()
-
 /datum/changeling_genetic_matrix_recipe/chitin_courier
 	id = "matrix_chitin_courier"
 	name = "Chitin Courier"

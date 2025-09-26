@@ -1,7 +1,3 @@
-/// Upgrade: Adrenal Spike — distills human adrenaline, goat stamina reserves, and rabbit twitch muscles into a reactive countershock for Gene Stim.
-/datum/changeling_genetic_module/upgrade/adrenal_spike
-	passive_effects = list()
-
 /datum/changeling_genetic_matrix_recipe/adrenal_spike
 	id = "matrix_adrenal_spike"
 	name = "Adrenal Spike"
