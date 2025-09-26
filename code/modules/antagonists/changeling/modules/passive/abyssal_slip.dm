@@ -38,7 +38,7 @@
 
 /datum/changeling_genetic_module/passive/abyssal_slip/on_deactivate()
 	unbind_host()
-	remove_traits()
+	remove_module_traits()
 	return ..()
 
 /datum/changeling_genetic_module/passive/abyssal_slip/on_owner_changed(mob/living/old_holder, mob/living/new_holder)
@@ -48,7 +48,7 @@
 	if(new_holder)
 		bind_host(new_holder)
 	else
-		remove_traits()
+		remove_module_traits()
 
 /datum/changeling_genetic_module/passive/abyssal_slip/proc/bind_host(mob/living/new_holder)
 	if(bound_host == new_holder)
@@ -72,7 +72,7 @@
 		return
 	living_owner.add_traits(list(TRAIT_SILENT_FOOTSTEPS, TRAIT_LIGHT_STEP), CHANGELING_TRAIT)
 
-/datum/changeling_genetic_module/passive/abyssal_slip/proc/remove_traits()
+/datum/changeling_genetic_module/passive/abyssal_slip/proc/remove_module_traits()
 	var/mob/living/living_owner = get_owner_mob()
 	if(!living_owner)
 		return
