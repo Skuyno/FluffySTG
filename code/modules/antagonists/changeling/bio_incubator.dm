@@ -405,11 +405,9 @@
 		module_type = GLOB.changeling_genetic_module_types?[module_id]
 	if(istext(module_type))
 		module_type = text2path(module_type)
-	var/datum/changeling_genetic_module/module
-	if(ispath(module_type, /datum/changeling_genetic_module))
-		module = new module_type()
-	else
-		module = new_module_for_id(module_id, changeling)
+	if(!ispath(module_type, /datum/changeling_genetic_module))
+		return null
+	var/datum/changeling_genetic_module/module = new module_type()
 	if(!module)
 		return null
 	module.id = module_id
