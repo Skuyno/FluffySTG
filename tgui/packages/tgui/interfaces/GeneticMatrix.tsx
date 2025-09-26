@@ -456,7 +456,11 @@ const MatrixTab = ({
     const activeIds = selectedBuild.activeModuleIds ?? [];
     const slotCount = Math.max(maxModuleSlots, modulesList.length, activeIds.length);
     for (let index = 0; index < slotCount; index += 1) {
-      const assignedId = modulesList[index]?.id ?? null;
+      const moduleEntry = modulesList[index] ?? null;
+      if (moduleEntry?.active === false) {
+        return true;
+      }
+      const assignedId = moduleEntry?.id ?? null;
       const activeId = activeIds[index] ?? null;
       if (assignedId !== activeId) {
         return true;
