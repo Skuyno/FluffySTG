@@ -448,10 +448,8 @@ const MatrixTab = ({
     );
   }, [selectedBuild]);
 
-  const hasPendingChanges = useMemo(() => {
-    if (!selectedBuild) {
-      return false;
-    }
+  let hasPendingChanges = false;
+  if (selectedBuild) {
     const modulesList = selectedBuild.modules ?? [];
     const activeIds = selectedBuild.activeModuleIds ?? [];
     const slotCount = Math.max(maxModuleSlots, modulesList.length, activeIds.length);
@@ -459,11 +457,11 @@ const MatrixTab = ({
       const assignedId = modulesList[index]?.id ?? null;
       const activeId = activeIds[index] ?? null;
       if (assignedId !== activeId) {
-        return true;
+        hasPendingChanges = true;
+        break;
       }
     }
-    return false;
-  }, [maxModuleSlots, selectedBuild]);
+  }
 
   const commitDisabledReason = !selectedBuild
     ? 'We lack a genetic configuration to edit.'
