@@ -356,6 +356,25 @@
 /datum/antagonist/changeling/proc/get_genetic_matrix_effect(effect_key, default_value)
 	return module_manager?.get_genetic_matrix_effect(effect_key, default_value)
 
+/datum/antagonist/changeling/proc/get_changeling_power_instance(power_path)
+	if(!ispath(power_path, /datum/action/changeling))
+		CRASH("Changeling get_changeling_power_instance attempted to access an invalid typepath! (got: [power_path])")
+
+	for(var/datum/action/changeling/innate as anything in innate_powers)
+		if(istype(innate, power_path))
+			return innate
+
+	var/datum/action/changeling/power = purchased_powers[power_path]
+	if(istype(power))
+		return power
+
+	for(var/purchased_path in purchased_powers)
+		var/datum/action/changeling/purchased_power = purchased_powers[purchased_path]
+		if(istype(purchased_power, power_path))
+			return purchased_power
+
+	return null
+
 /datum/antagonist/changeling/proc/on_matrix_module_activated(datum/changeling_genetic_module/module)
 	return
 

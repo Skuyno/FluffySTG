@@ -44,7 +44,7 @@
 
 /datum/changeling_genetic_module/passive/aether_drake_mantle/on_deactivate()
 	revoke_action()
-	remove_traits()
+	remove_module_traits()
 	sync_void_adaption()
 	return ..()
 
@@ -55,7 +55,7 @@
 		apply_traits()
 	else
 		revoke_action()
-		remove_traits()
+		remove_module_traits()
 	sync_void_adaption()
 
 /datum/changeling_genetic_module/passive/aether_drake_mantle/proc/ensure_action()
@@ -79,7 +79,7 @@
 	living_owner.add_traits(list(TRAIT_SPACEWALK, TRAIT_FREE_HYPERSPACE_MOVEMENT), CHANGELING_TRAIT)
 	traits_applied = TRUE
 
-/datum/changeling_genetic_module/passive/aether_drake_mantle/proc/remove_traits()
+/datum/changeling_genetic_module/passive/aether_drake_mantle/proc/remove_module_traits()
 	if(!traits_applied)
 		return
 	var/mob/living/living_owner = get_owner_mob()
