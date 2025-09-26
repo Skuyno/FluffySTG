@@ -76,28 +76,8 @@
 	var/datum/changeling_bio_incubator/bio_incubator
 	/// Whether the changeling is currently rewriting their genetic matrix.
 	var/genetic_matrix_reconfiguring = FALSE
-	/// Active genetic matrix modules keyed by identifier.
-	var/list/modules_by_id = list()
-	/// Aggregated matrix effects currently applied to this changeling.
-	var/list/genetic_matrix_effect_cache = list()
-	/// Mob currently benefiting from passive matrix effect adjustments.
-	var/mob/living/matrix_passive_effects_bound_mob
-	/// Cached slowdown applied by passive matrix effects.
-	var/matrix_current_movespeed_slowdown = 0
-	/// Cached stamina usage multiplier from passive effects.
-	var/matrix_current_stamina_use_mult = 1
-	/// Cached stamina regeneration multiplier from passive effects.
-	var/matrix_current_stamina_regen_mult = 1
-	/// Cached max stamina bonus applied by passive effects.
-	var/matrix_current_max_stamina_bonus = 0
-	/// Cached chemical recharge modifier from passive effects.
-	var/matrix_current_chem_rate_bonus = 0
-	/// Cached sting range bonus from passive effects.
-	var/matrix_current_sting_range_bonus = 0
-	/// Cached brute damage multiplier from passive effects.
-	var/matrix_current_brute_damage_mult = 1
-	/// Cached burn damage multiplier from passive effects.
-	var/matrix_current_burn_damage_mult = 1
+	/// Coordinator for all genetic module state.
+	var/datum/changeling_module_manager/module_manager
 
 	/// UI displaying how many chems we have
 	var/atom/movable/screen/ling/chems/lingchemdisplay
@@ -138,6 +118,7 @@
 
 /datum/antagonist/changeling/New()
 	. = ..()
+	module_manager = new(src)
 	hive_name = hive_name()
 	for(var/datum/antagonist/changeling/other_ling in GLOB.antagonists)
 		if(!other_ling.owner || other_ling.owner == owner)
@@ -146,12 +127,7 @@
 		break
 
 /datum/antagonist/changeling/Destroy()
-	clear_matrix_passive_effects()
-	if(modules_by_id)
-		for(var/id in modules_by_id.Copy())
-			var/datum/changeling_genetic_module/module = modules_by_id[id]
-			deactivate_genetic_matrix_module(id, module)
-		modules_by_id.Cut()
+	QDEL_NULL(module_manager)
 	QDEL_NULL(emporium_action)
 	QDEL_NULL(cellular_emporium)
 	QDEL_NULL(genetic_matrix_action)
@@ -200,8 +176,8 @@
 		RegisterSignal(living_mob, COMSIG_MOB_HUD_CREATED, PROC_REF(on_hud_created))
 
 	make_brain_decoy(living_mob)
-	apply_genetic_matrix_effects()
-	notify_matrix_module_owner_changed(null, living_mob)
+	refresh_module_state()
+	module_manager?.on_owner_mob_changed(null, living_mob)
 
 /datum/antagonist/changeling/proc/make_brain_decoy(mob/living/ling)
 	var/obj/item/organ/brain/our_ling_brain = ling.get_organ_slot(ORGAN_SLOT_BRAIN)
@@ -246,7 +222,7 @@
 	handle_clown_mutation(living_mob, removing = FALSE)
 	UnregisterSignal(living_mob, list(COMSIG_MOB_LOGIN, COMSIG_LIVING_LIFE, COMSIG_LIVING_POST_FULLY_HEAL, COMSIG_MOB_GET_STATUS_TAB_ITEMS, COMSIG_MOB_MIDDLECLICKON, COMSIG_MOB_ALTCLICKON))
 	REMOVE_TRAIT(living_mob, TRAIT_FAKE_SOULLESS, CHANGELING_TRAIT)
-	notify_matrix_module_owner_changed(living_mob, null)
+	module_manager?.on_owner_mob_changed(living_mob, null)
 
 	if(living_mob.hud_used)
 		var/datum/hud/hud_used = living_mob.hud_used
@@ -277,12 +253,13 @@
 /datum/antagonist/changeling/proc/create_bio_incubator()
 	QDEL_NULL(bio_incubator)
 	bio_incubator = new(src)
+	module_manager?.set_bio_incubator(bio_incubator)
 	bio_incubator.ensure_default_build()
 	update_genetic_matrix_unlocks()
 	if(genetic_matrix)
 		genetic_matrix.register_with_incubator()
 	genetic_matrix_reconfiguring = FALSE
-	apply_genetic_matrix_effects()
+	refresh_module_state()
 	return bio_incubator
 
 /datum/antagonist/changeling/proc/create_genetic_matrix()
@@ -296,7 +273,7 @@
 	update_genetic_matrix_unlocks()
 	if(owner && owner.current)
 		genetic_matrix_action.Grant(owner.current)
-	apply_genetic_matrix_effects()
+	refresh_module_state()
 
 /datum/antagonist/changeling/proc/is_genetic_matrix_reconfiguring()
 	return genetic_matrix_reconfiguring
@@ -343,107 +320,41 @@
 		SStgui.update_uis(genetic_matrix)
 	to_chat(living_owner, span_notice("Our passive adaptations settle into place."))
 	on_genetic_matrix_reconfigured()
-	apply_genetic_matrix_effects()
 	return TRUE
 
 /datum/antagonist/changeling/proc/on_genetic_matrix_reconfigured()
 	update_genetic_matrix_unlocks()
-	apply_genetic_matrix_effects()
+	refresh_module_state()
 
 /**
 	* Synchronises the changeling's active genetic matrix modules with the bio incubator.
 	*/
-/datum/antagonist/changeling/proc/apply_genetic_matrix_effects()
-	if(!modules_by_id)
-		modules_by_id = list()
-	var/list/datum/changeling_genetic_module/active_instances = bio_incubator?.get_active_modules() || list()
-	var/list/new_map = list()
-	for(var/datum/changeling_genetic_module/instance as anything in active_instances)
-		if(!instance || QDELETED(instance))
-			continue
-		var/id_text = get_module_id_text(instance.id)
-		if(isnull(id_text))
-			continue
-		if(new_map[id_text])
-			continue
-		new_map[id_text] = instance
-	var/list/previous_modules = modules_by_id.Copy()
-	for(var/id in previous_modules)
-		var/datum/changeling_genetic_module/old_module = previous_modules[id]
-		var/datum/changeling_genetic_module/current_module = new_map[id]
-		if(old_module && current_module && old_module == current_module)
-			continue
-		modules_by_id -= id
-		deactivate_genetic_matrix_module(id, old_module)
-	for(var/id in new_map)
-		var/datum/changeling_genetic_module/module = new_map[id]
-		if(previous_modules[id] == module)
-			modules_by_id[id] = module
-			continue
-		activate_genetic_matrix_module(id, module)
-	update_matrix_passive_effects()
+/datum/antagonist/changeling/proc/refresh_module_state()
+	module_manager?.refresh_active_modules()
 
 /datum/antagonist/changeling/proc/is_genetic_matrix_module_active(module_identifier)
-	return !!get_module(module_identifier)
+	return module_manager?.is_module_active(module_identifier)
 
 /datum/antagonist/changeling/proc/get_module(module_identifier)
-	var/id_text = get_module_id_text(module_identifier)
-	if(isnull(id_text))
-		return null
-	return modules_by_id?[id_text]
+	return module_manager?.get_module(module_identifier)
 
 /datum/antagonist/changeling/proc/get_active_modules()
-	if(!modules_by_id)
-		return list()
-	return modules_by_id.Copy()
+	return module_manager?.get_active_modules() || list()
 
-/datum/antagonist/changeling/proc/get_module_id_text(module_identifier)
-	if(isnull(module_identifier))
-		return null
-	if(istext(module_identifier))
-		return module_identifier
-	if(bio_incubator)
-		var/id_text = bio_incubator.sanitize_module_id(module_identifier)
-		if(id_text)
-			return id_text
-	return "[module_identifier]"
+/datum/antagonist/changeling/proc/notify_matrix_module_owner_changed(mob/living/old_holder, mob/living/new_holder)
+	module_manager?.on_owner_mob_changed(old_holder, new_holder)
 
-/datum/antagonist/changeling/proc/activate_genetic_matrix_module(module_identifier, datum/changeling_genetic_module/module)
-	if(!module || QDELETED(module))
-		return
-	var/id_text = get_module_id_text(module_identifier)
-	if(isnull(id_text))
-		return
-	if(module.owner != src)
-		module.assign_owner(src)
-	var/already_active = module.vars?[CHANGELING_MODULE_ACTIVE_FLAG]
-	if(!already_active)
-		var/activation_result = module.on_activate()
-		if(!activation_result)
-			module.on_deactivate()
-			module.assign_owner(null)
-			module.vars[CHANGELING_MODULE_ACTIVE_FLAG] = FALSE
-			return
-	module.vars[CHANGELING_MODULE_ACTIVE_FLAG] = TRUE
-	modules_by_id[id_text] = module
-	module.on_owner_changed(null, owner?.current)
-	on_matrix_module_activated(module)
+/datum/antagonist/changeling/proc/clear_matrix_passive_effects()
+	module_manager?.clear_matrix_passive_effects()
 
-/datum/antagonist/changeling/proc/deactivate_genetic_matrix_module(module_identifier, datum/changeling_genetic_module/module)
-	var/id_text = get_module_id_text(module_identifier)
-	if(isnull(id_text))
-		id_text = null
-	if(module && !QDELETED(module))
-		var/mob/living/old_holder = module.get_owner_mob()
-		if(module.vars?[CHANGELING_MODULE_ACTIVE_FLAG])
-			module.on_deactivate()
-		module.vars[CHANGELING_MODULE_ACTIVE_FLAG] = FALSE
-		module.on_owner_changed(old_holder, null)
-		if(module.owner == src)
-			module.assign_owner(null)
-	if(id_text && modules_by_id)
-		modules_by_id -= id_text
-	on_matrix_module_deactivated(module_identifier, module)
+/datum/antagonist/changeling/proc/update_matrix_passive_effects()
+	module_manager?.update_matrix_passive_effects()
+
+/datum/antagonist/changeling/proc/apply_matrix_passive_effect_totals(list/totals)
+	module_manager?.apply_matrix_passive_effect_totals(totals)
+
+/datum/antagonist/changeling/proc/get_genetic_matrix_effect(effect_key, default_value)
+	return module_manager?.get_genetic_matrix_effect(effect_key, default_value)
 
 /datum/antagonist/changeling/proc/on_matrix_module_activated(datum/changeling_genetic_module/module)
 	return
@@ -451,154 +362,6 @@
 /datum/antagonist/changeling/proc/on_matrix_module_deactivated(module_identifier, datum/changeling_genetic_module/module)
 	return
 
-/datum/antagonist/changeling/proc/notify_matrix_module_owner_changed(mob/living/old_holder, mob/living/new_holder)
-	if(!modules_by_id)
-		return
-	for(var/id in modules_by_id)
-		var/datum/changeling_genetic_module/module = modules_by_id[id]
-		if(!module || QDELETED(module))
-			continue
-		module.on_owner_changed(old_holder, new_holder)
-
-/datum/antagonist/changeling/proc/get_changeling_power_instance(power_path)
-	if(!ispath(power_path, /datum/action/changeling))
-		return null
-	if(purchased_powers[power_path])
-		return purchased_powers[power_path]
-	for(var/datum/action/changeling/power as anything in innate_powers)
-		if(power.type == power_path)
-			return power
-	return null
-
-/datum/antagonist/changeling/proc/clear_matrix_passive_effects()
-	if(matrix_passive_effects_bound_mob)
-		var/mob/living/living_owner = matrix_passive_effects_bound_mob
-		living_owner.remove_movespeed_modifier(/datum/movespeed_modifier/changeling/genetic_matrix)
-		if(istype(living_owner, /mob/living/carbon/human))
-			var/mob/living/carbon/human/human_owner = living_owner
-			var/datum/physiology/phys = human_owner.physiology
-			if(phys)
-				if(matrix_current_stamina_use_mult != 1)
-					phys.stamina_mod /= matrix_current_stamina_use_mult
-				if(matrix_current_brute_damage_mult != 1)
-					phys.brute_mod /= matrix_current_brute_damage_mult
-				if(matrix_current_burn_damage_mult != 1)
-					phys.burn_mod /= matrix_current_burn_damage_mult
-		if(matrix_current_stamina_regen_mult != 1)
-			living_owner.stamina_regen_time /= matrix_current_stamina_regen_mult
-		if(matrix_current_max_stamina_bonus)
-			living_owner.max_stamina -= matrix_current_max_stamina_bonus
-			living_owner.staminaloss = clamp(living_owner.staminaloss, 0, living_owner.max_stamina)
-	if(matrix_current_chem_rate_bonus)
-		chem_recharge_rate -= matrix_current_chem_rate_bonus
-	if(matrix_current_sting_range_bonus)
-		sting_range -= matrix_current_sting_range_bonus
-	matrix_passive_effects_bound_mob = null
-	matrix_current_movespeed_slowdown = 0
-	matrix_current_stamina_use_mult = 1
-	matrix_current_stamina_regen_mult = 1
-	matrix_current_max_stamina_bonus = 0
-	matrix_current_chem_rate_bonus = 0
-	matrix_current_sting_range_bonus = 0
-	matrix_current_brute_damage_mult = 1
-	matrix_current_burn_damage_mult = 1
-	genetic_matrix_effect_cache = changeling_get_default_matrix_effects()
-
-/datum/antagonist/changeling/proc/update_matrix_passive_effects()
-	var/static/list/multiplicative_effect_keys = list(
-		"stamina_use_mult",
-		"stamina_regen_time_mult",
-		"fleshmend_heal_mult",
-		"biodegrade_timer_mult",
-		"resonant_shriek_confusion_mult",
-		"dissonant_shriek_structure_mult",
-		"incoming_brute_damage_mult",
-		"incoming_burn_damage_mult",
-	)
-	var/list/effect_totals = changeling_get_default_matrix_effects()
-	if(modules_by_id)
-		for(var/id in modules_by_id)
-			var/datum/changeling_genetic_module/module = modules_by_id[id]
-			if(!module || QDELETED(module))
-				continue
-			var/list/module_effects = module.get_passive_effects()
-			if(!islist(module_effects))
-				continue
-			for(var/effect_key in module_effects)
-				var/effect_value = module_effects[effect_key]
-				if(isnull(effect_value))
-					continue
-				if(isnum(effect_value))
-					if(effect_key in multiplicative_effect_keys)
-						effect_totals[effect_key] *= effect_value
-					else
-						effect_totals[effect_key] += effect_value
-				else
-					effect_totals[effect_key] = effect_value
-	apply_matrix_passive_effect_totals(effect_totals)
-
-/datum/antagonist/changeling/proc/apply_matrix_passive_effect_totals(list/totals)
-	clear_matrix_passive_effects()
-	if(!islist(totals))
-		totals = changeling_get_default_matrix_effects()
-	var/mob/living/living_owner = owner?.current
-	var/move_slowdown = totals["move_speed_slowdown"]
-	var/stamina_mult = totals["stamina_use_mult"]
-	var/regen_mult = totals["stamina_regen_time_mult"]
-	var/max_bonus = round(totals["max_stamina_add"])
-	var/chem_bonus = totals["chem_recharge_rate_add"]
-	var/sting_bonus = round(totals["sting_range_add"])
-	var/brute_damage_mult = isnum(totals["incoming_brute_damage_mult"]) ? totals["incoming_brute_damage_mult"] : 1
-	var/burn_damage_mult = isnum(totals["incoming_burn_damage_mult"]) ? totals["incoming_burn_damage_mult"] : 1
-	brute_damage_mult = max(brute_damage_mult, 0.0001)
-	burn_damage_mult = max(burn_damage_mult, 0.0001)
-
-	matrix_current_movespeed_slowdown = move_slowdown
-	matrix_current_stamina_use_mult = stamina_mult
-	matrix_current_stamina_regen_mult = regen_mult
-	matrix_current_max_stamina_bonus = max_bonus
-	matrix_current_chem_rate_bonus = chem_bonus
-	matrix_current_sting_range_bonus = sting_bonus
-	matrix_current_brute_damage_mult = brute_damage_mult
-	matrix_current_burn_damage_mult = burn_damage_mult
-
-	if(chem_bonus)
-		chem_recharge_rate += chem_bonus
-	if(sting_bonus)
-		sting_range += sting_bonus
-
-	genetic_matrix_effect_cache = totals.Copy()
-
-	if(!isliving(living_owner))
-		return
-
-	matrix_passive_effects_bound_mob = living_owner
-	living_owner.remove_movespeed_modifier(/datum/movespeed_modifier/changeling/genetic_matrix)
-	if(move_slowdown)
-		living_owner.add_or_update_variable_movespeed_modifier(/datum/movespeed_modifier/changeling/genetic_matrix, TRUE, multiplicative_slowdown = move_slowdown)
-	if(istype(living_owner, /mob/living/carbon/human))
-		var/mob/living/carbon/human/human_owner = living_owner
-		var/datum/physiology/phys = human_owner.physiology
-			if(phys)
-				if(stamina_mult != 1)
-					phys.stamina_mod *= stamina_mult
-				if(brute_damage_mult != 1)
-					phys.brute_mod *= brute_damage_mult
-				if(burn_damage_mult != 1)
-					phys.burn_mod *= burn_damage_mult
-	if(regen_mult != 1)
-		living_owner.stamina_regen_time *= regen_mult
-	if(max_bonus)
-		living_owner.max_stamina += max_bonus
-		living_owner.staminaloss = clamp(living_owner.staminaloss, 0, living_owner.max_stamina)
-
-/datum/antagonist/changeling/proc/get_genetic_matrix_effect(effect_key, default_value)
-	if(!islist(genetic_matrix_effect_cache))
-		return default_value
-	var/result = genetic_matrix_effect_cache[effect_key]
-	if(isnull(result))
-		return default_value
-	return result
 /*
 	* Instantiate all the default actions of a ling (transform, dna sting, absorb, etc)
 	* Any Changeling action with dna_cost = CHANGELING_POWER_INNATE will be added here automatically
@@ -627,7 +390,7 @@
 		return
 
 	regain_powers()
-	apply_genetic_matrix_effects()
+	refresh_module_state()
 	notify_matrix_module_owner_changed(null, owner?.current)
 
 /**
@@ -664,14 +427,9 @@
 		if(needs_update)
 			living_owner.updatehealth()
 
-	var/datum/changeling_genetic_module/passive/anaerobic_reservoir/anaerobic_module = get_module("matrix_anaerobic_reservoir")
+	var/datum/changeling_genetic_module/passive/anaerobic_reservoir/anaerobic_module = module_manager?.get_module("matrix_anaerobic_reservoir")
 	anaerobic_module?.try_surge()
-	if(modules_by_id)
-		for(var/id in modules_by_id)
-			var/datum/changeling_genetic_module/module = modules_by_id[id]
-			if(!module || QDELETED(module))
-				continue
-			module.on_tick(delta_time)
+	module_manager?.process_modules(delta_time)
 
 /**
 	* Signal proc for [COMSIG_LIVING_POST_FULLY_HEAL]
@@ -753,7 +511,7 @@
 	chem_recharge_slowdown = initial(chem_recharge_slowdown)
 	prune_genetic_matrix_assignments()
 	update_genetic_matrix_unlocks()
-	apply_genetic_matrix_effects()
+	refresh_module_state()
 
 /*
 	* For resetting all of the changeling's action buttons. (IE, re-granting them all.)

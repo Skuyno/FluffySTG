@@ -23,10 +23,10 @@
 	to_chat(user, span_changeling("The staggering rush of a stimulant honed precisely to our biology is INVIGORATING. We will not be subdued."))
 
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
-	var/datum/changeling_genetic_module/upgrade/adrenal_spike/adrenal_module = changeling_data?.get_module("matrix_adrenal_spike")
+   var/datum/changeling_genetic_module/upgrade/adrenal_spike/adrenal_module = changeling_data?.module_manager?.get_module("matrix_adrenal_spike")
 	adrenal_module?.apply_overdrive(user)
 	adrenal_module?.schedule_shockwave(user)
-	var/datum/changeling_genetic_module/upgrade/ashen_pump/ashen_module = changeling_data?.get_module("matrix_ashen_pump")
+   var/datum/changeling_genetic_module/upgrade/ashen_pump/ashen_module = changeling_data?.module_manager?.get_module("matrix_ashen_pump")
 	ashen_module?.on_gene_stim_used(user)
 
 	return TRUE

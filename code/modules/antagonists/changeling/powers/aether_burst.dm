@@ -16,7 +16,7 @@
 
 /datum/action/changeling/aether_burst/sting_action(mob/living/user)
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
-	if(!changeling_data?.is_genetic_matrix_module_active("matrix_aether_drake_mantle"))
+   if(!changeling_data?.module_manager?.is_module_active("matrix_aether_drake_mantle"))
 		user.balloon_alert(user, "requires mantle")
 		return FALSE
 	if(world.time < next_allowed)
