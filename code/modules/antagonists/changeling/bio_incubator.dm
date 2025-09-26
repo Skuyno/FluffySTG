@@ -328,8 +328,12 @@
 				var/found_slot = active_instances.Find(module)
 				if(found_slot)
 					slot_index = found_slot
-		copy["active"] = !isnull(slot_index)
-		copy["slot"] = slot_index
+		if(!isnull(slot_index))
+			copy["slot"] = slot_index
+			copy["active"] = TRUE
+		else
+			copy -= "slot"
+			copy -= "active"
 		catalog += list(copy)
 	return catalog
 
