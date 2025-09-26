@@ -126,7 +126,7 @@
 
         RegisterSignal(owner, COMSIG_LIVING_IGNITED, PROC_REF(on_ignited))
         RegisterSignal(owner, COMSIG_LIVING_EXTINGUISHED, PROC_REF(on_extinguished))
-        var/additional_duration = changeling_source?.get_genetic_matrix_effect("fleshmend_duration_add", 0) || 0
+       var/additional_duration = changeling_source?.module_manager?.get_genetic_matrix_effect("fleshmend_duration_add", 0) || 0
         duration = max(1, initial(duration) + additional_duration)
 
 /datum/status_effect/fleshmend/on_creation(mob/living/new_owner, datum/antagonist/changeling/changeling_data)
@@ -145,7 +145,7 @@
         if(owner.on_fire)
                 return
 
-        var/heal_multiplier = changeling_source?.get_genetic_matrix_effect("fleshmend_heal_mult", 1) || 1
+       var/heal_multiplier = changeling_source?.module_manager?.get_genetic_matrix_effect("fleshmend_heal_mult", 1) || 1
 
         var/need_mob_update = FALSE
         need_mob_update += owner.adjustBruteLoss(-(4 * heal_multiplier) * seconds_between_ticks, updating_health = FALSE)

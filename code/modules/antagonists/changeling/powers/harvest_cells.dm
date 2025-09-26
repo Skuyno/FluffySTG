@@ -10,12 +10,12 @@
 /datum/action/changeling/sting/harvest_cells/proc/get_effective_cost(datum/antagonist/changeling/changeling)
 	if(!changeling)
 		return chemical_cost
-	var/discount = round(changeling.get_genetic_matrix_effect("harvest_cells_chem_discount", 0))
+   var/discount = round(changeling.module_manager?.get_genetic_matrix_effect("harvest_cells_chem_discount", 0) || 0)
 	return max(0, chemical_cost - discount)
 
 /datum/action/changeling/sting/harvest_cells/proc/get_effective_range(datum/antagonist/changeling/changeling)
 	var/base_range = changeling?.sting_range || 0
-	var/bonus = round(changeling?.get_genetic_matrix_effect("harvest_cells_bonus_range", 0))
+   var/bonus = round(changeling?.module_manager?.get_genetic_matrix_effect("harvest_cells_bonus_range", 0) || 0)
 	return max(0, base_range + bonus)
 
 /datum/action/changeling/sting/harvest_cells/can_sting(mob/living/user, mob/living/target)

@@ -38,13 +38,13 @@
 /datum/status_effect/changeling_neuro_sap/on_apply()
 	owner.add_traits(list(TRAIT_RADIMMUNE, TRAIT_TOXIMMUNE), TRAIT_STATUS_EFFECT(id))
 	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
-	var/datum/changeling_genetic_module/upgrade/neuro_sap/neuro_module = changeling_data?.get_module("matrix_neuro_sap")
+       var/datum/changeling_genetic_module/upgrade/neuro_sap/neuro_module = changeling_data?.module_manager?.get_module("matrix_neuro_sap")
 	neuro_module?.apply_bonus()
 	return TRUE
 
 /datum/status_effect/changeling_neuro_sap/on_remove()
 	owner.remove_traits(list(TRAIT_RADIMMUNE, TRAIT_TOXIMMUNE), TRAIT_STATUS_EFFECT(id))
 	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
-	var/datum/changeling_genetic_module/upgrade/neuro_sap/neuro_module = changeling_data?.get_module("matrix_neuro_sap")
+       var/datum/changeling_genetic_module/upgrade/neuro_sap/neuro_module = changeling_data?.module_manager?.get_module("matrix_neuro_sap")
 	neuro_module?.remove_bonus()
 	return ..()

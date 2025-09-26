@@ -308,22 +308,27 @@
 
 /datum/changeling_bio_incubator/proc/get_crafted_module_catalog()
 	var/list/catalog = list()
+	var/datum/changeling_module_manager/manager = changeling?.module_manager
 	var/list/datum/changeling_genetic_module/active_instances = get_active_modules()
+	var/list/active_slots_by_id = list()
+	for(var/i in 1 to active_instances.len)
+		var/datum/changeling_genetic_module/module = active_instances[i]
+		if(!module?.id || !module.is_active())
+			continue
+		active_slots_by_id[module.id] = i
 	for(var/module_id in crafted_modules)
 		var/list/entry = crafted_modules[module_id]
 		if(!islist(entry))
 			continue
 		var/list/copy = entry.Copy()
-		var/is_active = FALSE
-		var/slot_index = null
-		for(var/i in 1 to active_instances.len)
-			var/datum/changeling_genetic_module/module = active_instances[i]
-			if(!module || module.id != module_id)
-				continue
-			is_active = TRUE
-			slot_index = i
-			break
-		copy["active"] = is_active
+		var/slot_index = active_slots_by_id[module_id]
+		if(isnull(slot_index) && manager)
+			var/datum/changeling_genetic_module/module = manager.get_module(module_id)
+			if(module?.is_active())
+				var/found_slot = active_instances.Find(module)
+				if(found_slot)
+					slot_index = found_slot
+		copy["active"] = !isnull(slot_index)
 		copy["slot"] = slot_index
 		catalog += list(copy)
 	return catalog
@@ -634,8 +639,22 @@
 		"name" = name,
 	)
 	ensure_slot_capacity()
-	var/list/active_ids = bio_incubator?.get_active_module_ids() || list()
+	var/datum/changeling_module_manager/manager = bio_incubator?.changeling?.module_manager
 	var/list/datum/changeling_genetic_module/active_instances = bio_incubator?.get_active_modules() || list()
+	var/list/active_ids = list()
+	var/list/active_slots_by_id = list()
+	for(var/i in 1 to active_instances.len)
+		var/datum/changeling_genetic_module/active_module = active_instances[i]
+		var/module_id = active_module?.id
+		active_ids += list(module_id)
+		if(!module_id)
+			continue
+		if(active_module.is_active())
+			active_slots_by_id[module_id] = i
+	if(!active_ids.len && manager)
+		var/list/datum/changeling_genetic_module/manager_modules = manager.get_active_modules()
+		for(var/module_id in manager_modules)
+			active_ids += list(module_id)
 	data["activeModuleIds"] = active_ids.Copy()
 	var/list/module_data = list()
 	for(var/i in 1 to module_ids.len)
@@ -649,13 +668,9 @@
 			module_data += list(null)
 			continue
 		entry = entry.Copy()
-		entry["slot"] = i
-		var/is_active = FALSE
-		if(i <= active_instances.len)
-			var/datum/changeling_genetic_module/active_module = active_instances[i]
-			if(active_module?.id == module_id)
-				is_active = TRUE
-		entry["active"] = is_active
+		var/active_slot = active_slots_by_id[module_id]
+		entry["slot"] = active_slot || i
+		entry["active"] = !isnull(active_slot)
 		module_data += list(entry)
 	data["modules"] = module_data
 	return data
