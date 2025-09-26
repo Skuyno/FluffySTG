@@ -111,35 +111,35 @@
 //Heals 10 brute and oxygen damage every second, and 5 fire
 //Being on fire will suppress this healing
 /datum/status_effect/fleshmend
-        id = "fleshmend"
-        duration = 10 SECONDS
-        alert_type = /atom/movable/screen/alert/status_effect/fleshmend
-        show_duration = TRUE
-        /// Cached changeling that applied the weave.
-        var/datum/antagonist/changeling/changeling_source
+	id = "fleshmend"
+	duration = 10 SECONDS
+	alert_type = /atom/movable/screen/alert/status_effect/fleshmend
+	show_duration = TRUE
+	/// Cached changeling that applied the weave.
+	var/datum/antagonist/changeling/changeling_source
 
 /datum/status_effect/fleshmend/on_apply()
-        . = ..()
-        if(iscarbon(owner))
-                var/mob/living/carbon/carbon_owner = owner
-                QDEL_LAZYLIST(carbon_owner.all_scars)
+	. = ..()
+	if(iscarbon(owner))
+		var/mob/living/carbon/carbon_owner = owner
+		QDEL_LAZYLIST(carbon_owner.all_scars)
 
 	RegisterSignal(owner, COMSIG_LIVING_IGNITED, PROC_REF(on_ignited))
 	RegisterSignal(owner, COMSIG_LIVING_EXTINGUISHED, PROC_REF(on_extinguished))
 	var/additional_duration = changeling_source?.module_manager?.get_genetic_matrix_effect("fleshmend_duration_add", 0) || 0
-        duration = max(1, initial(duration) + additional_duration)
+	duration = max(1, initial(duration) + additional_duration)
 
 /datum/status_effect/fleshmend/on_creation(mob/living/new_owner, datum/antagonist/changeling/changeling_data)
-        changeling_source = changeling_data
-        . = ..()
-        if(!. || !owner || !linked_alert)
-                return
-        if(owner.on_fire)
-                linked_alert.icon_state = "fleshmend_fire"
+	changeling_source = changeling_data
+	. = ..()
+	if(!. || !owner || !linked_alert)
+		return
+	if(owner.on_fire)
+		linked_alert.icon_state = "fleshmend_fire"
 
 /datum/status_effect/fleshmend/on_remove()
-        UnregisterSignal(owner, list(COMSIG_LIVING_IGNITED, COMSIG_LIVING_EXTINGUISHED))
-        changeling_source = null
+	UnregisterSignal(owner, list(COMSIG_LIVING_IGNITED, COMSIG_LIVING_EXTINGUISHED))
+	changeling_source = null
 
 /datum/status_effect/fleshmend/tick(seconds_between_ticks)
 	if(owner.on_fire)
@@ -147,12 +147,12 @@
 
 	var/heal_multiplier = changeling_source?.module_manager?.get_genetic_matrix_effect("fleshmend_heal_mult", 1) || 1
 
-        var/need_mob_update = FALSE
-        need_mob_update += owner.adjustBruteLoss(-(4 * heal_multiplier) * seconds_between_ticks, updating_health = FALSE)
-        need_mob_update += owner.adjustFireLoss(-(2 * heal_multiplier) * seconds_between_ticks, updating_health = FALSE)
-        need_mob_update += owner.adjustOxyLoss(-(4 * heal_multiplier) * seconds_between_ticks, updating_health = FALSE)
-        if(need_mob_update)
-                owner.updatehealth()
+	var/need_mob_update = FALSE
+	need_mob_update += owner.adjustBruteLoss(-(4 * heal_multiplier) * seconds_between_ticks, updating_health = FALSE)
+	need_mob_update += owner.adjustFireLoss(-(2 * heal_multiplier) * seconds_between_ticks, updating_health = FALSE)
+	need_mob_update += owner.adjustOxyLoss(-(4 * heal_multiplier) * seconds_between_ticks, updating_health = FALSE)
+	if(need_mob_update)
+		owner.updatehealth()
 
 /datum/status_effect/fleshmend/proc/on_ignited(datum/source)
 	SIGNAL_HANDLER
