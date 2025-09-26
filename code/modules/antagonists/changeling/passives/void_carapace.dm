@@ -1,7 +1,3 @@
-/// Passive: Void Carapace — condenses teshari void instincts, goliath stone plates, and watcher frost cores into armor that surges during hazard exposure.
-/datum/changeling_genetic_module/passive/void_carapace
-	passive_effects = list()
-
 /datum/changeling_genetic_matrix_recipe/void_carapace
 	id = "matrix_void_carapace"
 	name = "Void Carapace"

@@ -40,7 +40,8 @@
 		L.on = TRUE
 		L.break_light_tube()
 	stoplag()
-	changeling_data?.schedule_resonant_echo(user, effective_range, confusion_mult)
+	var/datum/changeling_genetic_module/upgrade/echo_cascade/echo_module = changeling_data?.get_module("matrix_echo_cascade")
+	echo_module?.schedule_resonant_echo(user, effective_range, confusion_mult)
 	return TRUE
 
 /datum/action/changeling/dissonant_shriek
@@ -86,5 +87,6 @@
 				continue
 			O.take_damage(round(80 * structure_mult), BRUTE, MELEE, TRUE, get_dir(O, user))
 
-	changeling_data?.schedule_dissonant_echo(user, heavy_range, light_range)
+	var/datum/changeling_genetic_module/upgrade/echo_cascade/echo_module = changeling_data?.get_module("matrix_echo_cascade")
+	echo_module?.schedule_dissonant_echo(user, heavy_range, light_range)
 	return TRUE

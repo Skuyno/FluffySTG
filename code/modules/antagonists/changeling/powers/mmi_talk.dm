@@ -10,11 +10,11 @@
 	req_stat = DEAD // Can be used while real dead too
 
 	/**
-	 * Reference to the brain we're talking through.
-	 *
-	 * Set when created via the ling decoy component.
-	 * If the brain ends up being qdelled, this action will also be qdelled, and thus this ref is cleared.
-	 */
+	* Reference to the brain we're talking through.
+	*
+	* Set when created via the ling decoy component.
+	* If the brain ends up being qdelled, this action will also be qdelled, and thus this ref is cleared.
+	*/
 	VAR_FINAL/obj/item/organ/brain/brain_ref
 
 	/// A map view of the area around the MMI.

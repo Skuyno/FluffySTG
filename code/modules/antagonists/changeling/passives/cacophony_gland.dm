@@ -1,10 +1,3 @@
-/// Upgrade: Cacophony Gland — reworks our lungs with vulpkanin hunting howls, corgi pack bellows, and pug pressure veins to weaponize the dissonant shriek.
-/datum/changeling_genetic_module/upgrade/cacophony_gland
-	passive_effects = list(
-		"dissonant_shriek_emp_range_add" = 2,
-		"dissonant_shriek_structure_mult" = 1.3,
-	)
-
 /datum/changeling_genetic_matrix_recipe/cacophony_gland
 	id = "matrix_cacophony_gland"
 	name = "Cacophony Gland"

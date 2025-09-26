@@ -1,8 +1,4 @@
 
-/// Upgrade: Neuro Sap — steeps Panacea with slimeperson buffer gel, bee toxin filters, and Legion null-masks that harden us against toxins and radiation.
-/datum/changeling_genetic_module/upgrade/neuro_sap
-	passive_effects = list()
-
 /datum/changeling_genetic_matrix_recipe/neuro_sap
 	id = "matrix_neuro_sap"
 	name = "Neuro Sap"
@@ -42,11 +38,13 @@
 /datum/status_effect/changeling_neuro_sap/on_apply()
 	owner.add_traits(list(TRAIT_RADIMMUNE, TRAIT_TOXIMMUNE), TRAIT_STATUS_EFFECT(id))
 	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
-	changeling_data?.apply_neuro_sap_bonus()
+	var/datum/changeling_genetic_module/upgrade/neuro_sap/neuro_module = changeling_data?.get_module("matrix_neuro_sap")
+	neuro_module?.apply_bonus()
 	return TRUE
 
 /datum/status_effect/changeling_neuro_sap/on_remove()
 	owner.remove_traits(list(TRAIT_RADIMMUNE, TRAIT_TOXIMMUNE), TRAIT_STATUS_EFFECT(id))
 	var/datum/antagonist/changeling/changeling_data = changeling_ref?.resolve()
-	changeling_data?.remove_neuro_sap_bonus()
+	var/datum/changeling_genetic_module/upgrade/neuro_sap/neuro_module = changeling_data?.get_module("matrix_neuro_sap")
+	neuro_module?.remove_bonus()
 	return ..()

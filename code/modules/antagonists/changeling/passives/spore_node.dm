@@ -1,8 +1,4 @@
 
-/// Key Active: Spore Node — plants a pheromone sensor node spun from slimeperson gel, bee swarm instincts, and mothroach lattice that can be detonated into restraining spores.
-/datum/changeling_genetic_module/key/spore_node
-	passive_effects = list()
-
 /datum/changeling_genetic_matrix_recipe/spore_node
 	id = "matrix_spore_node"
 	name = "Spore Node"

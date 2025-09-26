@@ -1,10 +1,3 @@
-/// Passive: Anaerobic Reservoir — layers human training lungs, goat stamina hearts, and pig blood caches to thicken our stamina pool.
-/datum/changeling_genetic_module/passive/anaerobic_reservoir
-	passive_effects = list(
-		"max_stamina_add" = 40,
-		"stamina_use_mult" = 0.9,
-	)
-
 /datum/changeling_genetic_matrix_recipe/anaerobic_reservoir
 	id = "matrix_anaerobic_reservoir"
 	name = "Anaerobic Reservoir"

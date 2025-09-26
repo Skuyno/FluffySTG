@@ -1,6 +1,6 @@
 /**
- * Base class for changeling genetic matrix modules and registry helpers.
- */
+	* Base class for changeling genetic matrix modules and registry helpers.
+	*/
 
 #define CHANGELING_MODULE_ACTIVE_FLAG "__changeling_module_active__"
 
@@ -81,6 +81,9 @@ GLOBAL_LIST_EMPTY(changeling_genetic_module_registry)
 
 /datum/changeling_genetic_module/proc/get_owner_mob()
 	return owner?.owner?.current
+
+/datum/changeling_genetic_module/proc/is_active()
+	return vars?[CHANGELING_MODULE_ACTIVE_FLAG]
 
 /datum/changeling_genetic_module/proc/on_owner_changed(mob/living/old_holder, mob/living/new_holder)
 	return
