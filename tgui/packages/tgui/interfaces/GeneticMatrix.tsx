@@ -33,6 +33,21 @@ const asBoolean = (value: BooleanLike | undefined): boolean => {
   return Boolean(value);
 };
 
+const normalizeArray = <T>(
+  value: readonly T[] | Record<string, T | null | undefined> | null | undefined,
+): T[] => {
+  if (!value) {
+    return [];
+  }
+  if (Array.isArray(value)) {
+    return value.slice();
+  }
+  const entries = Object.keys(value)
+    .sort((left, right) => Number(left) - Number(right))
+    .map((key) => (value as Record<string, T | null | undefined>)[key]);
+  return entries as T[];
+};
+
 export type ModuleEntry = {
   id: string;
   name: string;
@@ -276,6 +291,14 @@ const MatrixTab = ({
   );
 
   const selectedBuild = builds[0];
+  const selectedBuildModules = useMemo(
+    () => normalizeArray<ModuleEntry | null>(selectedBuild?.modules),
+    [selectedBuild],
+  );
+  const selectedBuildActiveIds = useMemo(
+    () => normalizeArray<string | null>(selectedBuild?.activeModuleIds),
+    [selectedBuild],
+  );
 
   const [selectedCells, setSelectedCells] = useState<string[]>([]);
   const [selectedAbilities, setSelectedAbilities] = useState<string[]>([]);
@@ -373,11 +396,11 @@ const MatrixTab = ({
         return;
       }
       const targetSlot =
-        validSlots.find((slot) => !selectedBuild.modules?.[slot - 1]) ??
+        validSlots.find((slot) => !selectedBuildModules[slot - 1]) ??
         validSlots[0];
       handleAssignModule(selectedBuild.id, targetSlot, module.id);
     },
-    [handleAssignModule, maxModuleSlots, selectedBuild],
+    [handleAssignModule, maxModuleSlots, selectedBuild, selectedBuildModules],
   );
 
   const handleAddCell = useCallback((id: string) => {
@@ -442,16 +465,16 @@ const MatrixTab = ({
       return new Set<string>();
     }
     return new Set(
-      selectedBuild.modules
+      selectedBuildModules
         .filter((entry): entry is ModuleEntry => Boolean(entry))
         .map((entry) => entry.id),
     );
-  }, [selectedBuild]);
+  }, [selectedBuild, selectedBuildModules]);
 
   let hasPendingChanges = false;
   if (selectedBuild) {
-    const modulesList = selectedBuild.modules ?? [];
-    const activeIds = selectedBuild.activeModuleIds ?? [];
+    const modulesList = selectedBuildModules;
+    const activeIds = selectedBuildActiveIds;
     const slotCount = Math.max(maxModuleSlots, modulesList.length, activeIds.length);
     for (let index = 0; index < slotCount; index += 1) {
       const assignedId = modulesList[index]?.id ?? null;
@@ -1059,9 +1082,13 @@ const BuildEditor = ({
     );
   }
 
+  const modulesList = useMemo(
+    () => normalizeArray<ModuleEntry | null>(build.modules),
+    [build.modules],
+  );
   const exclusiveCounts = useMemo(() => {
     const counts = new Map<string, number>();
-    build.modules.forEach((entry) => {
+    modulesList.forEach((entry) => {
       if (!entry?.exclusiveTags) {
         return;
       }
@@ -1071,9 +1098,12 @@ const BuildEditor = ({
       });
     });
     return counts;
-  }, [build.modules]);
+  }, [modulesList]);
 
-  const activeModuleIds = build.activeModuleIds ?? [];
+  const activeModuleIds = useMemo(
+    () => normalizeArray<string | null>(build.activeModuleIds),
+    [build.activeModuleIds],
+  );
 
   return (
     <Section
@@ -1090,7 +1120,7 @@ const BuildEditor = ({
           <Stack vertical gap={1}>
             {Array.from({ length: maxModuleSlots }, (_, index) => {
               const slot = index + 1;
-              const moduleEntry = build.modules[index] ?? null;
+              const moduleEntry = modulesList[index] ?? null;
               const highlight =
                 dragPayload &&
                 (dragPayload.type === 'module' ||
