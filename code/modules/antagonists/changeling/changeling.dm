@@ -289,21 +289,7 @@
 	if(genetic_matrix_reconfiguring)
 		living_owner.balloon_alert(living_owner, "already reconfiguring!")
 		return FALSE
-	var/list/datum/changeling_genetic_module/current_modules = bio_incubator.get_active_modules()
-	var/has_changes = FALSE
-	var/max_slots = bio_incubator.get_max_slots()
-	build.ensure_slot_capacity()
-	for(var/i in 1 to max_slots)
-		var/datum/changeling_genetic_module/current_module = i <= current_modules.len ? current_modules[i] : null
-		var/current_id = null
-		if(current_module)
-			current_id = bio_incubator.sanitize_module_id(current_module.id)
-		var/new_id = i <= build.module_ids.len ? build.module_ids[i] : null
-		if(new_id)
-			new_id = bio_incubator.sanitize_module_id(new_id)
-		if(current_id != new_id)
-			has_changes = TRUE
-			break
+	var/has_changes = !bio_incubator.build_matches_active_configuration(build)
 	if(!has_changes)
 		living_owner.balloon_alert(living_owner, "no changes to apply")
 		return FALSE

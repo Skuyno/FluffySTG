@@ -373,13 +373,38 @@
 	ensure_active_capacity()
 	return active_modules.Copy()
 
+/// Return the currently applied module identifiers, normalised for comparison.
 /datum/changeling_bio_incubator/proc/get_active_module_ids()
 	ensure_active_capacity()
 	var/list/ids = list()
 	for(var/i in 1 to active_modules.len)
 		var/datum/changeling_genetic_module/module = active_modules[i]
-		ids += list(module ? module.id : null)
+		ids[i] = sanitize_module_id(module?.id)
 	return ids
+
+/// Return the desired configuration for a build with sanitized identifiers per slot.
+/datum/changeling_bio_incubator/proc/get_assigned_module_ids(datum/changeling_bio_incubator/build/build)
+	var/list/ids = list()
+	if(!build)
+		return ids
+	build.ensure_slot_capacity()
+	for(var/i in 1 to build.module_ids.len)
+		ids[i] = sanitize_module_id(build.module_ids[i])
+	return ids
+
+/// Check if a build's desired modules align with the currently applied modules.
+/datum/changeling_bio_incubator/proc/build_matches_active_configuration(datum/changeling_bio_incubator/build/build)
+	if(!build)
+		return TRUE
+	var/list/desired_ids = get_assigned_module_ids(build)
+	var/list/active_ids = get_active_module_ids()
+	var/max_slots = max(get_max_slots(), desired_ids.len, active_ids.len)
+	for(var/i in 1 to max_slots)
+		var/desired_id = i <= desired_ids.len ? desired_ids[i] : null
+		var/current_id = i <= active_ids.len ? active_ids[i] : null
+		if(desired_id != current_id)
+			return FALSE
+	return TRUE
 
 /datum/changeling_bio_incubator/proc/find_module_instance(module_identifier)
 	var/id_text = sanitize_module_id(module_identifier)
