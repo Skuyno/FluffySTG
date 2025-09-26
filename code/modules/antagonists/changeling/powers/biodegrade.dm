@@ -11,11 +11,11 @@
 /datum/action/changeling/biodegrade/proc/get_effective_cost(datum/antagonist/changeling/changeling)
 	if(!changeling)
 		return chemical_cost
-   var/discount = round(changeling.module_manager?.get_genetic_matrix_effect("biodegrade_chem_discount", 0) || 0)
+	var/discount = round(changeling.module_manager?.get_genetic_matrix_effect("biodegrade_chem_discount", 0) || 0)
 	return max(0, chemical_cost - discount)
 
 /datum/action/changeling/biodegrade/proc/get_effective_delay(datum/antagonist/changeling/changeling, delay)
-   var/multiplier = changeling?.module_manager?.get_genetic_matrix_effect("biodegrade_timer_mult", 1) || 1
+	var/multiplier = changeling?.module_manager?.get_genetic_matrix_effect("biodegrade_timer_mult", 1) || 1
 	if(multiplier < 0)
 		multiplier = 0
 	var/result = round(delay * multiplier)

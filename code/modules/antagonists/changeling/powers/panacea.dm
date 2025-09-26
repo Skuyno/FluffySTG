@@ -53,6 +53,6 @@
 				continue
 			D.cure()
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
-   var/datum/changeling_genetic_module/upgrade/neuro_sap/neuro_module = changeling_data?.module_manager?.get_module("matrix_neuro_sap")
+	var/datum/changeling_genetic_module/upgrade/neuro_sap/neuro_module = changeling_data?.module_manager?.get_module("matrix_neuro_sap")
 	neuro_module?.on_panacea_used(user)
 	return TRUE
