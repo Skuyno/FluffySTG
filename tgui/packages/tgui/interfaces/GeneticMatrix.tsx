@@ -477,9 +477,14 @@ const MatrixTab = ({
     const activeIds = selectedBuildActiveIds;
     const slotCount = Math.max(maxModuleSlots, modulesList.length, activeIds.length);
     for (let index = 0; index < slotCount; index += 1) {
-      const assignedId = modulesList[index]?.id ?? null;
+      const moduleEntry = modulesList[index] ?? null;
+      const assignedId = moduleEntry?.id ?? null;
       const activeId = activeIds[index] ?? null;
-      if (assignedId !== activeId) {
+      const pendingAssignment = Boolean(
+        moduleEntry && moduleEntry.active !== undefined && !asBoolean(moduleEntry.active),
+      );
+      const pendingRemoval = !moduleEntry && Boolean(activeId);
+      if (assignedId !== activeId || pendingAssignment || pendingRemoval) {
         hasPendingChanges = true;
         break;
       }
