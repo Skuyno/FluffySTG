@@ -59,8 +59,9 @@
 /datum/changeling_bio_incubator/proc/can_add_build()
 	return builds.len < get_max_builds()
 
-/datum/changeling_bio_incubator/proc/ensure_default_build()
+/datum/changeling_bio_incubator/proc/ensure_default_build(apply_configuration = FALSE)
 	var/changed = FALSE
+	var/should_apply_configuration = apply_configuration
 	if(builds.len > 1)
 		for(var/i in 2 to builds.len)
 			var/datum/changeling_bio_incubator/build/extra = builds[i]
@@ -75,17 +76,12 @@
 		build.ensure_slot_capacity()
 		builds += list(build)
 		changed = TRUE
+		should_apply_configuration = TRUE
 	var/datum/changeling_bio_incubator/build/primary = builds[1]
 	if(primary)
 		primary.ensure_slot_capacity()
 	ensure_active_capacity()
-	var/has_active_modules = FALSE
-	for(var/datum/changeling_genetic_module/module as anything in active_modules)
-		if(!module)
-			continue
-		has_active_modules = TRUE
-		break
-	if(!has_active_modules)
+	if(should_apply_configuration && primary)
 		apply_build_configuration(primary, notify = FALSE)
 	else
 		sanitize_active_modules()

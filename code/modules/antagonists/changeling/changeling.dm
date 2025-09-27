@@ -254,7 +254,7 @@
 	QDEL_NULL(bio_incubator)
 	bio_incubator = new(src)
 	module_manager?.set_bio_incubator(bio_incubator)
-	bio_incubator.ensure_default_build()
+	bio_incubator.ensure_default_build(apply_configuration = TRUE)
 	update_genetic_matrix_unlocks()
 	if(genetic_matrix)
 		genetic_matrix.register_with_incubator()
