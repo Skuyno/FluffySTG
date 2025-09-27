@@ -308,7 +308,7 @@
 	if(genetic_matrix)
 		SStgui.update_uis(genetic_matrix)
 	to_chat(living_owner, span_notice("We focus inward, preparing to rewrite our genome."))
-		if(!do_after(living_owner, 15 SECONDS, target = living_owner, interaction_key = DOAFTER_SOURCE_CHANGELING_MATRIX, max_interact_count = 1))
+	if(!do_after(living_owner, 15 SECONDS, target = living_owner, interaction_key = DOAFTER_SOURCE_CHANGELING_MATRIX, max_interact_count = 1))
 		genetic_matrix_reconfiguring = FALSE
 		if(genetic_matrix)
 			SStgui.update_uis(genetic_matrix)
