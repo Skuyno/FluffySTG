@@ -670,18 +670,30 @@
 	var/list/datum/changeling_genetic_module/active_instances = bio_incubator?.get_active_modules() || list()
 	var/list/active_ids = list()
 	var/list/active_slots_by_id = list()
-	for(var/i in 1 to active_instances.len)
-		var/datum/changeling_genetic_module/active_module = active_instances[i]
-		var/module_id = active_module?.id
-		active_ids += list(module_id)
-		if(!module_id)
+	var/max_slots = bio_incubator?.get_max_slots() || active_instances.len
+	if(max_slots > 0)
+		active_ids.len = max_slots
+	for(var/i in 1 to max_slots)
+		var/datum/changeling_genetic_module/active_module = i <= active_instances.len ? active_instances[i] : null
+		if(!active_module)
 			continue
-		if(active_module.is_active())
-			active_slots_by_id[module_id] = i
-	if(!active_ids.len && manager)
+		var/module_id = active_module.id
+		if(module_id)
+			active_ids[i] = module_id
+			if(active_module.is_active())
+				active_slots_by_id[module_id] = i
+	if(!LAZYLEN(active_slots_by_id) && manager)
 		var/list/datum/changeling_genetic_module/manager_modules = manager.get_active_modules()
-		for(var/module_id in manager_modules)
-			active_ids += list(module_id)
+		if(LAZYLEN(manager_modules))
+			var/index = 1
+			if(active_ids.len < manager_modules.len)
+				active_ids.len = manager_modules.len
+			for(var/module_id in manager_modules)
+				if(isnull(module_id))
+					continue
+				if(index > active_ids.len)
+					active_ids.len = index
+				active_ids[index++] = module_id
 	data["activeModuleIds"] = active_ids.Copy()
 	var/list/module_data = list()
 	for(var/i in 1 to module_ids.len)
