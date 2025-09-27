@@ -254,6 +254,21 @@
 		return sanitize_slot_type(module_data["slotType"])
 	return BIO_INCUBATOR_SLOT_FLEX
 
+/datum/changeling_bio_incubator/proc/resolve_module_type(module_id, module_type_value)
+	if(isnull(module_id))
+		return null
+	var/module_type = module_type_value
+	if(istext(module_type))
+		module_type = text2path(module_type)
+	if(ispath(module_type, /datum/changeling_genetic_module))
+		return module_type
+	var/fallback_type = GLOB.changeling_genetic_module_types?[module_id]
+	if(istext(fallback_type))
+		fallback_type = text2path(fallback_type)
+	if(ispath(fallback_type, /datum/changeling_genetic_module))
+		return fallback_type
+	return null
+
 /datum/changeling_bio_incubator/proc/register_module(module_id, list/module_data)
 	if(isnull(module_id) || !islist(module_data))
 		return FALSE
@@ -264,14 +279,13 @@
 	data_copy["category"] = sanitize_category(data_copy["category"])
 	data_copy["tags"] = sanitize_tag_list(data_copy["tags"])
 	data_copy["exclusiveTags"] = sanitize_tag_list(data_copy["exclusiveTags"])
-	var/module_type = data_copy["moduleType"]
-	if(istext(module_type))
-		module_type = text2path(module_type)
+	var/original_type = data_copy["moduleType"]
+	var/module_type = resolve_module_type(module_id, original_type)
 	if(!ispath(module_type, /datum/changeling_genetic_module))
-		module_type = GLOB.changeling_genetic_module_types?[module_id]
-	if(ispath(module_type, /datum/changeling_genetic_module))
-		data_copy["moduleType"] = module_type
-		data_copy["moduleTypePath"] = module_type
+		stack_trace("Bio incubator refused to register module [module_id]: invalid module type ([original_type])")
+		return FALSE
+	data_copy["moduleType"] = module_type
+	data_copy["moduleTypePath"] = module_type
 	if(!data_copy["source"])
 		data_copy["source"] = "crafted"
 	crafted_modules[module_id] = data_copy
@@ -391,28 +405,34 @@
 	return null
 
 /datum/changeling_bio_incubator/proc/create_module_instance(module_id)
+	module_id = sanitize_module_id(module_id)
 	if(isnull(module_id))
 		return null
 	var/list/entry = crafted_modules?[module_id]
-	var/module_type = null
-	if(islist(entry))
-		module_type = entry["moduleTypePath"]
-		if(isnull(module_type))
-			module_type = entry["moduleType"]
-		if(istext(module_type))
-			module_type = text2path(module_type)
-	if(!ispath(module_type, /datum/changeling_genetic_module))
-		module_type = GLOB.changeling_genetic_module_types?[module_id]
-	if(istext(module_type))
-		module_type = text2path(module_type)
-	if(!ispath(module_type, /datum/changeling_genetic_module))
+	if(!islist(entry))
+		stack_trace("Bio incubator attempted to instantiate unknown module [module_id]")
+		warn_module_creation_failure(module_id, null)
 		return null
+	var/entry_module_type = entry["moduleType"]
+	var/module_type = resolve_module_type(module_id, entry["moduleTypePath"] || entry_module_type)
+	if(!ispath(module_type, /datum/changeling_genetic_module))
+		stack_trace("Bio incubator attempted to instantiate module [module_id] with missing type ([entry_module_type])")
+		warn_module_creation_failure(module_id, entry)
+		return null
+	entry["moduleTypePath"] = module_type
 	var/datum/changeling_genetic_module/module = new module_type()
 	if(!module)
 		return null
 	module.id = module_id
 	module.assign_owner(changeling)
 	return module
+
+/datum/changeling_bio_incubator/proc/warn_module_creation_failure(module_id, list/module_entry)
+	var/module_name = module_entry?["name"] || module_id
+	var/mob/living/user = changeling?.owner?.current
+	if(user)
+		to_chat(user, span_warning("Our bio incubator failed to form [module_name]!"))
+		user.balloon_alert(user, "module missing!")
 
 /datum/changeling_bio_incubator/proc/deactivate_module_instance(slot, datum/changeling_genetic_module/module, list/deactivated = null)
 	if(!module)
