@@ -19,6 +19,28 @@ import { Window } from '../layouts';
 
 const DRAG_DATA_KEY = 'application/x-genetic-matrix';
 
+const toArray = <T,>(value: unknown): T[] => {
+  if (Array.isArray(value)) {
+    return [...value];
+  }
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, T>;
+    return Object.keys(record)
+      .filter((key) => Number.isFinite(Number(key)))
+      .sort((a, b) => Number(a) - Number(b))
+      .map((key) => record[key]);
+  }
+  return [];
+};
+
+const toSlotArray = <T,>(value: unknown, slotCount: number): (T | null)[] => {
+  const entries = toArray<T | null>(value).map((entry) =>
+    entry === undefined ? null : entry,
+  );
+  const length = Math.max(slotCount, entries.length);
+  return Array.from({ length }, (_, index) => entries[index] ?? null);
+};
+
 const asBoolean = (value: BooleanLike | undefined): boolean => {
   if (typeof value === 'boolean') {
     return value;
@@ -373,11 +395,10 @@ const MatrixTab = ({
         return;
       }
       const targetSlot =
-        validSlots.find((slot) => !selectedBuild.modules?.[slot - 1]) ??
-        validSlots[0];
+        validSlots.find((slot) => !modulesList[slot - 1]) ?? validSlots[0];
       handleAssignModule(selectedBuild.id, targetSlot, module.id);
     },
-    [handleAssignModule, maxModuleSlots, selectedBuild],
+    [handleAssignModule, maxModuleSlots, modulesList, selectedBuild],
   );
 
   const handleAddCell = useCallback((id: string) => {
@@ -437,21 +458,30 @@ const MatrixTab = ({
     act('craft_module', { recipe: selectedRecipe.id });
   }, [act, selectedRecipe]);
 
-  const assignedModuleIds = new Set<string>();
-  if (selectedBuild) {
-    for (const moduleEntry of selectedBuild.modules ?? []) {
+  const modulesList = useMemo(
+    () => toSlotArray<ModuleEntry>(selectedBuild?.modules, maxModuleSlots),
+    [maxModuleSlots, selectedBuild?.modules],
+  );
+
+  const activeIds = useMemo(
+    () => toSlotArray<string>(selectedBuild?.activeModuleIds, maxModuleSlots),
+    [maxModuleSlots, selectedBuild?.activeModuleIds],
+  );
+
+  const assignedModuleIds = useMemo(() => {
+    const ids = new Set<string>();
+    modulesList.forEach((moduleEntry) => {
       if (moduleEntry) {
-        assignedModuleIds.add(moduleEntry.id);
+        ids.add(moduleEntry.id);
       }
-    }
-  }
+    });
+    return ids;
+  }, [modulesList]);
 
   const hasPendingChanges = (() => {
     if (!selectedBuild) {
       return false;
     }
-    const modulesList = selectedBuild.modules ?? [];
-    const activeIds = selectedBuild.activeModuleIds ?? [];
     const slotCount = Math.max(maxModuleSlots, modulesList.length, activeIds.length);
     for (let index = 0; index < slotCount; index += 1) {
       const moduleEntry = modulesList[index] ?? null;
@@ -1067,9 +1097,19 @@ const BuildEditor = ({
     );
   }
 
+  const modules = useMemo(
+    () => toSlotArray<ModuleEntry>(build.modules, maxModuleSlots),
+    [build.modules, maxModuleSlots],
+  );
+
+  const activeModuleIds = useMemo(
+    () => toSlotArray<string>(build.activeModuleIds, maxModuleSlots),
+    [build.activeModuleIds, maxModuleSlots],
+  );
+
   const exclusiveCounts = useMemo(() => {
     const counts = new Map<string, number>();
-    build.modules.forEach((entry) => {
+    modules.forEach((entry) => {
       if (!entry?.exclusiveTags) {
         return;
       }
@@ -1079,9 +1119,7 @@ const BuildEditor = ({
       });
     });
     return counts;
-  }, [build.modules]);
-
-  const activeModuleIds = build.activeModuleIds ?? [];
+  }, [modules]);
 
   return (
     <Section
@@ -1098,7 +1136,7 @@ const BuildEditor = ({
           <Stack vertical gap={1}>
             {Array.from({ length: maxModuleSlots }, (_, index) => {
               const slot = index + 1;
-              const moduleEntry = build.modules[index] ?? null;
+              const moduleEntry = modules[index] ?? null;
               const highlight =
                 dragPayload &&
                 (dragPayload.type === 'module' ||
