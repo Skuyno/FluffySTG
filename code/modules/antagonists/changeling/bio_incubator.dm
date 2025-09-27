@@ -472,7 +472,21 @@
 			continue
 		if(current)
 			current.assign_owner(changeling)
-			continue
+			if(current.is_active())
+				continue
+			var/reactivation_result = current.on_activate()
+			if(reactivation_result)
+				changed = TRUE
+				current.vars[CHANGELING_MODULE_ACTIVE_FLAG] = TRUE
+				if(current.id)
+					activated += list(list(
+					"id" = current.id,
+					"slot" = i,
+					))
+				continue
+			deactivate_module_instance(i, current, deactivated)
+			changed = TRUE
+			current = null
 		var/datum/changeling_genetic_module/new_module = create_module_instance(desired_id)
 		if(!new_module)
 			continue
