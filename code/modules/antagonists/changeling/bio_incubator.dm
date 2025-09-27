@@ -494,50 +494,50 @@
 			current = null
 		if(!desired_id)
 			continue
-			if(current)
-				current.assign_owner(changeling)
-				current.vars[CHANGELING_MODULE_ACTIVE_FLAG] = TRUE
-				if(current.is_active())
-					continue
-				var/reactivation_result = current.on_activate()
-				if(reactivation_result)
-					changed = TRUE
-					if(current.id)
-						activated += list(list(
-							"id" = current.id,
-							"slot" = i,
-						))
-					continue
-				current.on_deactivate()
-				current.vars[CHANGELING_MODULE_ACTIVE_FLAG] = FALSE
-				current.assign_owner(null)
-				if(active_modules.len >= i && active_modules[i] == current)
-					active_modules[i] = null
-				if(islist(deactivated) && current.id)
-					deactivated += list(list(
+		if(current)
+			current.assign_owner(changeling)
+			current.vars[CHANGELING_MODULE_ACTIVE_FLAG] = TRUE
+			if(current.is_active())
+				continue
+			var/reactivation_result = current.on_activate()
+			if(reactivation_result)
+				changed = TRUE
+				if(current.id)
+					activated += list(list(
 						"id" = current.id,
 						"slot" = i,
 					))
-				qdel(current)
-				changed = TRUE
-				current = null
-			var/datum/changeling_genetic_module/new_module = create_module_instance(desired_id)
-			if(!new_module)
 				continue
-			active_modules[i] = new_module
+			current.on_deactivate()
+			current.vars[CHANGELING_MODULE_ACTIVE_FLAG] = FALSE
+			current.assign_owner(null)
+			if(active_modules.len >= i && active_modules[i] == current)
+				active_modules[i] = null
+			if(islist(deactivated) && current.id)
+				deactivated += list(list(
+					"id" = current.id,
+					"slot" = i,
+				))
+			qdel(current)
 			changed = TRUE
-			new_module.assign_owner(changeling)
-			new_module.vars[CHANGELING_MODULE_ACTIVE_FLAG] = TRUE
-			var/activation_result = new_module.on_activate()
-			if(!activation_result)
-				new_module.on_deactivate()
-				new_module.vars[CHANGELING_MODULE_ACTIVE_FLAG] = FALSE
-				new_module.assign_owner(null)
-				if(active_modules.len >= i && active_modules[i] == new_module)
-					active_modules[i] = null
-				qdel(new_module)
-				continue
-			if(new_module.id)
+			current = null
+		var/datum/changeling_genetic_module/new_module = create_module_instance(desired_id)
+		if(!new_module)
+			continue
+		active_modules[i] = new_module
+		changed = TRUE
+		new_module.assign_owner(changeling)
+		new_module.vars[CHANGELING_MODULE_ACTIVE_FLAG] = TRUE
+		var/activation_result = new_module.on_activate()
+		if(!activation_result)
+			new_module.on_deactivate()
+			new_module.vars[CHANGELING_MODULE_ACTIVE_FLAG] = FALSE
+			new_module.assign_owner(null)
+			if(active_modules.len >= i && active_modules[i] == new_module)
+				active_modules[i] = null
+			qdel(new_module)
+			continue
+		if(new_module.id)
 				activated += list(list(
 					"id" = new_module.id,
 					"slot" = i,
