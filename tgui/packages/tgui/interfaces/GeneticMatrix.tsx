@@ -1277,8 +1277,9 @@ type ModuleSummaryProps = {
 const ModuleSummary = ({ module, showSource = true, conflictTags = [] }: ModuleSummaryProps) => {
   const sourceLabel = showSource ? formatSource(module.source) : '';
   const sourceColor = module.source?.toLowerCase() === 'innate' ? 'good' : 'average';
-  const statusDefined = module.active !== undefined;
-  const isActive = statusDefined ? asBoolean(module.active) : false;
+  const statusValue = module.active;
+  const statusDefined = statusValue !== undefined && statusValue !== null;
+  const isActive = statusDefined ? asBoolean(statusValue) : false;
   const statusLabel = statusDefined ? (isActive ? 'Equipped' : 'Pending Save') : '';
   const statusColor = isActive ? 'good' : 'average';
   return (
