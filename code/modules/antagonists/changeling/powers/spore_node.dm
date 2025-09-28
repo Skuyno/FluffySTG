@@ -25,7 +25,7 @@
 	changeling_data = IS_CHANGELING(user)
 	if(!changeling_data?.matrix_manager?.matrix_spore_node_active)
 		return FALSE
-	if(changeling_data.matrix_spore_node_ref?.resolve())
+	if(changeling_data.matrix_manager?.matrix_spore_node_ref?.resolve())
 		return FALSE
 	placement = get_turf(user)
 	if(!placement || placement.is_blocked_turf(TRUE, source_atom = user))
@@ -45,7 +45,7 @@
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
 	if(!changeling_data?.matrix_manager?.matrix_spore_node_active)
 		return FALSE
-	if(changeling_data.matrix_spore_node_ref?.resolve())
+	if(changeling_data.matrix_manager?.matrix_spore_node_ref?.resolve())
 		return FALSE
 	return TRUE
 

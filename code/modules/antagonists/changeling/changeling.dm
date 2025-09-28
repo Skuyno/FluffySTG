@@ -198,8 +198,8 @@
 	handle_clown_mutation(living_mob, removing = FALSE)
 	UnregisterSignal(living_mob, list(COMSIG_MOB_LOGIN, COMSIG_LIVING_LIFE, COMSIG_LIVING_POST_FULLY_HEAL, COMSIG_MOB_GET_STATUS_TAB_ITEMS, COMSIG_MOB_MIDDLECLICKON, COMSIG_MOB_ALTCLICKON))
 	REMOVE_TRAIT(living_mob, TRAIT_FAKE_SOULLESS, CHANGELING_TRAIT)
-unbind_predator_sinew_signals()
-unbind_anaerobic_reservoir_signals()
+	unbind_predator_sinew_signals()
+	unbind_anaerobic_reservoir_signals()
 	ui_manager?.unbind(living_mob)
 
 /datum/antagonist/changeling/on_removal()
@@ -310,21 +310,21 @@ unbind_anaerobic_reservoir_signals()
 	return matrix_manager?.update_matrix_predator_sinew_effect(is_active)
 
 /datum/antagonist/changeling/proc/bind_predator_sinew_signals(mob/living/new_host)
-	return matrix_manager?.bind_predator_sinew_signals(mob/living/new_host)
+	return matrix_manager?.bind_predator_sinew_signals(new_host)
 
 /datum/antagonist/changeling/proc/unbind_predator_sinew_signals()
 	return matrix_manager?.unbind_predator_sinew_signals()
 
 /datum/antagonist/changeling/proc/on_predator_sinew_item_attack(mob/living/source, mob/living/target, mob/living/user, list/modifiers, list/attack_modifiers)
 	SIGNAL_HANDLER
-	return matrix_manager?.on_predator_sinew_item_attack(mob/living/source, mob/living/target, mob/living/user, list/modifiers, list/attack_modifiers)
+	return matrix_manager?.on_predator_sinew_item_attack(source, target, user, modifiers, attack_modifiers)
 
 /datum/antagonist/changeling/proc/on_predator_sinew_unarmed_attack(mob/living/source, atom/target, proximity_flag, list/modifiers)
 	SIGNAL_HANDLER
-	return matrix_manager?.on_predator_sinew_unarmed_attack(mob/living/source, atom/target, proximity_flag, list/modifiers)
+	return matrix_manager?.on_predator_sinew_unarmed_attack(source, target, proximity_flag, modifiers)
 
 /datum/antagonist/changeling/proc/handle_predator_sinew_knockdown(mob/living/target)
-	return matrix_manager?.handle_predator_sinew_knockdown(mob/living/target)
+	return matrix_manager?.handle_predator_sinew_knockdown(target)
 
 /datum/antagonist/changeling/proc/update_matrix_void_carapace_effect(is_active)
 	return matrix_manager?.update_matrix_void_carapace_effect(is_active)
@@ -333,13 +333,13 @@ unbind_anaerobic_reservoir_signals()
 	return matrix_manager?.update_matrix_adrenal_spike_effect(is_active)
 
 /datum/antagonist/changeling/proc/apply_matrix_adrenal_overdrive(mob/living/carbon/user)
-	return matrix_manager?.apply_matrix_adrenal_overdrive(mob/living/carbon/user)
+	return matrix_manager?.apply_matrix_adrenal_overdrive(user)
 
 /datum/antagonist/changeling/proc/schedule_adrenal_spike_shockwave(mob/living/carbon/user)
-	return matrix_manager?.schedule_adrenal_spike_shockwave(mob/living/carbon/user)
+	return matrix_manager?.schedule_adrenal_spike_shockwave(user)
 
 /datum/antagonist/changeling/proc/adrenal_spike_shockwave(mob/living/carbon/user)
-	return matrix_manager?.adrenal_spike_shockwave(mob/living/carbon/user)
+	return matrix_manager?.adrenal_spike_shockwave(user)
 
 /datum/antagonist/changeling/proc/update_matrix_aether_drake_effect(is_active)
 	return matrix_manager?.update_matrix_aether_drake_effect(is_active)
@@ -360,7 +360,7 @@ unbind_anaerobic_reservoir_signals()
 	return matrix_manager?.update_matrix_graviton_ripsaw_effect(is_active)
 
 /datum/antagonist/changeling/proc/try_matrix_graviton_ripsaw_grapple(atom/grapple_target, mob/living/user)
-	return matrix_manager?.try_matrix_graviton_ripsaw_grapple(atom/grapple_target, mob/living/user)
+	return matrix_manager?.try_matrix_graviton_ripsaw_grapple(grapple_target, user)
 
 /datum/antagonist/changeling/proc/update_matrix_hemolytic_bloom_effect(is_active)
 	return matrix_manager?.update_matrix_hemolytic_bloom_effect(is_active)
@@ -381,14 +381,14 @@ unbind_anaerobic_reservoir_signals()
 	return matrix_manager?.remove_matrix_abyssal_slip_traits()
 
 /datum/antagonist/changeling/proc/bind_abyssal_slip_signals(mob/living/new_host)
-	return matrix_manager?.bind_abyssal_slip_signals(mob/living/new_host)
+	return matrix_manager?.bind_abyssal_slip_signals(new_host)
 
 /datum/antagonist/changeling/proc/unbind_abyssal_slip_signals()
 	return matrix_manager?.unbind_abyssal_slip_signals()
 
 /datum/antagonist/changeling/proc/on_abyssal_slip_moved(atom/movable/source, atom/old_loc, move_dir, forced, list/atom/old_locs)
 	SIGNAL_HANDLER
-	return matrix_manager?.on_abyssal_slip_moved(atom/movable/source, atom/old_loc, move_dir, forced, list/atom/old_locs)
+	return matrix_manager?.on_abyssal_slip_moved(source, old_loc, move_dir, forced, old_locs)
 
 /datum/antagonist/changeling/proc/update_matrix_crystalline_buffer_effect(is_active)
 	return matrix_manager?.update_matrix_crystalline_buffer_effect(is_active)
@@ -397,17 +397,17 @@ unbind_anaerobic_reservoir_signals()
 	return matrix_manager?.update_matrix_anaerobic_reservoir_effect(is_active)
 
 /datum/antagonist/changeling/proc/bind_anaerobic_reservoir_signals(mob/living/new_host)
-	return matrix_manager?.bind_anaerobic_reservoir_signals(mob/living/new_host)
+	return matrix_manager?.bind_anaerobic_reservoir_signals(new_host)
 
 /datum/antagonist/changeling/proc/unbind_anaerobic_reservoir_signals()
 	return matrix_manager?.unbind_anaerobic_reservoir_signals()
 
 /datum/antagonist/changeling/proc/try_matrix_anaerobic_reservoir_surge(mob/living/living_owner)
-	return matrix_manager?.try_matrix_anaerobic_reservoir_surge(mob/living/living_owner)
+	return matrix_manager?.try_matrix_anaerobic_reservoir_surge(living_owner)
 
 /datum/antagonist/changeling/proc/on_anaerobic_reservoir_stamina_damage(mob/living/source, damage_type, amount, forced)
 	SIGNAL_HANDLER
-	return matrix_manager?.on_anaerobic_reservoir_stamina_damage(mob/living/source, damage_type, amount, forced)
+	return matrix_manager?.on_anaerobic_reservoir_stamina_damage(source, damage_type, amount, forced)
 
 /datum/antagonist/changeling/proc/update_matrix_ashen_pump_effect(is_active)
 	return matrix_manager?.update_matrix_ashen_pump_effect(is_active)
@@ -431,31 +431,31 @@ unbind_anaerobic_reservoir_signals()
 	return matrix_manager?.remove_neuro_sap_bonus()
 
 /datum/antagonist/changeling/proc/schedule_resonant_echo(mob/living/user, range, confusion_mult)
-	return matrix_manager?.schedule_resonant_echo(mob/living/user, range, confusion_mult)
+	return matrix_manager?.schedule_resonant_echo(user, range, confusion_mult)
 
 /datum/antagonist/changeling/proc/perform_resonant_echo(mob/living/user, range, confusion_mult, echo_index)
-	return matrix_manager?.perform_resonant_echo(mob/living/user, range, confusion_mult, echo_index)
+	return matrix_manager?.perform_resonant_echo(user, range, confusion_mult, echo_index)
 
 /datum/antagonist/changeling/proc/schedule_dissonant_echo(mob/living/user, heavy_range, light_range)
-	return matrix_manager?.schedule_dissonant_echo(mob/living/user, heavy_range, light_range)
+	return matrix_manager?.schedule_dissonant_echo(user, heavy_range, light_range)
 
 /datum/antagonist/changeling/proc/perform_dissonant_echo(mob/living/user, heavy_range, light_range, echo_index)
-	return matrix_manager?.perform_dissonant_echo(mob/living/user, heavy_range, light_range, echo_index)
+	return matrix_manager?.perform_dissonant_echo(user, heavy_range, light_range, echo_index)
 
 /datum/antagonist/changeling/proc/handle_graviton_ripsaw_hit(atom/target, mob/living/user)
-	return matrix_manager?.handle_graviton_ripsaw_hit(atom/target, mob/living/user)
+	return matrix_manager?.handle_graviton_ripsaw_hit(target, user)
 
 /datum/antagonist/changeling/proc/handle_hemolytic_bloom_hit(atom/target, mob/living/user)
-	return matrix_manager?.handle_hemolytic_bloom_hit(atom/target, mob/living/user)
+	return matrix_manager?.handle_hemolytic_bloom_hit(target, user)
 
 /datum/antagonist/changeling/proc/spawn_hemolytic_seed(mob/living/victim)
-	return matrix_manager?.spawn_hemolytic_seed(mob/living/victim)
+	return matrix_manager?.spawn_hemolytic_seed(victim)
 
 /datum/antagonist/changeling/proc/on_gene_stim_used(mob/living/carbon/user)
-	return matrix_manager?.on_gene_stim_used(mob/living/carbon/user)
+	return matrix_manager?.on_gene_stim_used(user)
 
 /datum/antagonist/changeling/proc/on_panacea_used(mob/living/carbon/user)
-	return matrix_manager?.on_panacea_used(mob/living/carbon/user)
+	return matrix_manager?.on_panacea_used(user)
 
 /datum/antagonist/changeling/proc/update_matrix_spore_node_effect(is_active)
 	return matrix_manager?.update_matrix_spore_node_effect(is_active)
@@ -467,34 +467,34 @@ unbind_anaerobic_reservoir_signals()
 	return matrix_manager?.remove_matrix_spore_node_action()
 
 /datum/antagonist/changeling/proc/stash_chitin_courier_item(obj/item/held_item, mob/living/user)
-	return matrix_manager?.stash_chitin_courier_item(obj/item/held_item, mob/living/user)
+	return matrix_manager?.stash_chitin_courier_item(held_item, user)
 
 /datum/antagonist/changeling/proc/retrieve_chitin_courier_item(mob/living/user)
-	return matrix_manager?.retrieve_chitin_courier_item(mob/living/user)
+	return matrix_manager?.retrieve_chitin_courier_item(user)
 
 /datum/antagonist/changeling/proc/clear_chitin_courier_cache(drop_item = FALSE)
 	return matrix_manager?.clear_chitin_courier_cache(drop_item)
 
 /datum/antagonist/changeling/proc/place_spore_node(turf/location, mob/living/user)
-	return matrix_manager?.place_spore_node(turf/location, mob/living/user)
+	return matrix_manager?.place_spore_node(location, user)
 
 /datum/antagonist/changeling/proc/detonate_spore_node(mob/living/user)
-	return matrix_manager?.detonate_spore_node(mob/living/user)
+	return matrix_manager?.detonate_spore_node(user)
 
 /datum/antagonist/changeling/proc/spore_node_detonated(mob/living/user)
-	return matrix_manager?.spore_node_detonated(mob/living/user)
+	return matrix_manager?.spore_node_detonated(user)
 
 /datum/antagonist/changeling/proc/clear_spore_node(obj/structure/changeling_spore_node/ignore)
-	return matrix_manager?.clear_spore_node(obj/structure/changeling_spore_node/ignore)
+	return matrix_manager?.clear_spore_node(ignore)
 
 /datum/antagonist/changeling/proc/clear_matrix_passive_effects()
 	return matrix_manager?.clear_matrix_passive_effects()
 
 /datum/antagonist/changeling/proc/update_matrix_passive_effects(list/active_ids)
-	return matrix_manager?.update_matrix_passive_effects(list/active_ids)
+	return matrix_manager?.update_matrix_passive_effects(active_ids)
 
 /datum/antagonist/changeling/proc/apply_matrix_passive_effect_totals(list/totals)
-	return matrix_manager?.apply_matrix_passive_effect_totals(list/totals)
+	return matrix_manager?.apply_matrix_passive_effect_totals(totals)
 
 /datum/antagonist/changeling/proc/get_genetic_matrix_effect(effect_key, default_value)
 	return matrix_manager?.get_genetic_matrix_effect(effect_key, default_value)
@@ -722,6 +722,20 @@ unbind_anaerobic_reservoir_signals()
 	update_genetic_matrix_unlocks()
 
 	return TRUE
+
+/datum/antagonist/changeling/proc/get_changeling_power_instance(power_path)
+	if(!ispath(power_path, /datum/action/changeling))
+		return null
+	if(purchased_powers[power_path])
+		return purchased_powers[power_path]
+	for(var/datum/action/changeling/power as anything in innate_powers)
+		if(istype(power, power_path))
+			return power
+	if(istype(emporium_action, power_path))
+		return emporium_action
+	if(istype(genetic_matrix_action, power_path))
+		return genetic_matrix_action
+	return null
 
 /*
 	* Changeling's ability to re-adapt all of their learned powers.
