@@ -21,16 +21,20 @@
 	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
 	changeling.chosen_sting = src
 
-	changeling.lingstingdisplay.icon_state = button_icon_state
-	changeling.lingstingdisplay.SetInvisibility(0, id=type)
+	var/atom/movable/screen/ling/sting/sting_display = changeling.ui_manager?.get_sting_display()
+	if(sting_display)
+		sting_display.icon_state = button_icon_state
+		sting_display.SetInvisibility(0, id=type)
 
 /datum/action/changeling/sting/proc/unset_sting(mob/user)
 	to_chat(user, span_warning("We retract our sting, we can't sting anyone for now."))
 	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
 	changeling.chosen_sting = null
 
-	changeling.lingstingdisplay.icon_state = null
-	changeling.lingstingdisplay.RemoveInvisibility(type)
+	var/atom/movable/screen/ling/sting/sting_display = changeling.ui_manager?.get_sting_display()
+	if(sting_display)
+		sting_display.icon_state = null
+		sting_display.RemoveInvisibility(type)
 
 /mob/living/carbon/proc/unset_sting()
 	if(mind)
