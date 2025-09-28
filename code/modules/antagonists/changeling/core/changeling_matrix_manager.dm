@@ -362,7 +362,8 @@
 	user.setDir(get_dir(user_turf, destination))
 	user.Beam(
 		destination,
-		icon_state = "zipline_hook",
+		icon = 'icons/effects/beam.dmi',
+		icon_state = "tentacle",
 		time = 0.5 SECONDS,
 		emissive = FALSE,
 		maxdistance = GRAVITON_RIPSAW_GRAPPLE_RANGE,
