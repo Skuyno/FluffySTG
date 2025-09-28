@@ -1,4 +1,4 @@
-/// Passive: Symbiotic Overgrowth — cultivates human scar meshes, goat stamina fibers, and sheep mitotic layers that regenerate slowly and prime Regenerate for deeper healing bursts.
+/// Matrix Passive: Symbiotic Overgrowth — cultivates human scar meshes, goat stamina fibers, and sheep mitotic layers that regenerate slowly and prime Regenerate for deeper healing bursts.
 /datum/changeling_genetic_matrix_recipe/symbiotic_overgrowth
 	id = "matrix_symbiotic_overgrowth"
 	name = "Symbiotic Overgrowth"

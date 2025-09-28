@@ -1,5 +1,5 @@
 
-/// Upgrade: Echo Cascade — layers teshari overtones, parrot mimic chords, and butterfly wing chimes for delayed sonic aftershocks and EMP rebounds.
+/// Matrix Upgrade: Echo Cascade — layers teshari overtones, parrot mimic chords, and butterfly wing chimes for delayed sonic aftershocks and EMP rebounds.
 /datum/changeling_genetic_matrix_recipe/echo_cascade
 	id = "matrix_echo_cascade"
 	name = "Echo Cascade"

@@ -1,4 +1,4 @@
-/// Passive: Marrow Battery — cultivates hemophage marrow, cow endurance blood, and sheep insulating plasma that refuels our chemical reserves on its own.
+/// Matrix Passive: Marrow Battery — cultivates hemophage marrow, cow endurance blood, and sheep insulating plasma that refuels our chemical reserves on its own.
 /datum/changeling_genetic_matrix_recipe/marrow_battery
 	id = "matrix_marrow_battery"
 	name = "Marrow Battery"

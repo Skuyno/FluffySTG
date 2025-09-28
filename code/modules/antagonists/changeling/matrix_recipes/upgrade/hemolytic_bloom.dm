@@ -1,5 +1,5 @@
 
-/// Upgrade: Hemolytic Bloom — seeds the arm blade with hemophage blooms, glockroach charge sacs, and slaughter demon gore anchors that harvest blood and detonate caustic spores.
+/// Matrix Upgrade: Hemolytic Bloom — seeds the arm blade with hemophage blooms, glockroach charge sacs, and slaughter demon gore anchors that harvest blood and detonate caustic spores.
 /datum/changeling_genetic_matrix_recipe/hemolytic_bloom
 	id = "matrix_hemolytic_bloom"
 	name = "Hemolytic Bloom"

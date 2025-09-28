@@ -1,4 +1,4 @@
-/// Passive: Abyssal Slip — braids teshari sprint tendons, fox pads, and mothroach clingers for silent, shadow-hugging movement.
+/// Matrix Passive: Abyssal Slip — braids teshari sprint tendons, fox pads, and mothroach clingers for silent, shadow-hugging movement.
 /datum/changeling_genetic_matrix_recipe/abyssal_slip
 	id = "matrix_abyssal_slip"
 	name = "Abyssal Slip"
