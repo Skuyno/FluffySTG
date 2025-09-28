@@ -9,6 +9,23 @@
 	req_stat = CONSCIOUS
 	disabled_by_fire = TRUE
 
+/datum/action/changeling/adrenaline/try_to_sting(mob/living/user, mob/living/target)
+	if(!user || !IS_CHANGELING(user))
+		return FALSE
+	if(!can_sting(user, target))
+		return FALSE
+	var/datum/antagonist/changeling/changeling = IS_CHANGELING(user)
+	var/can_ignore_fire = changeling?.matrix_manager?.matrix_ashen_pump_active
+	if(disabled_by_fire && user.fire_stacks && user.on_fire && !can_ignore_fire)
+		user.balloon_alert(user, "on fire!")
+		return FALSE
+	if(sting_action(user, target))
+		sting_feedback(user, target)
+		changeling.adjust_chemicals(-chemical_cost)
+		user.changeNext_move(CLICK_CD_MELEE)
+		return TRUE
+	return FALSE
+
 //Recover from stuns.
 /datum/action/changeling/adrenaline/sting_action(mob/living/carbon/user)
 	..()

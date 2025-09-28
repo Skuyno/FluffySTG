@@ -53,6 +53,10 @@
 /datum/status_effect/changeling_ashen_pump/proc/on_owner_moved(atom/movable/source, atom/old_loc, move_dir, forced, list/atom/old_locs)
 	SIGNAL_HANDLER
 	create_flare(old_loc)
+	// Reapply the flare to the tile we just entered so the changeling
+	// immediately extinguishes themselves even if they step back into
+	// an existing hotspot.
+	create_flare(get_turf(owner))
 
 /datum/status_effect/changeling_ashen_pump/proc/create_flare(atom/location)
 	if(!owner || !isturf(location))
