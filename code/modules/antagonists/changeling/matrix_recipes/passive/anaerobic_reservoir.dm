@@ -13,8 +13,8 @@
 		"exclusiveTags" = list("stamina_reservoir"),
 		"button_icon_state" = null,
 		"effects" = list(
-			"max_stamina_add" = 40,
-			"stamina_use_mult" = 0.9,
+			"max_stamina_add" = 60,
+			"stamina_use_mult" = 0.8,
 		),
 	)
 	required_cells = list(
