@@ -1,8 +1,8 @@
-/// Matrix Passive: Bioelectric Coils — weaves slimeperson conduits, glockroach capacitors, and space carp charge sinks to supercharge every stride while shrugging off fatigue.
+/// Matrix Passive: Bioelectric Coils — weaves slimeperson conduits, cockroach capacitors, and space carp charge sinks to supercharge every stride while shrugging off fatigue.
 /datum/changeling_genetic_matrix_recipe/bioelectric_coils
 	id = "matrix_bioelectric_coils"
 	name = "Bioelectric Coils"
-	description = "Thread slimeperson conduits, glockroach capacitors, and space carp charge sinks through our musculature for brutal sustained speed."
+	description = "Thread slimeperson conduits, cockroach capacitors, and space carp charge sinks through our musculature for brutal sustained speed."
 	module = list(
 		"id" = "matrix_bioelectric_coils",
 		"name" = "Bioelectric Coils",
@@ -21,6 +21,6 @@
 	)
 	required_cells = list(
 		CHANGELING_CELL_ID_SLIMEPERSON,
-		CHANGELING_CELL_ID_GLOCKROACH,
+		CHANGELING_CELL_ID_COCKROACH,
 		CHANGELING_CELL_ID_SPACE_CARP,
 	)
