@@ -1,4 +1,4 @@
-/// Upgrade: Precise Barbs — tempers our musculature with vulpkanin pursuit sinew, nabber hunting hooks, and rabbit sprint cords for relentless pursuit.
+/// Matrix Upgrade: Precise Barbs — tempers our musculature with vulpkanin pursuit sinew, nabber hunting hooks, and rabbit sprint cords for relentless pursuit.
 /datum/changeling_genetic_matrix_recipe/precise_barbs
 	id = "matrix_precise_barbs"
 	name = "Precise Barbs"

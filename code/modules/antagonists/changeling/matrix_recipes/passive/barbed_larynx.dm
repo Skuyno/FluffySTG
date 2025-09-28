@@ -1,4 +1,4 @@
-/// Passive: Barbed Larynx — reshapes our voicebox with felinid vibrato cords, parrot mimicry larynxes, and bee resonance combs to amplify sonic assaults.
+/// Matrix Passive: Barbed Larynx — reshapes our voicebox with felinid vibrato cords, parrot mimicry larynxes, and bee resonance combs to amplify sonic assaults.
 /datum/changeling_genetic_matrix_recipe/barbed_larynx
 	id = "matrix_barbed_larynx"
 	name = "Barbed Larynx"

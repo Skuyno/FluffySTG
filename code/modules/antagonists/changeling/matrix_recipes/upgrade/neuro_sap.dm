@@ -1,5 +1,5 @@
 
-/// Upgrade: Neuro Sap — steeps Panacea with slimeperson buffer gel, bee toxin filters, and Legion null-masks that harden us against toxins and radiation.
+/// Matrix Upgrade: Neuro Sap — steeps Panacea with slimeperson buffer gel, bee toxin filters, and Legion null-masks that harden us against toxins and radiation.
 /datum/changeling_genetic_matrix_recipe/neuro_sap
 	id = "matrix_neuro_sap"
 	name = "Neuro Sap"

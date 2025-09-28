@@ -1,4 +1,4 @@
-/// Passive: Predatory Howl — refines the dissonant shriek with vulpkanin hunting howls, nightmare shadow lungs, and corgi pack calls into an execution note that ruptures skulls and machinery alike.
+/// Matrix Key Active: Predatory Howl — refines the dissonant shriek with vulpkanin hunting howls, nightmare shadow lungs, and corgi pack calls into an execution note that ruptures skulls and machinery alike.
 /datum/changeling_genetic_matrix_recipe/predatory_howl
 	id = "matrix_predatory_howl"
 	name = "Predatory Howl"

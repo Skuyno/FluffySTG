@@ -1,4 +1,4 @@
-/// Passive: Crystalline Buffer — suspends human riot plating, colossus prism shards, and watcher frost cores as ablative, chem-feeding barrier charges.
+/// Matrix Passive: Crystalline Buffer — suspends human riot plating, colossus prism shards, and watcher frost cores as ablative, chem-feeding barrier charges.
 /datum/changeling_genetic_matrix_recipe/crystalline_buffer
 	id = "matrix_crystalline_buffer"
 	name = "Crystalline Buffer"

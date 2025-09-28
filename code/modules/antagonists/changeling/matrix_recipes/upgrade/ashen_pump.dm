@@ -1,5 +1,5 @@
 
-/// Upgrade: Ashen Pump — superheats Gene Stim with tajaran heat glands, ash drake embers, and Bubblegum furnace bile.
+/// Matrix Upgrade: Ashen Pump — superheats Gene Stim with tajaran heat glands, ash drake embers, and Bubblegum furnace bile.
 /datum/changeling_genetic_matrix_recipe/ashen_pump
 	id = "matrix_ashen_pump"
 	name = "Ashen Pump"

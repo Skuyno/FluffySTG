@@ -1,4 +1,4 @@
-/// Upgrade: Plasma Knit — saturates Fleshmend with tajaran scar-knitting, giant spider silk, and sheep clotting gel that lingers longer and knits faster.
+/// Matrix Upgrade: Plasma Knit — saturates Fleshmend with tajaran scar-knitting, giant spider silk, and sheep clotting gel that lingers longer and knits faster.
 /datum/changeling_genetic_matrix_recipe/plasma_knit
 	id = "matrix_plasma_knit"
 	name = "Plasma Knit"

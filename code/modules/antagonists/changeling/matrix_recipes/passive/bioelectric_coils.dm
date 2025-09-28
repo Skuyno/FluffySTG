@@ -1,4 +1,4 @@
-/// Passive: Bioelectric Coils — weaves slimeperson conduits, glockroach capacitors, and space carp charge sinks to supercharge every stride while shrugging off fatigue.
+/// Matrix Passive: Bioelectric Coils — weaves slimeperson conduits, glockroach capacitors, and space carp charge sinks to supercharge every stride while shrugging off fatigue.
 /datum/changeling_genetic_matrix_recipe/bioelectric_coils
 	id = "matrix_bioelectric_coils"
 	name = "Bioelectric Coils"

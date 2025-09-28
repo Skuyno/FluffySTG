@@ -1,4 +1,4 @@
-/// Upgrade: Corrosive Bile — distills slimeperson acid bladders, morph solvent sacs, and giant spider venoms to melt restraints in moments with less expenditure.
+/// Matrix Upgrade: Corrosive Bile — distills slimeperson acid bladders, morph solvent sacs, and giant spider venoms to melt restraints in moments with less expenditure.
 /datum/changeling_genetic_matrix_recipe/corrosive_bile
 	id = "matrix_corrosive_bile"
 	name = "Corrosive Bile"
