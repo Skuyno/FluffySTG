@@ -45,6 +45,10 @@
 /datum/status_effect/changeling_ashen_pump/on_remove()
 	UnregisterSignal(owner, COMSIG_MOVABLE_MOVED)
 	remove_burn_bonus()
+	if(isliving(owner))
+		var/mob/living/living_owner = owner
+		living_owner.set_fire_stacks(0, remove_wet_stacks = FALSE)
+		living_owner.extinguish_mob()
 	return ..()
 
 /datum/status_effect/changeling_ashen_pump/tick(seconds_between_ticks)
@@ -65,7 +69,10 @@
 		new /obj/effect/hotspot(T)
 	T.hotspot_expose(900, 50, 1)
 	if(owner in T)
-		owner.extinguish_mob()
+		if(isliving(owner))
+			var/mob/living/living_owner = owner
+			living_owner.set_fire_stacks(0, remove_wet_stacks = FALSE)
+			living_owner.extinguish_mob()
 	for(var/mob/living/carbon/victim in T)
 		if(victim == owner || IS_CHANGELING(victim))
 			continue
