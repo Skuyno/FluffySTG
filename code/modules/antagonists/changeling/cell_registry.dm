@@ -48,7 +48,7 @@
 #define CHANGELING_CELL_ID_MORPH "morph"
 #define CHANGELING_CELL_ID_REVENANT "revenant"
 #define CHANGELING_CELL_ID_SLAUGHTER_DEMON "slaughter_demon"
-#define CHANGELING_CELL_ID_GLOCKROACH "glockroach"
+#define CHANGELING_CELL_ID_COCKROACH "cockroach"
 #define CHANGELING_CELL_ID_SPACE_DRAGON "space_dragon"
 #define CHANGELING_CELL_ID_HERETIC_ROBE "heretic_robe"
 #define CHANGELING_CELL_ID_BEE "bee"
@@ -303,10 +303,10 @@ GLOBAL_LIST_INIT(changeling_cell_registry, list(
                 CHANGELING_CELL_REGISTRY_DESC = "Warp-charged sinew and sanguine armor ripped from slaughter demons.",
                 CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/demon/slaughter),
         ),
-        CHANGELING_CELL_ID_GLOCKROACH = list(
-                CHANGELING_CELL_REGISTRY_NAME = "Glockroach",
-                CHANGELING_CELL_REGISTRY_DESC = "Ballistic chitin and rapid-fire ganglia extracted from glockroaches.",
-                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/cockroach/glockroach),
+        CHANGELING_CELL_ID_COCKROACH = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Cockroach",
+                CHANGELING_CELL_REGISTRY_DESC = "Stubborn blattodean chitin reconstituted from the station's hardiest cockroaches, save for delicate mothroaches.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/cockroach),
         ),
         CHANGELING_CELL_ID_SPACE_DRAGON = list(
                 CHANGELING_CELL_REGISTRY_NAME = "Space Dragon",
