@@ -25,7 +25,7 @@
 	alert_type = null
 	var/datum/weakref/changeling_ref
 	var/charges_left = 4
-	var/recharge_delay = 12.5 SECONDS
+	var/recharge_delay = 25 SECONDS
 
 /datum/status_effect/changeling_crystalline_buffer/on_creation(mob/living/new_owner, datum/antagonist/changeling/changeling_data)
 	changeling_ref = WEAKREF(changeling_data)
@@ -89,10 +89,11 @@
 	return TRUE
 
 /datum/status_effect/changeling_crystalline_buffer/proc/trigger_flash()
-	owner.flash_act(visual = TRUE)
+	playsound(get_turf(owner), 'sound/items/weapons/flash.ogg', 50, TRUE)
 	for(var/mob/living/victim in oview(1, owner))
 		if(victim == owner)
 			continue
+		victim.flash_act(visual = TRUE)
 		victim.adjustStaminaLoss(20)
 		victim.apply_status_effect(/datum/status_effect/dazed, 3 SECONDS)
 
