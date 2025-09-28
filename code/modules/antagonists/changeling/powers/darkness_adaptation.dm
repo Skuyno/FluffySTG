@@ -109,7 +109,7 @@
         if(!living_owner)
                 return FALSE
         var/datum/antagonist/changeling/changeling_data = living_owner.mind?.has_antag_datum(/datum/antagonist/changeling)
-        if(!changeling_data?.matrix_abyssal_slip_active)
+        if(!changeling_data?.matrix_manager?.matrix_abyssal_slip_active)
                 return FALSE
         var/turf/current_turf = get_turf(living_owner)
         if(!istype(current_turf))

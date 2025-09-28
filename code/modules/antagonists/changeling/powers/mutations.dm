@@ -258,7 +258,7 @@
 
 /obj/item/melee/arm_blade/ranged_interact_with_atom_secondary(atom/interacting_with, mob/living/user, list/modifiers)
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)
-	if(!changeling_data?.matrix_graviton_ripsaw_active)
+	if(!changeling_data?.matrix_manager?.matrix_graviton_ripsaw_active)
 		return ..()
 	var/result = changeling_data.try_matrix_graviton_ripsaw_grapple(interacting_with, user)
 	if(result)
