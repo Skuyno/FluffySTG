@@ -98,19 +98,6 @@
 	/// Cached burn damage multiplier from passive effects.
 	var/matrix_current_burn_damage_mult = 1
 
-#define owner changeling.owner
-#define bio_incubator changeling.bio_incubator
-#define genetic_matrix changeling.genetic_matrix
-#define chem_charges changeling.chem_charges
-#define chem_recharge_rate changeling.chem_recharge_rate
-#define chem_recharge_slowdown changeling.chem_recharge_slowdown
-#define sting_range changeling.sting_range
-#define total_chem_storage changeling.total_chem_storage
-#define total_genetic_points changeling.total_genetic_points
-#define genetic_points changeling.genetic_points
-#define innate_powers changeling.innate_powers
-#define purchased_powers changeling.purchased_powers
-#define chosen_sting changeling.chosen_sting
 
 /datum/changeling_matrix_manager/New(datum/antagonist/changeling/changeling)
 	. = ..()
@@ -135,12 +122,12 @@
 	return ..()
 /datum/changeling_matrix_manager/proc/apply_genetic_matrix_effects()
 	var/list/active_ids = list()
-	if(bio_incubator)
-		var/list/incubator_ids = bio_incubator.get_active_module_ids()
+	if(changeling.bio_incubator)
+		var/list/incubator_ids = changeling.bio_incubator.get_active_module_ids()
 		for(var/module_id in incubator_ids)
 			if(isnull(module_id))
 				continue
-			var/id_text = bio_incubator.sanitize_module_id(module_id)
+			var/id_text = changeling.bio_incubator.sanitize_module_id(module_id)
 			if(isnull(id_text))
 				id_text = "[module_id]"
 			if(!(id_text in active_ids))
@@ -170,8 +157,8 @@
 	var/id_text
 	if(istext(module_identifier))
 		id_text = module_identifier
-	else if(bio_incubator)
-		id_text = bio_incubator.sanitize_module_id(module_identifier)
+	else if(changeling.bio_incubator)
+		id_text = changeling.bio_incubator.sanitize_module_id(module_identifier)
 	if(isnull(id_text))
 		id_text = "[module_identifier]"
 	return id_text in current_matrix_module_ids
@@ -187,7 +174,7 @@
 	if(!matrix_predator_sinew_active)
 		unbind_predator_sinew_signals()
 		return
-	bind_predator_sinew_signals(owner?.current)
+	bind_predator_sinew_signals(changeling.owner?.current)
 
 /datum/changeling_matrix_manager/proc/bind_predator_sinew_signals(mob/living/new_host)
 	if(matrix_predator_sinew_bound_mob == new_host)
@@ -217,7 +204,7 @@
 /datum/changeling_matrix_manager/proc/handle_predator_sinew_knockdown(mob/living/target)
 	if(!matrix_predator_sinew_active)
 		return
-	var/mob/living/carbon/user = owner?.current
+	var/mob/living/carbon/user = changeling.owner?.current
 	if(!istype(user) || user != matrix_predator_sinew_bound_mob)
 		return
 	var/datum/action/changeling/strained_muscles/muscles = changeling.get_changeling_power_instance(/datum/action/changeling/strained_muscles)
@@ -249,7 +236,7 @@
 		if(matrix_adrenal_spike_shockwave_timer)
 			deltimer(matrix_adrenal_spike_shockwave_timer)
 			matrix_adrenal_spike_shockwave_timer = null
-		owner?.current?.remove_status_effect(/datum/status_effect/changeling_adrenal_overdrive)
+		changeling.owner?.current?.remove_status_effect(/datum/status_effect/changeling_adrenal_overdrive)
 
 /datum/changeling_matrix_manager/proc/apply_matrix_adrenal_overdrive(mob/living/carbon/user)
 	if(!matrix_adrenal_spike_active || !istype(user))
@@ -296,20 +283,20 @@
 		return
 	if(!matrix_aether_burst_action)
 		matrix_aether_burst_action = new
-	if(owner?.current)
-		matrix_aether_burst_action.Grant(owner.current)
+	if(changeling.owner?.current)
+		matrix_aether_burst_action.Grant(changeling.owner.current)
 
 /datum/changeling_matrix_manager/proc/remove_matrix_aether_burst_action()
 	if(!matrix_aether_burst_action)
 		return
-	if(owner?.current)
-		matrix_aether_burst_action.Remove(owner.current)
+	if(changeling.owner?.current)
+		matrix_aether_burst_action.Remove(changeling.owner.current)
 	QDEL_NULL(matrix_aether_burst_action)
 
 /datum/changeling_matrix_manager/proc/apply_matrix_aether_drake_traits()
 	if(!matrix_aether_drake_active)
 		return
-	var/mob/living/living_owner = owner?.current
+	var/mob/living/living_owner = changeling.owner?.current
 	if(!isliving(living_owner))
 		return
 	if(!matrix_aether_drake_traits_applied)
@@ -317,8 +304,8 @@
 		matrix_aether_drake_traits_applied = TRUE
 
 /datum/changeling_matrix_manager/proc/remove_matrix_aether_drake_traits()
-	if(matrix_aether_drake_traits_applied && owner?.current)
-		owner.current.remove_traits(list(TRAIT_SPACEWALK, TRAIT_FREE_HYPERSPACE_MOVEMENT), CHANGELING_TRAIT)
+	if(matrix_aether_drake_traits_applied && changeling.owner?.current)
+		changeling.owner.current.remove_traits(list(TRAIT_SPACEWALK, TRAIT_FREE_HYPERSPACE_MOVEMENT), CHANGELING_TRAIT)
 		matrix_aether_drake_traits_applied = FALSE
 
 /datum/changeling_matrix_manager/proc/update_matrix_graviton_ripsaw_effect(is_active)
@@ -330,7 +317,7 @@
 #define GRAVITON_RIPSAW_GRAPPLE_COOLDOWN (2 SECONDS)
 
 /datum/changeling_matrix_manager/proc/try_matrix_graviton_ripsaw_grapple(atom/grapple_target, mob/living/user)
-	if(!matrix_graviton_ripsaw_active || owner?.current != user)
+	if(!matrix_graviton_ripsaw_active || changeling.owner?.current != user)
 		return NONE
 	if(!istype(user))
 		return ITEM_INTERACT_BLOCKING
@@ -412,17 +399,17 @@
 		unbind_abyssal_slip_signals()
 		return
 	apply_matrix_abyssal_slip_traits()
-	bind_abyssal_slip_signals(owner?.current)
+	bind_abyssal_slip_signals(changeling.owner?.current)
 
 /datum/changeling_matrix_manager/proc/apply_matrix_abyssal_slip_traits()
-	if(!matrix_abyssal_slip_active || !owner?.current)
+	if(!matrix_abyssal_slip_active || !changeling.owner?.current)
 		return
-	owner.current.add_traits(list(TRAIT_SILENT_FOOTSTEPS, TRAIT_LIGHT_STEP), CHANGELING_TRAIT)
+	changeling.owner.current.add_traits(list(TRAIT_SILENT_FOOTSTEPS, TRAIT_LIGHT_STEP), CHANGELING_TRAIT)
 
 /datum/changeling_matrix_manager/proc/remove_matrix_abyssal_slip_traits()
-	if(!owner?.current)
+	if(!changeling.owner?.current)
 		return
-	owner.current.remove_traits(list(TRAIT_SILENT_FOOTSTEPS, TRAIT_LIGHT_STEP), CHANGELING_TRAIT)
+	changeling.owner.current.remove_traits(list(TRAIT_SILENT_FOOTSTEPS, TRAIT_LIGHT_STEP), CHANGELING_TRAIT)
 
 /datum/changeling_matrix_manager/proc/bind_abyssal_slip_signals(mob/living/new_host)
 	if(matrix_abyssal_slip_bound_mob == new_host)
@@ -451,7 +438,7 @@
 
 /datum/changeling_matrix_manager/proc/update_matrix_crystalline_buffer_effect(is_active)
 	matrix_crystalline_buffer_active = !!is_active
-	var/mob/living/living_owner = owner?.current
+	var/mob/living/living_owner = changeling.owner?.current
 	if(!living_owner)
 		return
 	if(matrix_crystalline_buffer_active)
@@ -467,7 +454,7 @@
 		COOLDOWN_RESET(src, matrix_anaerobic_reservoir_cooldown)
 		unbind_anaerobic_reservoir_signals()
 		return
-	bind_anaerobic_reservoir_signals(owner?.current)
+	bind_anaerobic_reservoir_signals(changeling.owner?.current)
 
 /datum/changeling_matrix_manager/proc/bind_anaerobic_reservoir_signals(mob/living/new_host)
 	if(matrix_anaerobic_reservoir_bound_mob == new_host)
@@ -536,13 +523,13 @@
 
 /datum/changeling_matrix_manager/proc/update_matrix_ashen_pump_effect(is_active)
 	matrix_ashen_pump_active = !!is_active
-	if(!matrix_ashen_pump_active && owner?.current)
-		owner.current.remove_status_effect(/datum/status_effect/changeling_ashen_pump)
+	if(!matrix_ashen_pump_active && changeling.owner?.current)
+		changeling.owner.current.remove_status_effect(/datum/status_effect/changeling_ashen_pump)
 
 /datum/changeling_matrix_manager/proc/update_matrix_neuro_sap_effect(is_active)
 	matrix_neuro_sap_active = !!is_active
-	if(!matrix_neuro_sap_active && owner?.current)
-		owner.current.remove_status_effect(/datum/status_effect/changeling_neuro_sap)
+	if(!matrix_neuro_sap_active && changeling.owner?.current)
+		changeling.owner.current.remove_status_effect(/datum/status_effect/changeling_neuro_sap)
 	remove_neuro_sap_bonus()
 
 /datum/changeling_matrix_manager/proc/update_matrix_chitin_courier_effect(is_active)
@@ -558,26 +545,26 @@
 		return
 	if(!matrix_chitin_courier_action)
 		matrix_chitin_courier_action = new
-	if(owner?.current)
-		matrix_chitin_courier_action.Grant(owner.current)
+	if(changeling.owner?.current)
+		matrix_chitin_courier_action.Grant(changeling.owner.current)
 
 /datum/changeling_matrix_manager/proc/remove_matrix_chitin_courier_action()
 	if(!matrix_chitin_courier_action)
 		return
-	if(owner?.current)
-		matrix_chitin_courier_action.Remove(owner.current)
+	if(changeling.owner?.current)
+		matrix_chitin_courier_action.Remove(changeling.owner.current)
 	QDEL_NULL(matrix_chitin_courier_action)
 
 /datum/changeling_matrix_manager/proc/apply_neuro_sap_bonus()
 	if(matrix_neuro_sap_bonus_applied)
 		return
-	chem_recharge_rate += 0.8
+	changeling.chem_recharge_rate += 0.8
 	matrix_neuro_sap_bonus_applied = TRUE
 
 /datum/changeling_matrix_manager/proc/remove_neuro_sap_bonus()
 	if(!matrix_neuro_sap_bonus_applied)
 		return
-	chem_recharge_rate -= 0.8
+	changeling.chem_recharge_rate -= 0.8
 	matrix_neuro_sap_bonus_applied = FALSE
 
 /datum/changeling_matrix_manager/proc/schedule_resonant_echo(mob/living/user, range, confusion_mult)
@@ -702,14 +689,14 @@
 		return
 	if(!matrix_spore_node_action)
 		matrix_spore_node_action = new
-	if(owner?.current)
-		matrix_spore_node_action.Grant(owner.current)
+	if(changeling.owner?.current)
+		matrix_spore_node_action.Grant(changeling.owner.current)
 
 /datum/changeling_matrix_manager/proc/remove_matrix_spore_node_action()
 	if(!matrix_spore_node_action)
 		return
-	if(owner?.current)
-		matrix_spore_node_action.Remove(owner.current)
+	if(changeling.owner?.current)
+		matrix_spore_node_action.Remove(changeling.owner.current)
 	QDEL_NULL(matrix_spore_node_action)
 
 /datum/changeling_matrix_manager/proc/stash_chitin_courier_item(obj/item/held_item, mob/living/user)
@@ -751,7 +738,7 @@
 		var/obj/item/stored = matrix_chitin_courier_item
 		matrix_chitin_courier_item = null
 		if(drop_item)
-			var/turf/drop_loc = get_turf(owner?.current) || get_turf(stored)
+			var/turf/drop_loc = get_turf(changeling.owner?.current) || get_turf(stored)
 			stored.forceMove(drop_loc)
 		else
 			stored.forceMove(get_turf(stored))
@@ -809,9 +796,9 @@
 			living_owner.max_stamina -= matrix_current_max_stamina_bonus
 			living_owner.staminaloss = clamp(living_owner.staminaloss, 0, living_owner.max_stamina)
 	if(matrix_current_chem_rate_bonus)
-		chem_recharge_rate -= matrix_current_chem_rate_bonus
+		changeling.chem_recharge_rate -= matrix_current_chem_rate_bonus
 	if(matrix_current_sting_range_bonus)
-		sting_range -= matrix_current_sting_range_bonus
+		changeling.sting_range -= matrix_current_sting_range_bonus
 	matrix_passive_effects_bound_mob = null
 	matrix_current_movespeed_slowdown = 0
 	matrix_current_stamina_use_mult = 1
@@ -863,7 +850,7 @@
 	clear_matrix_passive_effects()
 	if(!islist(totals))
 		totals = changeling_get_default_matrix_effects()
-	var/mob/living/living_owner = owner?.current
+	var/mob/living/living_owner = changeling.owner?.current
 	var/move_slowdown = totals["move_speed_slowdown"]
 	var/stamina_mult = totals["stamina_use_mult"]
 	var/regen_mult = totals["stamina_regen_time_mult"]
@@ -885,9 +872,9 @@
 	matrix_current_burn_damage_mult = burn_damage_mult
 
 	if(chem_bonus)
-		chem_recharge_rate += chem_bonus
+		changeling.chem_recharge_rate += chem_bonus
 	if(sting_bonus)
-		sting_range += sting_bonus
+		changeling.sting_range += sting_bonus
 
 	genetic_matrix_effect_cache = totals.Copy()
 
@@ -922,16 +909,3 @@
 		return default_value
 	return result
 
-#undef chosen_sting
-#undef genetic_points
-#undef innate_powers
-#undef purchased_powers
-#undef total_genetic_points
-#undef total_chem_storage
-#undef chem_charges
-#undef sting_range
-#undef chem_recharge_slowdown
-#undef chem_recharge_rate
-#undef genetic_matrix
-#undef bio_incubator
-#undef owner
