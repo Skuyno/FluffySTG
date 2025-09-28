@@ -362,11 +362,12 @@
 	user.setDir(get_dir(user_turf, destination))
 	user.Beam(
 		destination,
-		icon_state = "zipline_hook",
+		icon = 'icons/effects/beam.dmi',
+		icon_state = "tentacle",
 		time = 0.5 SECONDS,
 		emissive = FALSE,
 		maxdistance = GRAVITON_RIPSAW_GRAPPLE_RANGE,
-		layer = BELOW_MOB_LAYER
+		layer = BELOW_MOB_LAYER,
 	)
 	playsound(user, 'sound/effects/splat.ogg', 40, TRUE)
 	user.throw_at(destination, distance_to_destination, 1, user, spin = FALSE, gentle = TRUE)
