@@ -6,15 +6,15 @@
 	module = list(
 		"id" = "matrix_barbed_larynx",
 		"name" = "Barbed Larynx",
-		"desc" = "Bolsters our sonic shrieks with broader reach and lingering vertigo.",
+		"desc" = "Bolsters our sonic shrieks with sweeping reach and crushing vertigo.",
 		"category" = GENETIC_MATRIX_CATEGORY_PASSIVE,
 		"slotType" = BIO_INCUBATOR_SLOT_FLEX,
 		"tags" = list("sonic", "crowd_control"),
 		"exclusiveTags" = list("shriek_range"),
 		"button_icon_state" = "resonant_shriek",
 		"effects" = list(
-			"resonant_shriek_range_add" = 2,
-			"resonant_shriek_confusion_mult" = 1.1,
+			"resonant_shriek_range_add" = 3,
+			"resonant_shriek_confusion_mult" = 1.3,
 		),
 	)
 	required_cells = list(
