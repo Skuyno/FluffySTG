@@ -1,8 +1,8 @@
-/// Matrix Upgrade: Corrosive Bile — distills slimeperson acid bladders, morph solvent sacs, and giant spider venoms to melt restraints in moments with less expenditure.
+/// Matrix Upgrade: Corrosive Bile — distills slimeperson acid bladders, morph solvent sacs, and spider venoms to melt restraints in moments with less expenditure.
 /datum/changeling_genetic_matrix_recipe/corrosive_bile
 	id = "matrix_corrosive_bile"
 	name = "Corrosive Bile"
-	description = "Concentrate volatile bile streams from slimeperson acid bladders, morph solvent sacs, and giant spider venoms to chew through bindings almost instantly while hardening our flesh against splashback."
+	description = "Concentrate volatile bile streams from slimeperson acid bladders, morph solvent sacs, and spider venoms to chew through bindings almost instantly while hardening our flesh against splashback."
 	module = list(
 		"id" = "matrix_corrosive_bile",
 		"name" = "Corrosive Bile",
@@ -21,7 +21,7 @@
 	required_cells = list(
 		CHANGELING_CELL_ID_SLIMEPERSON,
 		CHANGELING_CELL_ID_MORPH,
-		CHANGELING_CELL_ID_GIANT_SPIDER,
+		CHANGELING_CELL_ID_SPIDER,
 	)
 	required_abilities = list(
 		/datum/action/changeling/biodegrade,
