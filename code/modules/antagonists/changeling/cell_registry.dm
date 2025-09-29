@@ -44,7 +44,7 @@
 #define CHANGELING_CELL_ID_PUG "pug"
 #define CHANGELING_CELL_ID_COLOSSUS "colossus"
 #define CHANGELING_CELL_ID_SPACE_CARP "space_carp"
-#define CHANGELING_CELL_ID_GIANT_SPIDER "giant_spider"
+#define CHANGELING_CELL_ID_SPIDER "spider"
 #define CHANGELING_CELL_ID_MORPH "morph"
 #define CHANGELING_CELL_ID_REVENANT "revenant"
 #define CHANGELING_CELL_ID_SLAUGHTER_DEMON "slaughter_demon"
@@ -283,10 +283,14 @@ GLOBAL_LIST_INIT(changeling_cell_registry, list(
                 CHANGELING_CELL_REGISTRY_DESC = "Hydrodynamic muscle bundles and predatory instincts from roaming space carp.",
                 CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/carp),
         ),
-        CHANGELING_CELL_ID_GIANT_SPIDER = list(
-                CHANGELING_CELL_REGISTRY_NAME = "Giant Spider",
-                CHANGELING_CELL_REGISTRY_DESC = "Venom glands and tensile spinnerets salvaged from giant spiders loosed on stations.",
-                CHANGELING_CELL_REGISTRY_TYPES = list(/mob/living/basic/spider/giant),
+        CHANGELING_CELL_ID_SPIDER = list(
+                CHANGELING_CELL_REGISTRY_NAME = "Spider",
+                CHANGELING_CELL_REGISTRY_DESC = "Venom glands and tensile spinnerets salvaged from maintenance skitterlings, maturing broods, and full-grown giants alike.",
+                CHANGELING_CELL_REGISTRY_TYPES = list(
+                        /mob/living/basic/spider/maintenance,
+                        /mob/living/basic/spider/growing,
+                        /mob/living/basic/spider/giant,
+                ),
         ),
         CHANGELING_CELL_ID_MORPH = list(
                 CHANGELING_CELL_REGISTRY_NAME = "Morph",
