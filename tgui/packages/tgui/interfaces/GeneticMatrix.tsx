@@ -181,7 +181,7 @@ export const GeneticMatrix = () => {
                 selected={activeTab === 'skills'}
                 onClick={() => setActiveTab('skills')}
               >
-                Standard Skills
+                Cellular Emporium
               </Tabs.Tab>
             </Tabs>
           </Stack.Item>
