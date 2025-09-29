@@ -1,10 +1,10 @@
 
 /datum/action/changeling/aether_burst
 	name = "Aetheric Burst"
-	desc = "We vent draconic plasma to shove ourselves through open space. Costs 2 chemicals."
+	desc = "We vent draconic plasma to shove ourselves through open space. Costs 8 chemicals."
 	helptext = "Requires the Aether Drake Mantle. Propels us a few tiles in the direction we face even in zero-g."
-	button_icon_state = "lesserform"
-	chemical_cost = 2
+	button_icon_state = "lesser_form"
+	chemical_cost = 8
 	dna_cost = CHANGELING_POWER_UNOBTAINABLE
 	req_stat = CONSCIOUS
 	disabled_by_fire = FALSE
@@ -12,7 +12,7 @@
 	/// Cooldown tracker in deciseconds.
 	var/next_allowed = 0
 	/// Minimum delay between bursts.
-	var/cooldown_length = 15
+	var/cooldown_length = 30
 
 /datum/action/changeling/aether_burst/sting_action(mob/living/user)
 	var/datum/antagonist/changeling/changeling_data = IS_CHANGELING(user)

@@ -3,7 +3,7 @@
 	name = "Chitin Courier"
 	desc = "We unfurl a hidden cache beneath our skin for a single medium item."
 	helptext = "Store or retrieve a compact contraband item invisibly. Requires the Chitin Courier matrix passive."
-	button_icon_state = "lesserform"
+	button_icon_state = "lesser_form"
 	chemical_cost = 0
 	dna_cost = CHANGELING_POWER_UNOBTAINABLE
 	req_stat = CONSCIOUS
