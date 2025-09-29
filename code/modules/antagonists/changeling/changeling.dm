@@ -52,20 +52,16 @@
 	var/total_genetic_points = 10
 	/// List of all powers we start with.
 	var/list/innate_powers = list()
-	/// Associated list of all powers we have evolved / bought from the emporium. [path] = [instance of path]
+	/// Associated list of all powers we have evolved / bought from the Cellular Emporium tab. [path] = [instance of path]
 	var/list/purchased_powers = list()
 
 	/// The voice we're mimicing via the changeling voice ability.
 	var/mimicing = ""
-	/// Whether we can currently respec in the cellular emporium.
+	/// Whether we can currently respec in the genetic matrix.
 	var/can_respec = 0
 
 	/// The currently active changeling sting.
 	var/datum/action/changeling/sting/chosen_sting
-	/// A reference to our cellular emporium datum.
-	var/datum/cellular_emporium/cellular_emporium
-	/// A reference to our cellular emporium action (which opens the UI for the datum).
-	var/datum/action/cellular_emporium/emporium_action
 	/// Coordinator for the genetic matrix UI.
 	var/datum/genetic_matrix/genetic_matrix
 	/// Action that opens the genetic matrix UI.
@@ -122,8 +118,6 @@
 /datum/antagonist/changeling/Destroy()
 	QDEL_NULL(matrix_manager)
 	QDEL_NULL(ui_manager)
-	QDEL_NULL(emporium_action)
-	QDEL_NULL(cellular_emporium)
 	QDEL_NULL(genetic_matrix_action)
 	QDEL_NULL(genetic_matrix)
 	QDEL_NULL(bio_incubator)
@@ -136,7 +130,6 @@
 		matrix_manager = new(src)
 	if(!ui_manager)
 		ui_manager = new(src)
-	create_emporium()
 	create_bio_incubator()
 	create_genetic_matrix()
 	create_innate_actions()
@@ -209,14 +202,6 @@
 /datum/antagonist/changeling/farewell()
 	if(owner.current)
 		to_chat(owner.current, span_userdanger("You grow weak and lose your powers! You are no longer a changeling and are stuck in your current form!"))
-
-/*
-	* Instantiate the cellular emporium for the changeling.
-	*/
-/datum/antagonist/changeling/proc/create_emporium()
-	cellular_emporium = new(src)
-	emporium_action = new(cellular_emporium)
-	emporium_action.Grant(owner.current)
 
 /datum/antagonist/changeling/proc/create_bio_incubator()
 	QDEL_NULL(bio_incubator)
@@ -648,7 +633,6 @@
 	* For resetting all of the changeling's action buttons. (IE, re-granting them all.)
 	*/
 /datum/antagonist/changeling/proc/regain_powers()
-	emporium_action.Grant(owner.current)
 	if(genetic_matrix_action)
 		genetic_matrix_action.Grant(owner.current)
 	for(var/datum/action/changeling/power as anything in innate_powers)
@@ -731,8 +715,6 @@
 	for(var/datum/action/changeling/power as anything in innate_powers)
 		if(istype(power, power_path))
 			return power
-	if(istype(emporium_action, power_path))
-		return emporium_action
 	if(istype(genetic_matrix_action, power_path))
 		return genetic_matrix_action
 	return null
