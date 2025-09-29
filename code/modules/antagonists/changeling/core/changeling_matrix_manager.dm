@@ -214,7 +214,7 @@
 		return
 	if(!istype(target) || target == user || target.stat == DEAD)
 		return
-	var/stamina_cost = 6
+	var/stamina_cost = 12
 	if(user.staminaloss + stamina_cost >= user.max_stamina)
 		return
 	user.adjustStaminaLoss(stamina_cost)
